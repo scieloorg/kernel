@@ -2,6 +2,9 @@ import unittest
 from typing import Union
 
 
+__all__ = ["new", "add_version", "add_asset_version"]
+
+
 def new(doc_id: str) -> dict:
     return {"id": str(doc_id), "versions": []}
 
