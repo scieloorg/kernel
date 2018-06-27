@@ -1,6 +1,6 @@
 import unittest
 from typing import Union
-
+from copy import deepcopy
 
 __all__ = ["new", "add_version", "add_asset_version"]
 
@@ -15,7 +15,7 @@ def _new_version(data_uri: str, assets: Union[dict, list]) -> dict:
 
 
 def add_version(manifest: dict, data_uri: str, assets: Union[dict, list]) -> dict:
-    _manifest = manifest.copy()
+    _manifest = deepcopy(manifest)
     version = _new_version(data_uri, assets)
     for asset_id in assets:
         try:
@@ -29,13 +29,13 @@ def add_version(manifest: dict, data_uri: str, assets: Union[dict, list]) -> dic
 
 
 def _new_asset_version(version: dict, asset_id: str, asset_uri: str) -> dict:
-    _version = version.copy()
+    _version = deepcopy(version)
     _version["assets"][asset_id].append(asset_uri)
     return _version
 
 
 def add_asset_version(manifest: dict, asset_id: str, asset_uri: str) -> dict:
-    _manifest = manifest.copy()
+    _manifest = deepcopy(manifest)
     _manifest["versions"][-1] = _new_asset_version(
         _manifest["versions"][-1], asset_id, asset_uri
     )
@@ -73,6 +73,17 @@ class TestAddVersion(unittest.TestCase):
             ),
             expected,
         )
+
+    def test_manifest_versions_are_immutable(self):
+        doc = {"id": "0034-8910-rsp-48-2-0275", "versions": []}
+        new_version = add_version(
+            doc,
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+            ["0034-8910-rsp-48-2-0275-gf01.gif"],
+        )
+
+        self.assertEqual(len(doc["versions"]), 0)
+        self.assertEqual(len(new_version["versions"]), 1)
 
     def test_add_version_with_assets_mapping(self):
         doc = {"id": "0034-8910-rsp-48-2-0275", "versions": []}
