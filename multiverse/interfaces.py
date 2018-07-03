@@ -10,15 +10,6 @@ class ArticleStore(abc.ABC):
         pass
 
 
-class FileStore(abc.ABC):
-    """Banco de dados de objetos.
-    """
-
-    @abc.abstractmethod
-    def add(self, sha1_sum, f) -> None:
-        pass
-
-
 class SessionManager(abc.ABC):
     """Retorna novas instâncias de ``Session``.
     """
@@ -52,12 +43,5 @@ class Session(abc.ABC):
     @abc.abstractmethod
     def articles(self):
         """Ponto de acesso à instância de ``ArticleStore``.
-        """
-        pass
-
-    @property
-    @abc.abstractmethod
-    def files(self):
-        """Ponto de acesso à instância de ``FileStore``.
         """
         pass

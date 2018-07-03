@@ -6,11 +6,19 @@ class Article:
         assert any([doc_id, manifest])
         self.manifest = manifest or _manifest.new(doc_id)
 
-    def new_version(self, data) -> None:
-        """Adiciona `data` como uma nova versão do artigo.
+    def doc_id(self):
+        return self.manifest.get("id", "")
 
-        :param data: é o file-object de um artigo em XML.
+    def new_version(self, data_uri) -> None:
+        """Adiciona `data_uri` como uma nova versão do artigo.
+
+        TODO:
+        Obtém o conteúdo de `data_uri` com a finalidade de listar seus ativos
+        digitais relacionados.
+
+        :param data_uri: é a URI para a nova versão do artigo.
         """
+        self.manifest = _manifest.add_version(self.manifest, data_uri, [])
 
     def new_asset_version(self, asset_id, data) -> None:
         """Adiciona `data` como uma nova versão do ativo `asset_id` vinculado 
