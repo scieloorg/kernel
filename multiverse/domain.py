@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from . import manifest as _manifest
 
 
@@ -19,6 +21,20 @@ class Article:
         :param data_uri: é a URI para a nova versão do artigo.
         """
         self.manifest = _manifest.add_version(self.manifest, data_uri, [])
+
+    def version(self, index=None) -> dict:
+        index = index if index is not None else -1
+        version = deepcopy(self.manifest["versions"][index])
+
+        def _latest(uris):
+            try:
+                return uris[-1]
+            except IndexError:
+                return ""
+
+        assets = {a: _latest(u) for a, u in version["assets"].items()}
+        version["assets"] = assets
+        return version
 
     def new_asset_version(self, asset_id, data) -> None:
         """Adiciona `data` como uma nova versão do ativo `asset_id` vinculado 
