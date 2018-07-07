@@ -8,6 +8,14 @@ class Article:
         assert any([doc_id, manifest])
         self.manifest = manifest or _manifest.new(doc_id)
 
+    @property
+    def manifest(self):
+        return deepcopy(self._manifest)
+
+    @manifest.setter
+    def manifest(self, value):
+        self._manifest = value
+
     def doc_id(self):
         return self.manifest.get("id", "")
 
@@ -20,11 +28,11 @@ class Article:
 
         :param data_uri: é a URI para a nova versão do artigo.
         """
-        self.manifest = _manifest.add_version(self.manifest, data_uri, [])
+        self.manifest = _manifest.add_version(self._manifest, data_uri, [])
 
     def version(self, index=None) -> dict:
         index = index if index is not None else -1
-        version = deepcopy(self.manifest["versions"][index])
+        version = self.manifest["versions"][index]
 
         def _latest(uris):
             try:
