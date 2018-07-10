@@ -3,7 +3,6 @@ from copy import deepcopy
 
 from multiverse import domain
 
-
 SAMPLE_MANIFEST = {
     "id": "0034-8910-rsp-48-2-0275",
     "versions": [
@@ -60,7 +59,10 @@ class ArticleTests(unittest.TestCase):
         article = self.make_one()
         self.assertEqual(len(article.manifest["versions"]), 2)
 
-        article.new_version("/rawfiles/5e3ad9c6cd6b8/0034-8910-rsp-48-2-0275.xml")
+        article.new_version(
+            "/rawfiles/5e3ad9c6cd6b8/0034-8910-rsp-48-2-0275.xml",
+            assets_getter=lambda data_url, timeout: [],
+        )
         self.assertEqual(len(article.manifest["versions"]), 3)
 
     def test_get_latest_version(self):
