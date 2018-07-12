@@ -8,25 +8,13 @@ from lxml import etree
 from . import manifest as _manifest
 
 
-class BaseHTTPError(Exception):
-    """A raíz das exceções relacionadas à HTTP"""
+class RetryableError(Exception):
+    """Pode, potencialmente, ser aceito pela contraparte sem modificação.
+    """
 
 
-class HTTPConnectionError(BaseHTTPError):
-    """Equivalente a ``requests.exceptions.ConnectionError``"""
-
-
-class HTTPTimeout(BaseHTTPError):
-    """Equivalente a ``requests.exceptions.Timeout``"""
-
-
-class HTTPError(BaseHTTPError):
-    """Equivalente a ``requests.exceptions.HTTPError``"""
-
-
-class HTTPURLError(BaseHTTPError):
-    """Equivalente a ``requests.exceptions.InvalidSchema``,
-    ``requests.exceptions.InvalidURL`` e ``requests.exceptions.MissingSchema``
+class NonRetryableError(Exception):
+    """Requer modificação para que seja aceito pela contraparte.
     """
 
 
@@ -56,21 +44,20 @@ def get_static_assets(xml_et):
 def assets_from_remote_xml(url: str, timeout: float = 2) -> list:
     try:
         response = requests.get(url, timeout=timeout)
-    except requests.exceptions.ConnectionError as exc:
-        raise HTTPConnectionError(exc) from None
-    except requests.exceptions.Timeout as exc:
-        raise HTTPTimeout(exc) from None
-    except (
-        requests.exceptions.InvalidSchema,
-        requests.exceptions.MissingSchema,
-        requests.exceptions.InvalidURL,
-    ) as exc:
-        raise HTTPURLError(exc) from None
+    except (requests.ConnectionError, requests.Timeout) as exc:
+        raise RetryableError(exc) from exc
+    except (requests.InvalidSchema, requests.MissingSchema, requests.InvalidURL) as exc:
+        raise NonRetryableError(exc) from None
     else:
         try:
             response.raise_for_status()
-        except requests.exceptions.HTTPError as exc:
-            raise HTTPError(exc) from None
+        except requests.HTTPError as exc:
+            if 400 <= exc.response.status_code < 500:
+                raise NonRetryableError(exc) from exc
+            elif 500 <= exc.response.status_code < 600:
+                raise RetryableError(exc) from exc
+            else:
+                raise
 
     return get_static_assets(etree.parse(BytesIO(response.content)))
 
