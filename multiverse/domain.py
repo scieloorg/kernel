@@ -9,12 +9,15 @@ from . import manifest as _manifest
 
 
 class RetryableError(Exception):
-    """Pode, potencialmente, ser aceito pela contraparte sem modificação.
+    """Erro recuperável sem que seja necessário modificar o estado dos dados
+    na parte cliente, e.g., timeouts, erros advindos de particionamento de rede 
+    etc.
     """
 
 
 class NonRetryableError(Exception):
-    """Requer modificação para que seja aceito pela contraparte.
+    """Erro do qual não pode ser recuperado sem modificar o estado dos dados 
+    na parte cliente, e.g., recurso solicitado não exite, URI inválida etc.
     """
 
 
@@ -41,13 +44,13 @@ def get_static_assets(xml_et):
     ]
 
 
-def assets_from_remote_xml(url: str, timeout: float = 2) -> list:
+def fetch_data(url: str, timeout: float = 2) -> bytes:
     try:
         response = requests.get(url, timeout=timeout)
     except (requests.ConnectionError, requests.Timeout) as exc:
         raise RetryableError(exc) from exc
     except (requests.InvalidSchema, requests.MissingSchema, requests.InvalidURL) as exc:
-        raise NonRetryableError(exc) from None
+        raise NonRetryableError(exc) from exc
     else:
         try:
             response.raise_for_status()
@@ -59,7 +62,12 @@ def assets_from_remote_xml(url: str, timeout: float = 2) -> list:
             else:
                 raise
 
-    return get_static_assets(etree.parse(BytesIO(response.content)))
+    return response.content
+
+
+def assets_from_remote_xml(url: str, timeout: float = 2) -> list:
+    data = fetch_data(url, timeout)
+    return get_static_assets(etree.parse(BytesIO(data)))
 
 
 class Article:
