@@ -133,7 +133,7 @@ class Article:
 
     def data(
         self, version_index=None, assets_getter=assets_from_remote_xml, timeout=2
-    ) -> dict:
+    ) -> bytes:
         """Retorna o conteúdo do XML, codificado em UTF-8, já com as 
         referências aos ativos digitais correspondendo às da versão solicitada.
         """
