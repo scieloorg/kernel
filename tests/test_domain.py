@@ -61,7 +61,7 @@ class ArticleTests(unittest.TestCase):
 
         article.new_version(
             "/rawfiles/5e3ad9c6cd6b8/0034-8910-rsp-48-2-0275.xml",
-            assets_getter=lambda data_url, timeout: [],
+            assets_getter=lambda data_url, timeout: (None, []),
         )
         self.assertEqual(len(article.manifest["versions"]), 3)
 

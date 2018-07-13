@@ -7,6 +7,14 @@ from lxml import etree
 
 from . import manifest as _manifest
 
+DEFAULT_XMLPARSER = etree.XMLParser(
+    remove_blank_text=False,
+    remove_comments=False,
+    load_dtd=False,
+    no_network=True,
+    collect_ids=False,
+)
+
 
 class RetryableError(Exception):
     """Erro recuperável sem que seja necessário modificar o estado dos dados
@@ -40,7 +48,8 @@ def get_static_assets(xml_et):
     elements = itertools.chain(*iterators)
 
     return [
-        element.attrib["{http://www.w3.org/1999/xlink}href"] for element in elements
+        (element.attrib["{http://www.w3.org/1999/xlink}href"], element)
+        for element in elements
     ]
 
 
@@ -65,9 +74,12 @@ def fetch_data(url: str, timeout: float = 2) -> bytes:
     return response.content
 
 
-def assets_from_remote_xml(url: str, timeout: float = 2) -> list:
+def assets_from_remote_xml(
+    url: str, timeout: float = 2, parser=DEFAULT_XMLPARSER
+) -> list:
     data = fetch_data(url, timeout)
-    return get_static_assets(etree.parse(BytesIO(data)))
+    xml = etree.parse(BytesIO(data), parser)
+    return xml, get_static_assets(xml)
 
 
 class Article:
@@ -92,15 +104,17 @@ class Article:
         """Adiciona `data_url` como uma nova versão do artigo.
 
         :param data_url: é a URL para a nova versão do artigo.
-        :param assets_getter: (optional) função que recebe 2 argumentos: a)
-        a URL do XML do artigo e b) o timeout para a requisição. Deve ainda
-        levantar as seguintes exceções: ``HTTPConnectionError`` quando não
-        for possível estabelecer uma conexão, ``HTTPError`` quando a requisição
-        retornar com código HTTP indicando falha, ``HTTPTimeout`` quando
-        ``timeout`` for excedido e ``HTTPURLError``` quando a URL não for
-        válida.
+        :param assets_getter: (optional) função que recebe 2 argumentos: 1)
+        a URL do XML do artigo e 2) o timeout para a requisição e retorna 
+        o par ``(xml, [(href, xml_node), ...]`` onde ``xml`` é uma instância
+        de *element tree* da *lxml* e ``[(href, xml_node), ...]`` é uma lista
+        que associa as URIs dos ativos com os nós do XML onde se encontram.
+        Essa função deve ainda lançar as ``RetryableError`` e 
+        ``NonRetryableError`` para representar problemas no acesso aos dados
+        do XML.
         """
-        assets = assets_getter(data_url, timeout=timeout)
+        _, assets = assets_getter(data_url, timeout=timeout)
+        assets = [href for href, _ in assets]
         self.manifest = _manifest.add_version(self._manifest, data_url, assets)
 
     def version(self, index=None) -> dict:
@@ -116,6 +130,22 @@ class Article:
         assets = {a: _latest(u) for a, u in version["assets"].items()}
         version["assets"] = assets
         return version
+
+    def data(
+        self, version_index=None, assets_getter=assets_from_remote_xml, timeout=2
+    ) -> dict:
+        """Retorna o conteúdo do XML, codificado em UTF-8, já com as 
+        referências aos ativos digitais correspondendo às da versão solicitada.
+        """
+        version = self.version(version_index)
+        xml_tree, data_assets = assets_getter(version["data"], timeout=timeout)
+
+        version_assets = version["assets"]
+        for asset_key, target_node in data_assets:
+            version_href = version_assets.get(asset_key, "")
+            target_node.attrib["{http://www.w3.org/1999/xlink}href"] = version_href
+
+        return etree.tostring(xml_tree, encoding="utf-8", pretty_print=False)
 
     def new_asset_version(self, asset_id, data) -> None:
         """Adiciona `data` como uma nova versão do ativo `asset_id` vinculado 
