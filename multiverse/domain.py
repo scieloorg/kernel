@@ -113,9 +113,24 @@ class Article:
         ``NonRetryableError`` para representar problemas no acesso aos dados
         do XML.
         """
-        _, assets = assets_getter(data_url, timeout=timeout)
-        assets = [href for href, _ in assets]
+        _, data_assets = assets_getter(data_url, timeout=timeout)
+        data_assets_keys = [asset_key for asset_key, _ in data_assets]
+        assets = self._link_assets(data_assets_keys)
         self.manifest = _manifest.add_version(self._manifest, data_url, assets)
+
+    def _link_assets(self, tolink: list) -> dict:
+        """Retorna um mapa entre as chaves dos ativos em `tolink` e as
+        referências já existentes na última versão. 
+        """
+        try:
+            latest_version = self.version()
+        except ValueError:
+            latest_version = {"assets": {}}
+
+        return {
+            asset_key: latest_version["assets"].get(asset_key, "")
+            for asset_key in tolink
+        }
 
     def version(self, index=-1) -> dict:
         try:

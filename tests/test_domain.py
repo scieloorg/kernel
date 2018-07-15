@@ -93,3 +93,33 @@ class ArticleTests(unittest.TestCase):
             },
         }
         self.assertEqual(oldest, expected)
+
+    def test_new_version_automaticaly_references_latest_known_assets(self):
+        manifest = {
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [
+                {
+                    "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+                    "assets": {
+                        "0034-8910-rsp-48-2-0275-gf01.gif": [
+                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                            "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                        ]
+                    },
+                }
+            ],
+        }
+
+        article = domain.Article(manifest=manifest)
+        article.new_version(
+            "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
+            assets_getter=lambda data_url, timeout: (
+                None,
+                [("0034-8910-rsp-48-2-0275-gf01.gif", None)],
+            ),
+        )
+        latest = article.version()
+        self.assertEqual(
+            latest["assets"]["0034-8910-rsp-48-2-0275-gf01.gif"],
+            "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+        )

@@ -131,3 +131,57 @@ class TestAddVersion(unittest.TestCase):
             ),
             expected,
         )
+
+    def test_additional_data_are_preserved_while_adding_versions_for_assets(self):
+        doc = {
+            "_revision": "a1eda318424",
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [
+                {
+                    "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+                    "assets": {
+                        "0034-8910-rsp-48-2-0275-gf01.gif": [
+                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif"
+                        ]
+                    },
+                }
+            ],
+        }
+        expected = {
+            "_revision": "a1eda318424",
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [
+                {
+                    "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+                    "assets": {
+                        "0034-8910-rsp-48-2-0275-gf01.gif": [
+                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                            "/rawfiles/7a664999a8fb3/0034-8910-rsp-48-2-0275-gf01.gif",
+                        ]
+                    },
+                }
+            ],
+        }
+
+        self.assertEqual(
+            add_asset_version(
+                doc,
+                "0034-8910-rsp-48-2-0275-gf01.gif",
+                "/rawfiles/7a664999a8fb3/0034-8910-rsp-48-2-0275-gf01.gif",
+            ),
+            expected,
+        )
+
+    def test_additional_data_are_preserved_while_adding_versions(self):
+        doc = {
+            "_revision": "a1eda318424",
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [],
+        }
+        new_version = add_version(
+            doc,
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+            ["0034-8910-rsp-48-2-0275-gf01.gif"],
+        )
+
+        self.assertEqual(new_version["_revision"], "a1eda318424")
