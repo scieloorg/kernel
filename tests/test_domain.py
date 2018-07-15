@@ -72,6 +72,10 @@ class ArticleTests(unittest.TestCase):
             latest["data"], "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml"
         )
 
+    def test_get_latest_version_when_there_isnt_any(self):
+        article = domain.Article(doc_id="0034-8910-rsp-48-2-0275")
+        self.assertRaises(ValueError, lambda: article.version())
+
     def test_get_oldest_version(self):
         article = self.make_one()
         oldest = article.version(0)

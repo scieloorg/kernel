@@ -117,9 +117,11 @@ class Article:
         assets = [href for href, _ in assets]
         self.manifest = _manifest.add_version(self._manifest, data_url, assets)
 
-    def version(self, index=None) -> dict:
-        index = index if index is not None else -1
-        version = self.manifest["versions"][index]
+    def version(self, index=-1) -> dict:
+        try:
+            version = self.manifest["versions"][index]
+        except IndexError:
+            raise ValueError("missing version for index: %s" % index) from None
 
         def _latest(uris):
             try:
@@ -132,7 +134,7 @@ class Article:
         return version
 
     def data(
-        self, version_index=None, assets_getter=assets_from_remote_xml, timeout=2
+        self, version_index=-1, assets_getter=assets_from_remote_xml, timeout=2
     ) -> bytes:
         """Retorna o conteúdo do XML, codificado em UTF-8, já com as 
         referências aos ativos digitais correspondendo às da versão solicitada.
