@@ -172,6 +172,29 @@ class TestAddVersion(unittest.TestCase):
             expected,
         )
 
+    def test_add_asset_version_for_unknown_asset(self):
+        doc = {
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [
+                {
+                    "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+                    "assets": {
+                        "0034-8910-rsp-48-2-0275-gf01.gif": [
+                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif"
+                        ]
+                    },
+                }
+            ],
+        }
+
+        self.assertRaises(
+            KeyError,
+            add_asset_version,
+            doc,
+            "0034-8910-rsp-48-2-0275-UNKNOWN.gif",
+            "/rawfiles/7a664999a8fb3/0034-8910-rsp-48-2-0275-gf01.gif",
+        )
+
     def test_additional_data_are_preserved_while_adding_versions(self):
         doc = {
             "_revision": "a1eda318424",
