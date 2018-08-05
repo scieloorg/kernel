@@ -8,32 +8,74 @@ A abstração básica se apoia no conceito do *manifesto do documento*:
 
 ```javascript
 {
-  "id": "0034-8910-rsp-48-2-0275",
+  "id": "S0034-89102014000200347",
   "versions": [
-    {"data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
-     "assets": {
-         "0034-8910-rsp-48-2-0275-gf01.gif": [
-           "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
-           "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"]}
-    },
-    {"data": "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
-     "assets": {
-         "0034-8910-rsp-48-2-0275-gf01.gif": [
-           "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"]}
-    },
+    {
+      "assets": {
+        "0034-8910-rsp-48-2-0347-gf01": [
+          [
+            "2018-08-05 23:03:44.971230",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01.jpg"
+          ]
+        ],
+        "0034-8910-rsp-48-2-0347-gf01-en": [
+          [
+            "2018-08-05 23:08:41.590174",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01-en.jpg"
+          ]
+        ],
+        "0034-8910-rsp-48-2-0347-gf02": [
+          [
+            "2018-08-05 23:04:43.323527",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02.jpg"
+          ]
+        ],
+        "0034-8910-rsp-48-2-0347-gf02-en": [
+          [
+            "2018-08-05 23:08:50.331687",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02-en.jpg"
+          ]
+        ],
+        "0034-8910-rsp-48-2-0347-gf03": [
+          [
+            "2018-08-05 23:05:14.882129",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03.jpg"
+          ]
+        ],
+        "0034-8910-rsp-48-2-0347-gf03-en": [
+          [
+            "2018-08-05 23:08:59.691924",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03-en.jpg"
+          ]
+        ],
+        "0034-8910-rsp-48-2-0347-gf04": [
+          [
+            "2018-08-05 23:05:42.016837",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04.jpg"
+          ]
+        ],
+        "0034-8910-rsp-48-2-0347-gf04-en": [
+          [
+            "2018-08-05 23:09:09.569312",
+            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04-en.jpg"
+          ]
+        ]
+      },
+      "data": "https://raw.githubusercontent.com/scieloorg/packtools/master/tests/samples/0034-8910-rsp-48-2-0347.xml",
+      "timestamp": "2018-08-05 23:02:29.392990"
+    }
   ]
 }
 ```
 
-
-* *versions* e *assets* são listas ordenadas da versão mais antiga para a mais 
-  recente;
-* O endpoint *rawfiles* representa qualquer object-store de maneira opaca.
-  Poderia ser uma URL para um endpoint da própria aplicação ou para a Amazon S3, 
-  por exemplo;
-* O protótipo do endpoint rawfiles que aparece aqui tem a preocupação de 
-  separar o identificador único do arquivo, baseado nos primeiros dígitos da 
-  sua soma SHA1, do seu "nome social" legível por pessoas;
-* Reduz a solução do problema a um object-store e um manifesto que representa 
-  as relações entre a identidade da entidade e seus diferentes estados.
+O *manifesto do documento* é um objeto JSON que representa as relações entre
+a identidade de um documento e seus estados. A identidade do documento é 
+representada por meio da chave ``id``, que deve ser única. Os estados do
+documento são representados pela chave ``versions``, que está associada a uma
+coleção de objetos que representam versões. A coleção ``versions`` é ordenada
+da versão mais antiga para a mais recente. Cada versão contém uma URI para o 
+artigo codificado em XML segundo a especificação SciELO PS na chave ``data``,
+o *timestamp* UTC datando sua criação e a coleção ``assets``, composta pelo
+mapeamento dos ativos digitais referenciados pelo documento em XML e pares
+*timestamp* e URI.
 

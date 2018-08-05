@@ -1,6 +1,15 @@
+import functools
 import unittest
 
-from multiverse.manifest import *
+from multiverse.manifest import new, add_version, add_asset_version
+
+
+def fake_utcnow():
+    return "2018-08-05 22:33:49.795151"
+
+
+add_version = functools.partial(add_version, now=fake_utcnow)
+add_asset_version = functools.partial(add_asset_version, now=fake_utcnow)
 
 
 class TestNewManifest(unittest.TestCase):
@@ -22,6 +31,7 @@ class TestAddVersion(unittest.TestCase):
                 {
                     "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
                     "assets": {"0034-8910-rsp-48-2-0275-gf01.gif": []},
+                    "timestamp": fake_utcnow(),
                 }
             ],
         }
@@ -53,7 +63,8 @@ class TestAddVersion(unittest.TestCase):
             "versions": [
                 {
                     "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
-                    "assets": {"0034-8910-rsp-48-2-0275-gf01.gif": [""]},
+                    "assets": {"0034-8910-rsp-48-2-0275-gf01.gif": []},
+                    "timestamp": fake_utcnow(),
                 }
             ],
         }
@@ -102,7 +113,10 @@ class TestAddVersion(unittest.TestCase):
                     "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
                     "assets": {
                         "0034-8910-rsp-48-2-0275-gf01.gif": [
-                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif"
+                            (
+                                "2018-08-05 21:15:07.795137",
+                                "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                            )
                         ]
                     },
                 }
@@ -115,8 +129,14 @@ class TestAddVersion(unittest.TestCase):
                     "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
                     "assets": {
                         "0034-8910-rsp-48-2-0275-gf01.gif": [
-                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
-                            "/rawfiles/7a664999a8fb3/0034-8910-rsp-48-2-0275-gf01.gif",
+                            (
+                                "2018-08-05 21:15:07.795137",
+                                "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                            ),
+                            (
+                                fake_utcnow(),
+                                "/rawfiles/7a664999a8fb3/0034-8910-rsp-48-2-0275-gf01.gif",
+                            ),
                         ]
                     },
                 }
@@ -139,11 +159,7 @@ class TestAddVersion(unittest.TestCase):
             "versions": [
                 {
                     "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
-                    "assets": {
-                        "0034-8910-rsp-48-2-0275-gf01.gif": [
-                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif"
-                        ]
-                    },
+                    "assets": {"0034-8910-rsp-48-2-0275-gf01.gif": []},
                 }
             ],
         }
@@ -155,8 +171,10 @@ class TestAddVersion(unittest.TestCase):
                     "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
                     "assets": {
                         "0034-8910-rsp-48-2-0275-gf01.gif": [
-                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
-                            "/rawfiles/7a664999a8fb3/0034-8910-rsp-48-2-0275-gf01.gif",
+                            (
+                                fake_utcnow(),
+                                "/rawfiles/7a664999a8fb3/0034-8910-rsp-48-2-0275-gf01.gif",
+                            )
                         ]
                     },
                 }

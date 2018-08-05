@@ -10,18 +10,29 @@ SAMPLE_MANIFEST = {
             "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": [
-                    "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
-                    "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                    (
+                        "2018-08-05 23:03:44.971230",
+                        "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                    ),
+                    (
+                        "2018-08-05 23:08:41.590174",
+                        "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                    ),
                 ]
             },
+            "timestamp": "2018-08-05 23:02:29.392990",
         },
         {
             "data": "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": [
-                    "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"
+                    (
+                        "2018-08-05 23:30:29.392995",
+                        "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                    )
                 ]
             },
+            "timestamp": "2018-08-05 23:30:29.392990",
         },
     ],
 }
@@ -91,6 +102,7 @@ class ArticleTests(unittest.TestCase):
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"
             },
+            "timestamp": "2018-08-05 23:02:29.392990",
         }
         self.assertEqual(oldest, expected)
 
@@ -102,8 +114,14 @@ class ArticleTests(unittest.TestCase):
                     "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
                     "assets": {
                         "0034-8910-rsp-48-2-0275-gf01.gif": [
-                            "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
-                            "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                            (
+                                "2018-08-05 23:03:44.971230",
+                                "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                            ),
+                            (
+                                "2018-08-05 23:03:49.971250",
+                                "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                            ),
                         ]
                     },
                 }

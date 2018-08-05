@@ -140,7 +140,7 @@ class Article:
 
         def _latest(uris):
             try:
-                return uris[-1]
+                return uris[-1][1]
             except IndexError:
                 return ""
 
