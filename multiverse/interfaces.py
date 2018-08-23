@@ -10,12 +10,19 @@ class ArticleStore(abc.ABC):
         pass
 
 
-class SessionManager(abc.ABC):
+class SessionFactory(abc.ABC):
     """Retorna novas instâncias de ``Session``.
+
+    ``SessionFactory`` deve ser instanciado durante a inicialização da 
+    aplicação. Sua função é concentrar a injeção das dependências relacionadas
+    à persistência dos dados.
+
+    >>> Session = SessionFactory(mongodb_client, aws_s3_client)
+    >>> my_session = Session()
     """
 
     @abc.abstractmethod
-    def __call__(self):
+    def __call__(self) -> Session:
         pass
 
 
@@ -23,25 +30,9 @@ class Session(abc.ABC):
     """Implementa o padrão *unit of work*.
     """
 
-    @abc.abstractmethod
-    def __enter__(self):
-        pass
-
-    @abc.abstractmethod
-    def __exit__(self, typ, value, traceback):
-        pass
-
-    @abc.abstractmethod
-    def commit(self):
-        pass
-
-    @abc.abstractmethod
-    def rollback(self):
-        pass
-
     @property
     @abc.abstractmethod
-    def articles(self):
+    def articles(self) -> ArticleStore:
         """Ponto de acesso à instância de ``ArticleStore``.
         """
         pass
