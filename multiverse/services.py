@@ -6,9 +6,17 @@ from .domain import Article
 __all__ = ["get_handlers"]
 
 
-class StoreArticleCommandHandler:
+class CommandHandler:
     def __init__(self, Session: Callable[[], Session]):
         self.Session = Session
+
+
+class RegisterArticle(CommandHandler):
+    """Registra um novo artigo.
+
+    :param id: Identificador alfanumérico para o artigo. Deve ser único.
+    :param data_url: URL válida e publicamente acessível para o artigo em XML SciELO PS.
+    """
 
     def __call__(self, id: str, data_url: str) -> None:
         session = self.Session()
@@ -18,4 +26,4 @@ class StoreArticleCommandHandler:
 
 
 def get_handlers(Session: Callable[[], Session]) -> dict:
-    return {"store_article": StoreArticleCommandHandler(Session)}
+    return {"register_article": RegisterArticle(Session)}
