@@ -17,9 +17,12 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="2-clause BSD",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests"]
+    ),
     include_package_data=False,
     python_requires=">=3.6",
+    install_requires=["lxml", "requests", "pymongo"],
     test_suite="tests",
     classifiers=(
         "Development Status :: 2 - Pre-Alpha",
