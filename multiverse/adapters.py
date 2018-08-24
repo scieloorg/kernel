@@ -16,17 +16,10 @@ class MongoDB:
         return self.db()[self._colname]
 
 
-class SessionFactory:
+class Session(interfaces.Session):
     def __init__(self, mongodb_client):
         self._mongodb_client = mongodb_client
-
-    def __call__(self):
-        return Session(self._mongodb_client.collection())
-
-
-class Session:
-    def __init__(self, collection):
-        self._collection = collection
+        self._collection = self._mongodb_client.collection()
 
     @property
     def articles(self):

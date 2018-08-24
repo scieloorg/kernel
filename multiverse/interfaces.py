@@ -1,4 +1,5 @@
 import abc
+import functools
 
 
 class ArticleStore(abc.ABC):
@@ -10,25 +11,13 @@ class ArticleStore(abc.ABC):
         pass
 
 
-class SessionFactory(abc.ABC):
-    """Retorna novas instâncias de ``Session``.
-
-    ``SessionFactory`` deve ser instanciado durante a inicialização da 
-    aplicação. Sua função é concentrar a injeção das dependências relacionadas
-    à persistência dos dados.
-
-    >>> Session = SessionFactory(mongodb_client, aws_s3_client)
-    >>> my_session = Session()
-    """
-
-    @abc.abstractmethod
-    def __call__(self) -> Session:
-        pass
-
-
 class Session(abc.ABC):
-    """Implementa o padrão *unit of work*.
+    """Concentra os pontos de acesso aos repositórios de dados.
     """
+
+    @classmethod
+    def partial(cls, *args, **kwargs):
+        return functools.partial(cls, *args, **kwargs)
 
     @property
     @abc.abstractmethod
