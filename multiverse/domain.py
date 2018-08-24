@@ -6,6 +6,7 @@ import requests
 from lxml import etree
 
 from . import manifest as _manifest
+from . import exceptions
 
 DEFAULT_XMLPARSER = etree.XMLParser(
     remove_blank_text=False,
@@ -14,19 +15,6 @@ DEFAULT_XMLPARSER = etree.XMLParser(
     no_network=True,
     collect_ids=False,
 )
-
-
-class RetryableError(Exception):
-    """Erro recuperável sem que seja necessário modificar o estado dos dados
-    na parte cliente, e.g., timeouts, erros advindos de particionamento de rede 
-    etc.
-    """
-
-
-class NonRetryableError(Exception):
-    """Erro do qual não pode ser recuperado sem modificar o estado dos dados 
-    na parte cliente, e.g., recurso solicitado não exite, URI inválida etc.
-    """
 
 
 def get_static_assets(xml_et):
@@ -57,17 +45,17 @@ def fetch_data(url: str, timeout: float = 2) -> bytes:
     try:
         response = requests.get(url, timeout=timeout)
     except (requests.ConnectionError, requests.Timeout) as exc:
-        raise RetryableError(exc) from exc
+        raise exceptions.RetryableError(exc) from exc
     except (requests.InvalidSchema, requests.MissingSchema, requests.InvalidURL) as exc:
-        raise NonRetryableError(exc) from exc
+        raise exceptions.NonRetryableError(exc) from exc
     else:
         try:
             response.raise_for_status()
         except requests.HTTPError as exc:
             if 400 <= exc.response.status_code < 500:
-                raise NonRetryableError(exc) from exc
+                raise exceptions.NonRetryableError(exc) from exc
             elif 500 <= exc.response.status_code < 600:
-                raise RetryableError(exc) from exc
+                raise exceptions.RetryableError(exc) from exc
             else:
                 raise
 
