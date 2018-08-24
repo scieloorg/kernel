@@ -44,6 +44,12 @@ class ArticleStore:
                 '"%s": the id is already in use' % article.doc_id()
             ) from None
 
+    def update(self, article):
+        data = article.manifest
+        if not data.get("_id"):
+            data["_id"] = article.doc_id()
+        self._collection.replace_one({"_id": data["_id"]}, data)
+
     def fetch(self, id):
         manifest = self._collection.find_one({"_id": id})
         if manifest:

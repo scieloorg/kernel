@@ -1,13 +1,23 @@
 import abc
 import functools
 
+from .domain import Article
+
 
 class ArticleStore(abc.ABC):
     """Banco de dados de artigos.
     """
 
     @abc.abstractmethod
-    def add(self, article) -> None:
+    def add(self, article: Article) -> None:
+        pass
+
+    @abc.abstractmethod
+    def update(self, article: Article) -> None:
+        pass
+
+    @abc.abstractmethod
+    def fetch(self, id: str) -> Article:
         pass
 
 

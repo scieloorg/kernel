@@ -26,6 +26,21 @@ class RegisterArticle(CommandHandler):
         session.articles.add(article)
 
 
+class RegisterArticleVersion(CommandHandler):
+    """Registra uma nova versão de um artigo já registrado.
+
+    :param id: Identificador alfanumérico para o artigo.
+    :param data_url: URL válida e publicamente acessível para o artigo em XML 
+    SciELO PS.
+    """
+
+    def __call__(self, id: str, data_url: str) -> None:
+        session = self.Session()
+        article = session.articles.fetch(id)
+        article.new_version(data_url)
+        session.articles.update(article)
+
+
 class FetchArticleData(CommandHandler):
     """Recupera o artigo em XML à partir de seu identificador.
 
@@ -43,5 +58,6 @@ class FetchArticleData(CommandHandler):
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_article": RegisterArticle(Session),
+        "register_article_version": RegisterArticleVersion(Session),
         "fetch_article_data": FetchArticleData(Session),
     }
