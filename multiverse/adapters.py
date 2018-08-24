@@ -2,6 +2,7 @@ import pymongo
 
 from . import interfaces
 from . import exceptions
+from . import domain
 
 
 class MongoDB:
@@ -42,3 +43,12 @@ class ArticleStore:
                 "cannot add article with id "
                 '"%s": the id is already in use' % article.doc_id()
             ) from None
+
+    def fetch(self, id):
+        manifest = self._collection.find_one({"_id": id})
+        if manifest:
+            return domain.Article(manifest=manifest)
+        else:
+            raise exceptions.ArticleDoesNotExist(
+                "cannot fetch article with id " '"%s": article does not exist' % id
+            )
