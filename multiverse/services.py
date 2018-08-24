@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Dict
 
 from .interfaces import Session
 from .domain import Article
@@ -19,10 +19,16 @@ class RegisterArticle(CommandHandler):
     SciELO PS.
     """
 
-    def __call__(self, id: str, data_url: str) -> None:
+    def __call__(self, id: str, data_url: str, assets: Dict[str, str] = None) -> None:
+        try:
+            assets = dict(assets)
+        except TypeError:
+            assets = {}
         session = self.Session()
         article = Article(doc_id=id)
         article.new_version(data_url)
+        for asset_id, asset_url in assets.items():
+            article.new_asset_version(asset_id, asset_url)
         session.articles.add(article)
 
 
@@ -34,10 +40,16 @@ class RegisterArticleVersion(CommandHandler):
     SciELO PS.
     """
 
-    def __call__(self, id: str, data_url: str) -> None:
+    def __call__(self, id: str, data_url: str, assets: Dict[str, str] = None) -> None:
+        try:
+            assets = dict(assets)
+        except TypeError:
+            assets = {}
         session = self.Session()
         article = session.articles.fetch(id)
         article.new_version(data_url)
+        for asset_id, asset_url in assets.items():
+            article.new_asset_version(asset_id, asset_url)
         session.articles.update(article)
 
 
