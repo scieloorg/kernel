@@ -1,6 +1,7 @@
 import pymongo
 
 from . import interfaces
+from . import exceptions
 
 
 class MongoDB:
@@ -34,4 +35,10 @@ class ArticleStore:
         data = article.manifest
         if not data.get("_id"):
             data["_id"] = article.doc_id()
-        self._collection.insert_one(data)
+        try:
+            self._collection.insert_one(data)
+        except pymongo.errors.DuplicateKeyError:
+            raise exceptions.ArticleAlreadyExists(
+                "cannot add article with id "
+                '"%s": the id is already in use' % article.doc_id()
+            ) from None

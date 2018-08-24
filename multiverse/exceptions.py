@@ -9,3 +9,9 @@ class NonRetryableError(Exception):
     """Erro do qual não pode ser recuperado sem modificar o estado dos dados 
     na parte cliente, e.g., recurso solicitado não exite, URI inválida etc.
     """
+
+
+class ArticleAlreadyExists(NonRetryableError):
+    """Erro que representa a tentativa de registro de um artigo cujo
+    identificador está associado a outro artigo no sistema.
+    """
