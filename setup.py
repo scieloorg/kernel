@@ -22,7 +22,7 @@ setuptools.setup(
     ),
     include_package_data=False,
     python_requires=">=3.6",
-    install_requires=["lxml", "requests", "pymongo", "pyramid", "cornice"],
+    install_requires=["lxml", "requests", "pymongo", "pyramid", "cornice", "colander"],
     test_suite="tests",
     classifiers=(
         "Development Status :: 2 - Pre-Alpha",

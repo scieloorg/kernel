@@ -1,16 +1,39 @@
+import logging
+
 from pyramid.config import Configurator
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPNoContent, HTTPCreated
 from cornice import Service
+from cornice.validators import colander_body_validator
+import colander
 
 from . import services
 from . import adapters
 from . import exceptions
+
+LOGGER = logging.getLogger(__name__)
 
 articles = Service(
     name="articles",
     path="/articles/{article_id}",
     description="Get article at its latest version.",
 )
+
+
+class Asset(colander.MappingSchema):
+    asset_id = colander.SchemaNode(colander.String())
+    asset_url = colander.SchemaNode(colander.String(), validator=colander.url)
+
+
+class Assets(colander.SequenceSchema):
+    asset = Asset()
+
+
+class RegisterArticleSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro de artigos.
+    """
+
+    data = colander.SchemaNode(colander.String(), validator=colander.url)
+    assets = Assets()
 
 
 @articles.get(accept="text/xml", renderer="xml")
@@ -21,6 +44,39 @@ def fetch_article_data(request):
         )
     except exceptions.ArticleDoesNotExist as exc:
         raise HTTPNotFound(exc)
+
+
+@articles.put(schema=RegisterArticleSchema(), validators=(colander_body_validator,))
+def put_article(request):
+    """Adiciona ou atualiza registro de artigo. A atualização do artigo é 
+    idempotente.
+    
+    A semântica desta view-function está definida conforme a especificação:
+    https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+    """
+    data_url = request.validated["data"]
+    assets = {
+        asset["asset_id"]: asset["asset_url"]
+        for asset in request.validated.get("assets", [])
+    }
+    try:
+        request.services["register_article"](
+            id=request.matchdict["article_id"], data_url=data_url, assets=assets
+        )
+    except exceptions.ArticleAlreadyExists:
+        try:
+            request.services["register_article_version"](
+                id=request.matchdict["article_id"], data_url=data_url, assets=assets
+            )
+        except exceptions.ArticleVersionAlreadySet as exc:
+            LOGGER.info(
+                'skipping request to add version to "%s": %s',
+                request.matchdict["article_id"],
+                exc,
+            )
+        return HTTPNoContent("article updated successfully")
+    else:
+        return HTTPCreated("article created successfully")
 
 
 class XMLRenderer:

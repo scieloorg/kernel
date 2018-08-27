@@ -21,3 +21,9 @@ class ArticleDoesNotExist(NonRetryableError):
     """Erro que representa a tentativa de recuperar um artigo à partir
     de um identificador que não está associado a nenhum artigo.
     """
+
+
+class ArticleVersionAlreadySet(RetryableError):
+    """Erro que representa a tentativa de definir uma nova versão idêntica a 
+    anterior. 
+    """

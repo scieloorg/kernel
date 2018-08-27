@@ -101,6 +101,16 @@ class Article:
         ``NonRetryableError`` para representar problemas no acesso aos dados
         do XML.
         """
+        try:
+            latest_version = self.version()
+        except ValueError:
+            latest_version = {"data": ""}
+
+        if latest_version.get("data") == data_url:
+            raise exceptions.ArticleVersionAlreadySet(
+                "could not add version: the version is equal to the latest one"
+            )
+
         _, data_assets = assets_getter(data_url, timeout=timeout)
         data_assets_keys = [asset_key for asset_key, _ in data_assets]
         assets = self._link_assets(data_assets_keys)
