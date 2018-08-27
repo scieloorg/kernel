@@ -22,7 +22,7 @@ setuptools.setup(
     ),
     include_package_data=False,
     python_requires=">=3.6",
-    install_requires=["lxml", "requests", "pymongo"],
+    install_requires=["lxml", "requests", "pymongo", "pyramid", "cornice"],
     test_suite="tests",
     classifiers=(
         "Development Status :: 2 - Pre-Alpha",
@@ -33,4 +33,5 @@ setuptools.setup(
         "Programming Language :: Python :: 3 :: Only",
         "Operating System :: OS Independent",
     ),
+    entry_points={"paste.app_factory": ["main = multiverse.restfulapi:main"]},
 )
