@@ -27,3 +27,9 @@ class ArticleVersionAlreadySet(RetryableError):
     """Erro que representa a tentativa de definir uma nova versão idêntica a 
     anterior. 
     """
+
+
+class AssetVersionAlreadySet(RetryableError):
+    """Erro que representa a tentativa de definir uma nova versão idêntica a 
+    anterior. 
+    """

@@ -108,6 +108,21 @@ class FetchAssetsList(CommandHandler):
         return article.version(index=version_index)
 
 
+class RegisterAssetVersion(BaseRegisterArticle):
+    """Registra uma nova versão do ativo digital de artigo já registrado.
+
+    :param id: Identificador alfanumérico para o artigo.
+    :param asset_id: Identificador alfanumérico para o ativo.
+    :param asset_url: URL válida e publicamente acessível para o ativo digital.
+    """
+
+    def __call__(self, id: str, asset_id: str, asset_url: str) -> None:
+        session = self.Session()
+        article = session.articles.fetch(id)
+        article.new_asset_version(asset_id=asset_id, data_url=asset_url)
+        return session.articles.update(article)
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_article": RegisterArticle(Session),
@@ -115,4 +130,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "fetch_article_data": FetchArticleData(Session),
         "fetch_article_manifest": FetchArticleManifest(Session),
         "fetch_assets_list": FetchAssetsList(Session),
+        "register_asset_version": RegisterAssetVersion(Session),
     }

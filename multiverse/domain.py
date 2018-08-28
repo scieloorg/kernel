@@ -168,6 +168,16 @@ class Article:
         será executada em `data_url`.
         """
         try:
+            latest_version = self.version()
+        except ValueError:
+            latest_version = {"assets": {}}
+
+        if latest_version.get("assets", {}).get(asset_id) == data_url:
+            raise exceptions.AssetVersionAlreadySet(
+                "could not add version: the version is equal to the latest one"
+            )
+
+        try:
             self.manifest = _manifest.add_asset_version(
                 self._manifest, asset_id, data_url
             )

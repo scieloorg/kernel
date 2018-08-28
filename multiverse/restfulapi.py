@@ -5,6 +5,7 @@ from pyramid.httpexceptions import HTTPNotFound, HTTPNoContent, HTTPCreated
 from cornice import Service
 from cornice.validators import colander_body_validator
 import colander
+from slugify import slugify
 
 from . import services
 from . import adapters
@@ -30,6 +31,12 @@ assets_list = Service(
     description="Get the article's assets.",
 )
 
+assets = Service(
+    name="assets",
+    path="/articles/{article_id}/assets/{asset_slug}",
+    description="Set the URL for an article's asset.",
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -46,6 +53,13 @@ class RegisterArticleSchema(colander.MappingSchema):
 
     data = colander.SchemaNode(colander.String(), validator=colander.url)
     assets = Assets()
+
+
+class AssetSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro de ativos do artigo.
+    """
+
+    asset_url = colander.SchemaNode(colander.String(), validator=colander.url)
 
 
 @articles.get(accept="text/xml", renderer="xml")
@@ -101,12 +115,57 @@ def get_manifest(request):
         raise HTTPNotFound(exc)
 
 
+def slugify_assets_ids(assets, slug_fn=slugify):
+    return [
+        {"slug": slug_fn(asset_id), "id": asset_id, "url": asset_url}
+        for asset_id, asset_url in assets.items()
+    ]
+
+
 @assets_list.get(accept="application/json", renderer="json")
 def get_assets_list(request):
     try:
-        return request.services["fetch_assets_list"](id=request.matchdict["article_id"])
+        assets = request.services["fetch_assets_list"](
+            id=request.matchdict["article_id"]
+        )
     except exceptions.ArticleDoesNotExist as exc:
         raise HTTPNotFound(exc)
+
+    assets["assets"] = slugify_assets_ids(assets["assets"])
+    return assets
+
+
+@assets.put(schema=AssetSchema(), validators=(colander_body_validator,))
+def put_asset(request):
+    """Adiciona ou atualiza registro de ativo do artigo. A atualização do 
+    ativo é idempotente.
+    
+    A semântica desta view-function está definida conforme a especificação:
+    https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+    """
+    assets_list = get_assets_list(request)
+    assets_map = {asset["slug"]: asset["id"] for asset in assets_list["assets"]}
+    asset_slug = request.matchdict["asset_slug"]
+    try:
+        asset_id = assets_map[asset_slug]
+    except KeyError:
+        raise HTTPNotFound(
+            'cannot fetch asset with slug "%s": asset does not exist' % asset_slug
+        )
+
+    asset_url = request.validated["asset_url"]
+    try:
+        request.services["register_asset_version"](
+            id=request.matchdict["article_id"], asset_id=asset_id, asset_url=asset_url
+        )
+    except exceptions.AssetVersionAlreadySet as exc:
+        LOGGER.info(
+            'skipping request to add version to "%s/assets/%s": %s',
+            request.matchdict["article_id"],
+            request.matchdict["asset_slug"],
+            exc,
+        )
+    return HTTPNoContent("asset updated successfully")
 
 
 class XMLRenderer:
