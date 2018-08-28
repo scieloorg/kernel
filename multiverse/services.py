@@ -94,10 +94,25 @@ class FetchArticleManifest(CommandHandler):
         return article.manifest
 
 
+class FetchAssetsList(CommandHandler):
+    """Recupera a lista de ativos do artigo à partir de seu identificador.
+
+    :param id: Identificador único do artigo.
+    :param version_index: (opcional) Número inteiro correspondente a versão do 
+    artigo. Por padrão retorna a versão mais recente.
+    """
+
+    def __call__(self, id: str, version_index: int = -1) -> dict:
+        session = self.Session()
+        article = session.articles.fetch(id)
+        return article.version(index=version_index)
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_article": RegisterArticle(Session),
         "register_article_version": RegisterArticleVersion(Session),
         "fetch_article_data": FetchArticleData(Session),
         "fetch_article_manifest": FetchArticleManifest(Session),
+        "fetch_assets_list": FetchAssetsList(Session),
     }

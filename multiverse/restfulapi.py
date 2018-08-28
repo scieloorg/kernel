@@ -24,6 +24,12 @@ manifest = Service(
     description="Get the article's manifest.",
 )
 
+assets_list = Service(
+    name="assets_list",
+    path="/articles/{article_id}/assets",
+    description="Get the article's assets.",
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -91,6 +97,14 @@ def get_manifest(request):
         return request.services["fetch_article_manifest"](
             id=request.matchdict["article_id"]
         )
+    except exceptions.ArticleDoesNotExist as exc:
+        raise HTTPNotFound(exc)
+
+
+@assets_list.get(accept="application/json", renderer="json")
+def get_assets_list(request):
+    try:
+        return request.services["fetch_assets_list"](id=request.matchdict["article_id"])
     except exceptions.ArticleDoesNotExist as exc:
         raise HTTPNotFound(exc)
 
