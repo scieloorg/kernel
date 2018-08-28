@@ -37,3 +37,6 @@ nosetests.xml
 
 # Vim
 *.swp
+
+# Local app
+datadir

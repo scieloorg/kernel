@@ -192,7 +192,7 @@ def main(global_config, **settings):
     config.scan()
     config.add_renderer("xml", XMLRenderer)
 
-    mongo = adapters.MongoDB("mongodb://localhost:27017/")
+    mongo = adapters.MongoDB("mongodb://db:27017/")
     Session = adapters.Session.partial(mongo)
 
     config.add_request_method(

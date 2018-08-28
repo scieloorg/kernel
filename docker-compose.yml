@@ -1,0 +1,22 @@
+version: '2'
+
+services:
+    db:
+        image: mongo:latest
+        restart: always
+        user: mongodb
+        ports:
+            - "27017:27017"
+        volumes:
+            - ./datadir:/data/db
+    webapp:
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        command: ["pserve", "/app/config.ini"]
+        user: nobody
+        restart: always
+        depends_on:
+            - db
+        ports:
+            - "6543:6543"
