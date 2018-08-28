@@ -82,9 +82,22 @@ class FetchArticleData(CommandHandler):
         return article.data(version_index=version_index)
 
 
+class FetchArticleManifest(CommandHandler):
+    """Recupera o manifesto do artigo à partir de seu identificador.
+
+    :param id: Identificador único do artigo.
+    """
+
+    def __call__(self, id: str) -> dict:
+        session = self.Session()
+        article = session.articles.fetch(id)
+        return article.manifest
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_article": RegisterArticle(Session),
         "register_article_version": RegisterArticleVersion(Session),
         "fetch_article_data": FetchArticleData(Session),
+        "fetch_article_manifest": FetchArticleManifest(Session),
     }

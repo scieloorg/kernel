@@ -18,6 +18,12 @@ articles = Service(
     description="Get article at its latest version.",
 )
 
+manifest = Service(
+    name="manifest",
+    path="/articles/{article_id}/manifest",
+    description="Get the article's manifest.",
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -77,6 +83,16 @@ def put_article(request):
         return HTTPNoContent("article updated successfully")
     else:
         return HTTPCreated("article created successfully")
+
+
+@manifest.get(accept="application/json", renderer="json")
+def get_manifest(request):
+    try:
+        return request.services["fetch_article_manifest"](
+            id=request.matchdict["article_id"]
+        )
+    except exceptions.ArticleDoesNotExist as exc:
+        raise HTTPNotFound(exc)
 
 
 class XMLRenderer:
