@@ -107,7 +107,7 @@ class Article:
             latest_version = {"data": ""}
 
         if latest_version.get("data") == data_url:
-            raise exceptions.ArticleVersionAlreadySet(
+            raise exceptions.VersionAlreadySet(
                 "could not add version: the version is equal to the latest one"
             )
 
@@ -173,7 +173,7 @@ class Article:
             latest_version = {"assets": {}}
 
         if latest_version.get("assets", {}).get(asset_id) == data_url:
-            raise exceptions.AssetVersionAlreadySet(
+            raise exceptions.VersionAlreadySet(
                 "could not add version: the version is equal to the latest one"
             )
 

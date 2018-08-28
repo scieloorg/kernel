@@ -23,13 +23,7 @@ class ArticleDoesNotExist(NonRetryableError):
     """
 
 
-class ArticleVersionAlreadySet(RetryableError):
-    """Erro que representa a tentativa de definir uma nova versão idêntica a 
-    anterior. 
-    """
-
-
-class AssetVersionAlreadySet(RetryableError):
+class VersionAlreadySet(RetryableError):
     """Erro que representa a tentativa de definir uma nova versão idêntica a 
     anterior. 
     """

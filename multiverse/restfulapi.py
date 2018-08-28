@@ -94,7 +94,7 @@ def put_article(request):
             request.services["register_article_version"](
                 id=request.matchdict["article_id"], data_url=data_url, assets=assets
             )
-        except exceptions.ArticleVersionAlreadySet as exc:
+        except exceptions.VersionAlreadySet as exc:
             LOGGER.info(
                 'skipping request to add version to "%s": %s',
                 request.matchdict["article_id"],
@@ -158,7 +158,7 @@ def put_asset(request):
         request.services["register_asset_version"](
             id=request.matchdict["article_id"], asset_id=asset_id, asset_url=asset_url
         )
-    except exceptions.AssetVersionAlreadySet as exc:
+    except exceptions.VersionAlreadySet as exc:
         LOGGER.info(
             'skipping request to add version to "%s/assets/%s": %s',
             request.matchdict["article_id"],
