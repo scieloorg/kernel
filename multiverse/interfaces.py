@@ -1,23 +1,23 @@
 import abc
 import functools
 
-from .domain import Article
+from .domain import Document
 
 
-class ArticleStore(abc.ABC):
-    """Banco de dados de artigos.
+class DocumentStore(abc.ABC):
+    """Banco de dados de documentos.
     """
 
     @abc.abstractmethod
-    def add(self, article: Article) -> None:
+    def add(self, document: Document) -> None:
         pass
 
     @abc.abstractmethod
-    def update(self, article: Article) -> None:
+    def update(self, document: Document) -> None:
         pass
 
     @abc.abstractmethod
-    def fetch(self, id: str) -> Article:
+    def fetch(self, id: str) -> Document:
         pass
 
 
@@ -31,7 +31,7 @@ class Session(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def articles(self) -> ArticleStore:
-        """Ponto de acesso à instância de ``ArticleStore``.
+    def documents(self) -> DocumentStore:
+        """Ponto de acesso à instância de ``DocumentStore``.
         """
         pass

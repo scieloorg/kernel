@@ -11,15 +11,15 @@ class NonRetryableError(Exception):
     """
 
 
-class ArticleAlreadyExists(NonRetryableError):
-    """Erro que representa a tentativa de registro de um artigo cujo
-    identificador está associado a outro artigo no sistema.
+class DocumentAlreadyExists(NonRetryableError):
+    """Erro que representa a tentativa de registro de um documento cujo
+    identificador está associado a outro documento no sistema.
     """
 
 
-class ArticleDoesNotExist(NonRetryableError):
-    """Erro que representa a tentativa de recuperar um artigo à partir
-    de um identificador que não está associado a nenhum artigo.
+class DocumentDoesNotExist(NonRetryableError):
+    """Erro que representa a tentativa de recuperar um documento à partir
+    de um identificador que não está associado a nenhum documento.
     """
 
 

@@ -70,7 +70,7 @@ def assets_from_remote_xml(
     return xml, get_static_assets(xml)
 
 
-class Article:
+class Document:
     def __init__(self, doc_id=None, manifest=None):
         assert any([doc_id, manifest])
         self.manifest = manifest or _manifest.new(doc_id)
@@ -89,11 +89,11 @@ class Article:
     def new_version(
         self, data_url, assets_getter=assets_from_remote_xml, timeout=2
     ) -> None:
-        """Adiciona `data_url` como uma nova versão do artigo.
+        """Adiciona `data_url` como uma nova versão do documento.
 
-        :param data_url: é a URL para a nova versão do artigo.
+        :param data_url: é a URL para a nova versão do documento.
         :param assets_getter: (optional) função que recebe 2 argumentos: 1)
-        a URL do XML do artigo e 2) o timeout para a requisição e retorna 
+        a URL do XML do documento e 2) o timeout para a requisição e retorna 
         o par ``(xml, [(href, xml_node), ...]`` onde ``xml`` é uma instância
         de *element tree* da *lxml* e ``[(href, xml_node), ...]`` é uma lista
         que associa as URIs dos ativos com os nós do XML onde se encontram.
@@ -164,7 +164,7 @@ class Article:
 
     def new_asset_version(self, asset_id, data_url) -> None:
         """Adiciona `data_url` como uma nova versão do ativo `asset_id` vinculado 
-        a versão mais recente do artigo. É importante notar que nenhuma validação
+        a versão mais recente do documento. É importante notar que nenhuma validação
         será executada em `data_url`.
         """
         try:

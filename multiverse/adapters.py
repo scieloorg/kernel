@@ -6,7 +6,7 @@ from . import domain
 
 
 class MongoDB:
-    def __init__(self, uri, dbname="article-store", colname="manifests"):
+    def __init__(self, uri, dbname="document-store", colname="manifests"):
         self._client = pymongo.MongoClient(uri)
         self._dbname = dbname
         self._colname = colname
@@ -24,37 +24,37 @@ class Session(interfaces.Session):
         self._collection = self._mongodb_client.collection()
 
     @property
-    def articles(self):
-        return ArticleStore(self._collection)
+    def documents(self):
+        return DocumentStore(self._collection)
 
 
-class ArticleStore:
+class DocumentStore:
     def __init__(self, collection):
         self._collection = collection
 
-    def add(self, article):
-        data = article.manifest
+    def add(self, document):
+        data = document.manifest
         if not data.get("_id"):
-            data["_id"] = article.doc_id()
+            data["_id"] = document.doc_id()
         try:
             self._collection.insert_one(data)
         except pymongo.errors.DuplicateKeyError:
-            raise exceptions.ArticleAlreadyExists(
-                "cannot add article with id "
-                '"%s": the id is already in use' % article.doc_id()
+            raise exceptions.DocumentAlreadyExists(
+                "cannot add document with id "
+                '"%s": the id is already in use' % document.doc_id()
             ) from None
 
-    def update(self, article):
-        data = article.manifest
+    def update(self, document):
+        data = document.manifest
         if not data.get("_id"):
-            data["_id"] = article.doc_id()
+            data["_id"] = document.doc_id()
         self._collection.replace_one({"_id": data["_id"]}, data)
 
     def fetch(self, id):
         manifest = self._collection.find_one({"_id": id})
         if manifest:
-            return domain.Article(manifest=manifest)
+            return domain.Document(manifest=manifest)
         else:
-            raise exceptions.ArticleDoesNotExist(
-                "cannot fetch article with id " '"%s": article does not exist' % id
+            raise exceptions.DocumentDoesNotExist(
+                "cannot fetch document with id " '"%s": document does not exist' % id
             )

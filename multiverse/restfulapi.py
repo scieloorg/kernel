@@ -13,28 +13,28 @@ from . import exceptions
 
 LOGGER = logging.getLogger(__name__)
 
-articles = Service(
-    name="articles",
-    path="/articles/{article_id}",
-    description="Get article at its latest version.",
+documents = Service(
+    name="documents",
+    path="/documents/{document_id}",
+    description="Get document at its latest version.",
 )
 
 manifest = Service(
     name="manifest",
-    path="/articles/{article_id}/manifest",
-    description="Get the article's manifest.",
+    path="/documents/{document_id}/manifest",
+    description="Get the document's manifest.",
 )
 
 assets_list = Service(
     name="assets_list",
-    path="/articles/{article_id}/assets",
-    description="Get the article's assets.",
+    path="/documents/{document_id}/assets",
+    description="Get the document's assets.",
 )
 
 assets = Service(
     name="assets",
-    path="/articles/{article_id}/assets/{asset_slug}",
-    description="Set the URL for an article's asset.",
+    path="/documents/{document_id}/assets/{asset_slug}",
+    description="Set the URL for an document's asset.",
 )
 
 
@@ -47,8 +47,8 @@ class Assets(colander.SequenceSchema):
     asset = Asset()
 
 
-class RegisterArticleSchema(colander.MappingSchema):
-    """Representa o schema de dados para registro de artigos.
+class RegisterDocumentSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro de documentos.
     """
 
     data = colander.SchemaNode(colander.String(), validator=colander.url)
@@ -56,25 +56,25 @@ class RegisterArticleSchema(colander.MappingSchema):
 
 
 class AssetSchema(colander.MappingSchema):
-    """Representa o schema de dados para registro de ativos do artigo.
+    """Representa o schema de dados para registro de ativos do documento.
     """
 
     asset_url = colander.SchemaNode(colander.String(), validator=colander.url)
 
 
-@articles.get(accept="text/xml", renderer="xml")
-def fetch_article_data(request):
+@documents.get(accept="text/xml", renderer="xml")
+def fetch_document_data(request):
     try:
-        return request.services["fetch_article_data"](
-            id=request.matchdict["article_id"]
+        return request.services["fetch_document_data"](
+            id=request.matchdict["document_id"]
         )
-    except exceptions.ArticleDoesNotExist as exc:
+    except exceptions.DocumentDoesNotExist as exc:
         raise HTTPNotFound(exc)
 
 
-@articles.put(schema=RegisterArticleSchema(), validators=(colander_body_validator,))
-def put_article(request):
-    """Adiciona ou atualiza registro de artigo. A atualização do artigo é 
+@documents.put(schema=RegisterDocumentSchema(), validators=(colander_body_validator,))
+def put_document(request):
+    """Adiciona ou atualiza registro de documento. A atualização do documento é 
     idempotente.
     
     A semântica desta view-function está definida conforme a especificação:
@@ -86,32 +86,32 @@ def put_article(request):
         for asset in request.validated.get("assets", [])
     }
     try:
-        request.services["register_article"](
-            id=request.matchdict["article_id"], data_url=data_url, assets=assets
+        request.services["register_document"](
+            id=request.matchdict["document_id"], data_url=data_url, assets=assets
         )
-    except exceptions.ArticleAlreadyExists:
+    except exceptions.DocumentAlreadyExists:
         try:
-            request.services["register_article_version"](
-                id=request.matchdict["article_id"], data_url=data_url, assets=assets
+            request.services["register_document_version"](
+                id=request.matchdict["document_id"], data_url=data_url, assets=assets
             )
         except exceptions.VersionAlreadySet as exc:
             LOGGER.info(
                 'skipping request to add version to "%s": %s',
-                request.matchdict["article_id"],
+                request.matchdict["document_id"],
                 exc,
             )
-        return HTTPNoContent("article updated successfully")
+        return HTTPNoContent("document updated successfully")
     else:
-        return HTTPCreated("article created successfully")
+        return HTTPCreated("document created successfully")
 
 
 @manifest.get(accept="application/json", renderer="json")
 def get_manifest(request):
     try:
-        return request.services["fetch_article_manifest"](
-            id=request.matchdict["article_id"]
+        return request.services["fetch_document_manifest"](
+            id=request.matchdict["document_id"]
         )
-    except exceptions.ArticleDoesNotExist as exc:
+    except exceptions.DocumentDoesNotExist as exc:
         raise HTTPNotFound(exc)
 
 
@@ -126,9 +126,9 @@ def slugify_assets_ids(assets, slug_fn=slugify):
 def get_assets_list(request):
     try:
         assets = request.services["fetch_assets_list"](
-            id=request.matchdict["article_id"]
+            id=request.matchdict["document_id"]
         )
-    except exceptions.ArticleDoesNotExist as exc:
+    except exceptions.DocumentDoesNotExist as exc:
         raise HTTPNotFound(exc)
 
     assets["assets"] = slugify_assets_ids(assets["assets"])
@@ -137,7 +137,7 @@ def get_assets_list(request):
 
 @assets.put(schema=AssetSchema(), validators=(colander_body_validator,))
 def put_asset(request):
-    """Adiciona ou atualiza registro de ativo do artigo. A atualização do 
+    """Adiciona ou atualiza registro de ativo do documento. A atualização do 
     ativo é idempotente.
     
     A semântica desta view-function está definida conforme a especificação:
@@ -156,12 +156,12 @@ def put_asset(request):
     asset_url = request.validated["asset_url"]
     try:
         request.services["register_asset_version"](
-            id=request.matchdict["article_id"], asset_id=asset_id, asset_url=asset_url
+            id=request.matchdict["document_id"], asset_id=asset_id, asset_url=asset_url
         )
     except exceptions.VersionAlreadySet as exc:
         LOGGER.info(
             'skipping request to add version to "%s/assets/%s": %s',
-            request.matchdict["article_id"],
+            request.matchdict["document_id"],
             request.matchdict["asset_slug"],
             exc,
         )

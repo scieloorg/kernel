@@ -1,7 +1,7 @@
 from typing import Callable, Dict
 
 from .interfaces import Session
-from .domain import Article
+from .domain import Document
 
 __all__ = ["get_handlers"]
 
@@ -11,18 +11,18 @@ class CommandHandler:
         self.Session = Session
 
 
-class BaseRegisterArticle(CommandHandler):
-    """Implementação abstrata de comando para registrar um novo artigo.
+class BaseRegisterDocument(CommandHandler):
+    """Implementação abstrata de comando para registrar um novo documento.
 
-    :param id: Identificador alfanumérico para o artigo. Deve ser único.
-    :param data_url: URL válida e publicamente acessível para o artigo em XML 
+    :param id: Identificador alfanumérico para o documento. Deve ser único.
+    :param data_url: URL válida e publicamente acessível para o documento em XML 
     SciELO PS.
     """
 
-    def _get_article(self, session: Session, id: str) -> Article:
+    def _get_document(self, session: Session, id: str) -> Document:
         raise NotImplementedError()
 
-    def _persist(self, session: Session, article: Article) -> None:
+    def _persist(self, session: Session, document: Document) -> None:
         raise NotImplementedError()
 
     def __call__(self, id: str, data_url: str, assets: Dict[str, str] = None) -> None:
@@ -31,104 +31,104 @@ class BaseRegisterArticle(CommandHandler):
         except TypeError:
             assets = {}
         session = self.Session()
-        article = self._get_article(session, id)
-        article.new_version(data_url)
+        document = self._get_document(session, id)
+        document.new_version(data_url)
         for asset_id, asset_url in assets.items():
-            article.new_asset_version(asset_id, asset_url)
-        self._persist(session, article)
+            document.new_asset_version(asset_id, asset_url)
+        self._persist(session, document)
 
 
-class RegisterArticle(BaseRegisterArticle):
-    """Registra um novo artigo.
+class RegisterDocument(BaseRegisterDocument):
+    """Registra um novo documento.
 
-    :param id: Identificador alfanumérico para o artigo. Deve ser único.
-    :param data_url: URL válida e publicamente acessível para o artigo em XML 
+    :param id: Identificador alfanumérico para o documento. Deve ser único.
+    :param data_url: URL válida e publicamente acessível para o documento em XML 
     SciELO PS.
     """
 
-    def _get_article(self, session, id):
-        return Article(doc_id=id)
+    def _get_document(self, session, id):
+        return Document(doc_id=id)
 
-    def _persist(self, session, article):
-        return session.articles.add(article)
+    def _persist(self, session, document):
+        return session.documents.add(document)
 
 
-class RegisterArticleVersion(BaseRegisterArticle):
-    """Registra uma nova versão de um artigo já registrado.
+class RegisterDocumentVersion(BaseRegisterDocument):
+    """Registra uma nova versão de um documento já registrado.
 
-    :param id: Identificador alfanumérico para o artigo.
-    :param data_url: URL válida e publicamente acessível para o artigo em XML 
+    :param id: Identificador alfanumérico para o documento.
+    :param data_url: URL válida e publicamente acessível para o documento em XML 
     SciELO PS.
     """
 
-    def _get_article(self, session, id):
-        return session.articles.fetch(id)
+    def _get_document(self, session, id):
+        return session.documents.fetch(id)
 
-    def _persist(self, session, article):
-        return session.articles.update(article)
+    def _persist(self, session, document):
+        return session.documents.update(document)
 
 
-class FetchArticleData(CommandHandler):
-    """Recupera o artigo em XML à partir de seu identificador.
+class FetchDocumentData(CommandHandler):
+    """Recupera o documento em XML à partir de seu identificador.
 
-    :param id: Identificador único do artigo.
+    :param id: Identificador único do documento.
     :param version_index: (opcional) Número inteiro correspondente a versão do 
-    artigo. Por padrão retorna a versão mais recente.
+    documento. Por padrão retorna a versão mais recente.
     """
 
     def __call__(self, id: str, version_index: int = -1) -> bytes:
         session = self.Session()
-        article = session.articles.fetch(id)
-        return article.data(version_index=version_index)
+        document = session.documents.fetch(id)
+        return document.data(version_index=version_index)
 
 
-class FetchArticleManifest(CommandHandler):
-    """Recupera o manifesto do artigo à partir de seu identificador.
+class FetchDocumentManifest(CommandHandler):
+    """Recupera o manifesto do documento à partir de seu identificador.
 
-    :param id: Identificador único do artigo.
+    :param id: Identificador único do documento.
     """
 
     def __call__(self, id: str) -> dict:
         session = self.Session()
-        article = session.articles.fetch(id)
-        return article.manifest
+        document = session.documents.fetch(id)
+        return document.manifest
 
 
 class FetchAssetsList(CommandHandler):
-    """Recupera a lista de ativos do artigo à partir de seu identificador.
+    """Recupera a lista de ativos do documento à partir de seu identificador.
 
-    :param id: Identificador único do artigo.
+    :param id: Identificador único do documento.
     :param version_index: (opcional) Número inteiro correspondente a versão do 
-    artigo. Por padrão retorna a versão mais recente.
+    documento. Por padrão retorna a versão mais recente.
     """
 
     def __call__(self, id: str, version_index: int = -1) -> dict:
         session = self.Session()
-        article = session.articles.fetch(id)
-        return article.version(index=version_index)
+        document = session.documents.fetch(id)
+        return document.version(index=version_index)
 
 
-class RegisterAssetVersion(BaseRegisterArticle):
-    """Registra uma nova versão do ativo digital de artigo já registrado.
+class RegisterAssetVersion(BaseRegisterDocument):
+    """Registra uma nova versão do ativo digital de documento já registrado.
 
-    :param id: Identificador alfanumérico para o artigo.
+    :param id: Identificador alfanumérico para o documento.
     :param asset_id: Identificador alfanumérico para o ativo.
     :param asset_url: URL válida e publicamente acessível para o ativo digital.
     """
 
     def __call__(self, id: str, asset_id: str, asset_url: str) -> None:
         session = self.Session()
-        article = session.articles.fetch(id)
-        article.new_asset_version(asset_id=asset_id, data_url=asset_url)
-        return session.articles.update(article)
+        document = session.documents.fetch(id)
+        document.new_asset_version(asset_id=asset_id, data_url=asset_url)
+        return session.documents.update(document)
 
 
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
-        "register_article": RegisterArticle(Session),
-        "register_article_version": RegisterArticleVersion(Session),
-        "fetch_article_data": FetchArticleData(Session),
-        "fetch_article_manifest": FetchArticleManifest(Session),
+        "register_document": RegisterDocument(Session),
+        "register_document_version": RegisterDocumentVersion(Session),
+        "fetch_document_data": FetchDocumentData(Session),
+        "fetch_document_manifest": FetchDocumentManifest(Session),
         "fetch_assets_list": FetchAssetsList(Session),
         "register_asset_version": RegisterAssetVersion(Session),
     }
