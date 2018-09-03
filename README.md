@@ -79,3 +79,36 @@ o *timestamp* UTC datando sua criação e a coleção ``assets``, composta pelo
 mapeamento dos ativos digitais referenciados pelo documento em XML e pares
 *timestamp* e URI.
 
+
+## Requisitos
+
+* Python 3.6+
+* MongoDB
+
+
+## Implantação local
+
+Executando a aplicação:
+
+```docker-compose up -d```
+
+Testando o registro de um documento de exemplo:
+
+```
+curl -X PUT -H 'Accept: application/json' -H 'Content-Type: application/json' http://0.0.0.0:6543/documents/0034-8910-rsp-48-2-0347 -d '{"data": "https://raw.githubusercontent.com/scieloorg/packtools/master/tests/samples/0034-8910-rsp-48-2-0347.xml", "assets": [{"asset_id":"0034-8910-rsp-48-2-0347-gf01", "asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01.jpg"},{"asset_id":"0034-8910-rsp-48-2-0347-gf01-en", "asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01-en.jpg"},{"asset_id":"0034-8910-rsp-48-2-0347-gf02", "asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02.jpg"},{"asset_id":"0034-8910-rsp-48-2-0347-gf02-en","asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02-en.jpg"},{"asset_id":"0034-8910-rsp-48-2-0347-gf03", "asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03.jpg"},{"asset_id":"0034-8910-rsp-48-2-0347-gf03-en","asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03-en.jpg"},{"asset_id":"0034-8910-rsp-48-2-0347-gf04", "asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04.jpg"},{"asset_id":"0034-8910-rsp-48-2-0347-gf04-en","asset_url":"http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04-en.jpg"}]}'
+```
+
+e em seguida:
+
+```
+curl -X GET -H 'Accept: text/xml' http://0.0.0.0:6543/documents/0034-8910-rsp-48-2-0347
+```
+
+## Licença de uso
+
+Copyright 2018 SciELO <scielo-dev@googlegroups.com>. Licensed under the terms
+of the BSD license. Please see LICENSE in the source code for more
+information.
+
+https://github.com/scieloorg/document-store/blob/master/LICENSE
+
