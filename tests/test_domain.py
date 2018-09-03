@@ -1,7 +1,7 @@
 import unittest
 from copy import deepcopy
 
-from multiverse import domain
+from documentstore import domain
 
 SAMPLE_MANIFEST = {
     "id": "0034-8910-rsp-48-2-0275",

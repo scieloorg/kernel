@@ -1,7 +1,7 @@
 import functools
 import unittest
 
-from multiverse.manifest import new, add_version, add_asset_version
+from documentstore.manifest import new, add_version, add_asset_version
 
 
 def fake_utcnow():

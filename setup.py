@@ -7,12 +7,12 @@ with open(os.path.join(setup_path, "README.md")) as readme:
     long_description = readme.read()
 
 setuptools.setup(
-    name="multiverse",
+    name="scielo-documentstore",
     version="0.1",
     author="Gustavo Fonseca",
     author_email="gustavo@gfonseca.net",
-    description="Multiverse é uma implementação experimental de um pacote "
-    "Python que busca tratar da persistência de documentos XML "
+    description="scielo-documentstore é uma implementação experimental de um "
+    "pacote Python que busca tratar da persistência de documentos XML "
     "em múltiplas versões.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -41,5 +41,5 @@ setuptools.setup(
         "Programming Language :: Python :: 3 :: Only",
         "Operating System :: OS Independent",
     ),
-    entry_points={"paste.app_factory": ["main = multiverse.restfulapi:main"]},
+    entry_points={"paste.app_factory": ["main = documentstore.restfulapi:main"]},
 )

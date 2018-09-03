@@ -20,7 +20,7 @@ RUN apk add --no-cache --virtual .build-deps \
     && pip install --no-cache-dir gunicorn \
     && pip install --no-cache-dir raven \
     && pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-index --find-links=file:///deps -U multiverse \
+    && pip install --no-index --find-links=file:///deps -U scielo-documentstore \
     && apk --purge del .build-deps \
     && rm requirements.txt \
     && rm -rf /deps

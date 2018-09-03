@@ -1,7 +1,7 @@
-# Multiverse
+# SciELO Document Store
 
 
-*Multiverse* é uma implementação experimental de um pacote Python que busca 
+Trata-se de uma implementação experimental de um pacote Python que busca 
 tratar da persistência de documentos XML em multiplas versões.
 
 A abstração básica se apoia no conceito do *manifesto do documento*:
