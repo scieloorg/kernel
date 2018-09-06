@@ -10,14 +10,20 @@ from pyramid.httpexceptions import (
 )
 from cornice import Service
 from cornice.validators import colander_body_validator
+from cornice.service import get_services
 import colander
 from slugify import slugify
+from cornice_swagger import CorniceSwagger
 
 from . import services
 from . import adapters
 from . import exceptions
 
 LOGGER = logging.getLogger(__name__)
+
+swagger = Service(
+    name="Kernel API", path="/__api__", description="Kernel API documentation"
+)
 
 documents = Service(
     name="documents",
@@ -89,6 +95,22 @@ class RegisterDocumentSchema(colander.MappingSchema):
     assets = Assets()
 
 
+class QueryDiffDocumentSchema(colander.MappingSchema):
+    """Representa os parâmetros de querystring do schema DiffDocument.
+    """
+
+    from_when = colander.SchemaNode(colander.String(), missing=colander.drop)
+    to_when = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
+class DiffDocumentSchema(colander.MappingSchema):
+    """Representa a diferença entre estados do documento
+    """
+
+    data = colander.SchemaNode(colander.String(), missing=colander.drop)
+    querystring = QueryDiffDocumentSchema()
+
+
 class AssetSchema(colander.MappingSchema):
     """Representa o schema de dados para registro de ativos do documento.
     """
@@ -144,7 +166,69 @@ class DocumentsBundleSchema(colander.MappingSchema):
 
 
 @documents.get(accept="text/xml", renderer="xml")
+class QueryChangeSchema(colander.MappingSchema):
+    """Representa os parâmetros de querystring do schema change.
+    """
+
+    limit = colander.SchemaNode(colander.String(), missing=colander.drop)
+    since = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
+class ChangeSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro de mudança.
+    """
+
+    id = colander.SchemaNode(colander.String())
+    timestamp = colander.SchemaNode(colander.String())
+    deleted = colander.SchemaNode(colander.Boolean())
+    querystring = QueryChangeSchema()
+
+
+class ManifestSchema(colander.MappingSchema):
+    """Representa o schema de dados do registro de Manifest
+    """
+
+    data = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
+class QueryDocumentSchema(colander.MappingSchema):
+    """Representa os parâmetros de querystring do schema document.
+    """
+
+    when = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
+class DocumentSchema(colander.MappingSchema):
+    """Representa o schema de dados do documento.
+    """
+
+    data = colander.SchemaNode(colander.String(), missing=colander.drop)
+    assets = Assets()
+    querystring = QueryDocumentSchema()
+
+
+class FrontDocumentSchema(colander.MappingSchema):
+    """Representa o schema de dados front do documento.
+    """
+
+    data = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
+@documents.get(
+    schema=DocumentSchema(),
+    response_schemas={
+        "200": DocumentSchema(description="Obtém o documento"),
+        "404": DocumentSchema(description="Documento não encontrado"),
+    },
+    accept="text/xml",
+    renderer="xml",
+)
 def fetch_document_data(request):
+    """Obtém o conteúdo do documento representado em XML com todos os
+    apontamentos para seus ativos digitais contextualizados de acordo com a
+    versão do documento. Produzirá uma resposta com o código HTTP 404 caso o
+    documento solicitado não seja conhecido pela aplicação.
+    """
     when = request.GET.get("when", None)
     if when:
         version = {"version_at": when}
@@ -158,13 +242,26 @@ def fetch_document_data(request):
         raise HTTPNotFound(exc)
 
 
-@documents.put(schema=RegisterDocumentSchema(), validators=(colander_body_validator,))
+@documents.put(
+    schema=RegisterDocumentSchema(),
+    validators=(colander_body_validator,),
+    response_schemas={
+        "201": RegisterDocumentSchema(description="Documento criado com sucesso"),
+        "204": RegisterDocumentSchema(description="Documento atualizado com sucesso"),
+    },
+)
 def put_document(request):
     """Adiciona ou atualiza registro de documento. A atualização do documento é
     idempotente.
 
     A semântica desta view-function está definida conforme a especificação:
     https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
+
+    Em resumo, ``PUT /documents/:doc_id`` com o payload válido de acordo com o
+    schema documentado, e para um ``:doc_id`` inédito, resultará no registro do
+    documento e produzirá uma resposta com o código HTTP 201 Created. Qualquer
+    requisição subsequente para o mesmo recurso produzirá respostas com o código
+    HTTP 204 No Content.
     """
     data_url = request.validated["data"]
     assets = {
@@ -191,8 +288,19 @@ def put_document(request):
         return HTTPCreated("document created successfully")
 
 
-@manifest.get(accept="application/json", renderer="json")
+@manifest.get(
+    schema=ManifestSchema(),
+    response_schemas={
+        "200": ManifestSchema(description="Obtém o manifesto do documento"),
+        "404": ManifestSchema(description="Manifesto não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
 def get_manifest(request):
+    """Obtém o manifesto do documento. Produzirá uma resposta com o código
+    HTTP 404 caso o documento não seja conhecido pela aplicação.
+    """
     try:
         return request.services["fetch_document_manifest"](
             id=request.matchdict["document_id"]
@@ -208,8 +316,19 @@ def slugify_assets_ids(assets, slug_fn=slugify):
     ]
 
 
-@assets_list.get(accept="application/json", renderer="json")
+@assets_list.get(
+    accept="application/json",
+    renderer="json",
+    response_schemas={
+        "200": Assets(description="Lista de ativos"),
+        "404": Assets(description="Documento não encontrado"),
+    },
+)
 def get_assets_list(request):
+    """Obtém relação dos ativos associados ao documento em determinada
+    versão. Produzirá uma resposta com o código HTTP 404 caso o documento não
+    seja conhecido pela aplicação.
+    """
     try:
         assets = request.services["fetch_assets_list"](
             id=request.matchdict["document_id"]
@@ -221,7 +340,14 @@ def get_assets_list(request):
     return assets
 
 
-@assets.put(schema=AssetSchema(), validators=(colander_body_validator,))
+@assets.put(
+    schema=AssetSchema(),
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": AssetSchema(description="Adicionado ou atualizado o ativo digital com sucesso"),
+        "404": AssetSchema(description="Ativo não encontrado"),
+    },
+)
 def put_asset(request):
     """Adiciona ou atualiza registro de ativo do documento. A atualização do
     ativo é idempotente.
@@ -254,7 +380,19 @@ def put_asset(request):
     return HTTPNoContent("asset updated successfully")
 
 
-@diff.get(renderer="text")
+@diff.get(
+    schema=DiffDocumentSchema(),
+    response_schemas={
+        "200": DiffDocumentSchema(
+            description="Retorna a diferança do documento, recebe os argumentos `from_when` e `to_when`"
+        ),
+        "400": DiffDocumentSchema(
+            description="Erro ao tentar processar a requisição, verifique o valor do parâmetro `from_when`"
+        ),
+        "404": DiffDocumentSchema(description="Documento não encontrado"),
+    },
+    renderer="text",
+)
 def diff_document_versions(request):
     """Compara duas versões do documento. Se o argumento `to_when` não for
     fornecido, será assumido como alvo a versão mais recente.
@@ -272,13 +410,29 @@ def diff_document_versions(request):
         raise HTTPNotFound(exc)
 
 
-@front.get(renderer="json")
+@front.get(
+    schema=FrontDocumentSchema(),
+    response_schemas={
+        "200": FrontDocumentSchema(description="Retorna o Front do documento (todo os dados do documento exceto o body)"),
+        "404": FrontDocumentSchema(description="Front do documento não encontrado"),
+    },
+    renderer="json",
+)
 def fetch_document_front(request):
     data = fetch_document_data(request)
     return request.services["sanitize_document_front"](data)
 
 
-@bundles.get(renderer="json")
+@bundles.get(
+    response_schemas={
+        "200": DocumentsBundleSchema(description="Retorna os dados do bundle  solicitado"),
+        "404": DocumentsBundleSchema(description="Recurso não encontrado"),
+        "400": DocumentsBundleSchema(
+            description="Erro ao processar a requisição. Verifique o parâmetro `bundle_id`"
+        ),
+    },
+    renderer="json",
+)
 def fetch_documents_bundle(request):
     try:
         return request.services["fetch_documents_bundle"](
@@ -308,6 +462,17 @@ def put_documents_bundle(request):
 
 
 @changes.get(accept="application/json", renderer="json")
+@changes.get(
+    schema=ChangeSchema(),
+    response_schemas={
+        "200": AssetSchema(description="Retorna a lista de mudanças"),
+        "400": AssetSchema(
+            description="Erro ao processar a requisição, verifique o parâmetro `limit`"
+        ),
+    },
+    accept="application/json",
+    renderer="json",
+)
 def fetch_changes(request):
     """Obtém a lista de mudanças, recebe os argumentos `since` e `limit`.
     """
@@ -366,6 +531,13 @@ def put_journal(request):
         return HTTPCreated("journal created successfully")
 
 
+@swagger.get()
+def openAPI_spec(request):
+    doc = CorniceSwagger(get_services())
+    doc.summary_docstrings = True
+    return doc.generate("Kernel", "0.1")
+
+
 class XMLRenderer:
     """Renderizador para dados do tipo ``text/xml``.
 
@@ -414,7 +586,7 @@ def parse_settings(settings, defaults=DEFAULT_SETTINGS):
     definidos no arquivo .ini.
 
     O argumento `defaults` deve receber uma lista associativa na forma:
-        
+
       [
         (<diretiva de config>, <variável de ambiente>, <função de conversão>, <valor padrão>),
       ]
@@ -435,6 +607,7 @@ def main(global_config, **settings):
     settings.update(parse_settings(settings))
     config = Configurator(settings=settings)
     config.include("cornice")
+    config.include("cornice_swagger")
     config.scan()
     config.add_renderer("xml", XMLRenderer)
     config.add_renderer("text", PlainTextRenderer)

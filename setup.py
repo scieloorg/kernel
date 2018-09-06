@@ -28,6 +28,7 @@ setuptools.setup(
         "pymongo",
         "pyramid",
         "cornice",
+        "cornice_swagger",
         "colander",
         "python-slugify",
         "scielo-clea",
