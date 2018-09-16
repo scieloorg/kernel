@@ -64,11 +64,16 @@ class AssetSchema(colander.MappingSchema):
 
 @documents.get(accept="text/xml", renderer="xml")
 def fetch_document_data(request):
+    when = request.GET.get("when", None)
+    if when:
+        version = {"version_at": when}
+    else:
+        version = {}
     try:
         return request.services["fetch_document_data"](
-            id=request.matchdict["document_id"]
+            id=request.matchdict["document_id"], **version
         )
-    except exceptions.DocumentDoesNotExist as exc:
+    except (exceptions.DocumentDoesNotExist, ValueError) as exc:
         raise HTTPNotFound(exc)
 
 

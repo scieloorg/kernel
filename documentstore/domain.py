@@ -150,11 +150,23 @@ class Document:
         return version
 
     def version_at(self, timestamp: str) -> dict:
+        """Obtém os metadados da versão no momento `timestamp`.
+
+        :param timestamp: string de texto do timestamp UTC. A resolução pode
+        variar desde o dia, e.g., `2018-09-17`, dia horas e minutos, e.g.,
+        `2018-09-17 14:25`, ou dia horas minutos segundos (e frações em até 6
+        casas decimais). Caso a resolução esteja no nível do dia, a mesma
+        será ajustada automaticamente para o nível dos microsegundos por meio 
+        da concatenação da string ` 23:59:59:999999` ao valor de `timestamp`.
+        """
         if not re.match(self._timestamp_pattern, timestamp):
             raise ValueError(
                 "invalid format for timestamp: %s: must match pattern: %s"
                 % (timestamp, self._timestamp_pattern)
             )
+
+        if re.match(r"^\d{4}-\d{2}-\d{2}$", timestamp):
+            timestamp = f"{timestamp} 23:59:59:999999"
 
         try:
             target_version = max(
@@ -174,7 +186,6 @@ class Document:
                     key=lambda asset: asset[0],
                 )
             except ValueError:
-                # invocação da função `max` com uma lista vazia
                 return ""
             return target[1]
 
@@ -183,12 +194,30 @@ class Document:
         return target_version
 
     def data(
-        self, version_index=-1, assets_getter=assets_from_remote_xml, timeout=2
+        self,
+        version_index=-1,
+        version_at=None,
+        assets_getter=assets_from_remote_xml,
+        timeout=2,
     ) -> bytes:
         """Retorna o conteúdo do XML, codificado em UTF-8, já com as 
         referências aos ativos digitais correspondendo às da versão solicitada.
+
+        Por meio dos argumentos `version_index` e `version_at` é possível 
+        explicitar a versão desejada a partir de 2 estratégias distintas: 
+        `version_index` recebe um valor inteiro referente ao índice da versão
+        desejada (pense no acesso a uma lista de versões). Já o argumento
+        `version_at` recebe um timestamp UTC, em formato textual, e retorna
+        a versão do documento naquele dado momento. Estes argumentos são
+        mutuamente exclusivos, e `version_at` anula a presença do outro.
+
+        Note que o argumento `version_at` é muito mais poderoso, uma vez que,
+        diferentemente do `version_index`, também recupera o estado desejado 
+        no nível dos ativos digitais do documento.
         """
-        version = self.version(version_index)
+        version = (
+            self.version_at(version_at) if version_at else self.version(version_index)
+        )
         xml_tree, data_assets = assets_getter(version["data"], timeout=timeout)
 
         version_assets = version["assets"]

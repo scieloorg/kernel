@@ -74,12 +74,17 @@ class FetchDocumentData(CommandHandler):
     :param id: Identificador único do documento.
     :param version_index: (opcional) Número inteiro correspondente a versão do 
     documento. Por padrão retorna a versão mais recente.
+    :param version_at: (opcional) string de texto de um timestamp UTC
+    referente a versão do documento no determinado momento. O uso do argumento
+    `version_at` faz com que qualquer valor de `version_index` seja ignorado.
     """
 
-    def __call__(self, id: str, version_index: int = -1) -> bytes:
+    def __call__(
+        self, id: str, version_index: int = -1, version_at: str = None
+    ) -> bytes:
         session = self.Session()
         document = session.documents.fetch(id)
-        return document.data(version_index=version_index)
+        return document.data(version_index=version_index, version_at=version_at)
 
 
 class FetchDocumentManifest(CommandHandler):
