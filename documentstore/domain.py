@@ -1,6 +1,7 @@
 import itertools
 from copy import deepcopy
 from io import BytesIO
+import re
 
 import requests
 from lxml import etree
@@ -71,6 +72,8 @@ def assets_from_remote_xml(
 
 
 class Document:
+    _timestamp_pattern = r"[0-9]{4}-[0-9]{2}-[0-9]{2}( [0-9]{2}:[0-9]{2}(:[0-9]{2})?)?"
+
     def __init__(self, doc_id=None, manifest=None):
         assert any([doc_id, manifest])
         self.manifest = manifest or _manifest.new(doc_id)
@@ -145,6 +148,39 @@ class Document:
         assets = {a: _latest(u) for a, u in version["assets"].items()}
         version["assets"] = assets
         return version
+
+    def version_at(self, timestamp: str) -> dict:
+        if not re.match(self._timestamp_pattern, timestamp):
+            raise ValueError(
+                "invalid format for timestamp: %s: must match pattern: %s"
+                % (timestamp, self._timestamp_pattern)
+            )
+
+        try:
+            target_version = max(
+                itertools.takewhile(
+                    lambda version: version.get("timestamp", "") <= timestamp,
+                    self.manifest["versions"],
+                ),
+                key=lambda version: version.get("timestamp"),
+            )
+        except ValueError:
+            raise ValueError("missing version for timestamp: %s" % timestamp) from None
+
+        def _at_time(uris):
+            try:
+                target = max(
+                    itertools.takewhile(lambda asset: asset[0] <= timestamp, uris),
+                    key=lambda asset: asset[0],
+                )
+            except ValueError:
+                # invocação da função `max` com uma lista vazia
+                return ""
+            return target[1]
+
+        target_assets = {a: _at_time(u) for a, u in target_version["assets"].items()}
+        target_version["assets"] = target_assets
+        return target_version
 
     def data(
         self, version_index=-1, assets_getter=assets_from_remote_xml, timeout=2

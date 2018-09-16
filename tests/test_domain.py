@@ -141,3 +141,46 @@ class DocumentTests(unittest.TestCase):
             latest["assets"]["0034-8910-rsp-48-2-0275-gf01.gif"],
             "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
         )
+
+    def test_version_at_later_time(self):
+        """
+        No manifesto `SAMPLE_MANIFEST`, a versão mais recente possui foi
+        produzida nos seguintes instantes: a) dados em 2018-08-05 23:30:29.392990
+        e b) ativo digital em 2018-08-05 23:30:29.392995.
+        """
+        document = self.make_one()
+        target = document.version_at("2018-12-31")
+        expected = {
+            "data": "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
+            "assets": {
+                "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"
+            },
+            "timestamp": "2018-08-05 23:30:29.392990",
+        }
+        self.assertEqual(target, expected)
+
+    def test_version_at_given_time(self):
+        document = self.make_one()
+        target = document.version_at("2018-08-05 23:04:00")
+        expected = {
+            "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+            "assets": {
+                "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif"
+            },
+            "timestamp": "2018-08-05 23:02:29.392990",
+        }
+        self.assertEqual(target, expected)
+
+    def test_version_at_time_between_data_and_asset_registration(self):
+        document = self.make_one()
+        target = document.version_at("2018-08-05 23:03:44")
+        expected = {
+            "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+            "assets": {"0034-8910-rsp-48-2-0275-gf01.gif": ""},
+            "timestamp": "2018-08-05 23:02:29.392990",
+        }
+        self.assertEqual(target, expected)
+
+    def test_version_at_time_prior_to_data_registration(self):
+        document = self.make_one()
+        self.assertRaises(ValueError, lambda: document.version_at("2018-07-01"))
