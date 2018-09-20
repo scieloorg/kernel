@@ -1,7 +1,12 @@
 import logging
 
 from pyramid.config import Configurator
-from pyramid.httpexceptions import HTTPNotFound, HTTPNoContent, HTTPCreated
+from pyramid.httpexceptions import (
+    HTTPNotFound,
+    HTTPNoContent,
+    HTTPCreated,
+    HTTPBadRequest,
+)
 from cornice import Service
 from cornice.validators import colander_body_validator
 import colander
@@ -35,6 +40,12 @@ assets = Service(
     name="assets",
     path="/documents/{document_id}/assets/{asset_slug}",
     description="Set the URL for an document's asset.",
+)
+
+diff = Service(
+    name="diff",
+    path="/documents/{document_id}/diff",
+    description="Compare two versions of the same document.",
 )
 
 
@@ -173,6 +184,24 @@ def put_asset(request):
     return HTTPNoContent("asset updated successfully")
 
 
+@diff.get(renderer="text")
+def diff_document_versions(request):
+    """Compara duas versões do documento. Se o argumento `to_when` não for
+    fornecido, será assumido como alvo a versão mais recente.
+    """
+    from_when = request.GET.get("from_when", None)
+    if from_when is None:
+        raise HTTPBadRequest("cannot fetch diff: missing attribute from_when")
+    try:
+        return request.services["diff_document_versions"](
+            id=request.matchdict["document_id"],
+            from_version_at=from_when,
+            to_version_at=request.GET.get("to_when", None),
+        )
+    except (exceptions.DocumentDoesNotExist, ValueError) as exc:
+        raise HTTPNotFound(exc)
+
+
 class XMLRenderer:
     """Renderizador para dados do tipo ``text/xml``.
 
@@ -191,11 +220,30 @@ class XMLRenderer:
         return value
 
 
+class PlainTextRenderer:
+    """Renderizador para dados do tipo ``text/plain``.
+
+    Espera que o retorno da view-function seja uma string de bytes pronta para
+    ser transferida para o cliente. Este renderer apenas define o content-type
+    da resposta HTTP.
+    """
+
+    def __init__(self, info):
+        pass
+
+    def __call__(self, value, system):
+        request = system.get("request")
+        if request is not None:
+            request.response.content_type = "text/plain"
+        return value
+
+
 def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.include("cornice")
     config.scan()
     config.add_renderer("xml", XMLRenderer)
+    config.add_renderer("text", PlainTextRenderer)
 
     mongo = adapters.MongoDB("mongodb://db:27017/")
     Session = adapters.Session.partial(mongo)

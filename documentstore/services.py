@@ -1,4 +1,5 @@
 from typing import Callable, Dict
+import difflib
 
 from .interfaces import Session
 from .domain import Document
@@ -128,6 +129,39 @@ class RegisterAssetVersion(BaseRegisterDocument):
         return session.documents.update(document)
 
 
+class DiffDocumentVersions(CommandHandler):
+    """Compara duas versões do Documento.
+
+    :param id: Identificador único do documento.
+    :param from_version_at: string de texto de um timestamp UTC referente a 
+    versão do documento que será a base da comparação.
+    :param to_version_at: (opcional) string de texto de um timestamp UTC 
+    referente a versão final do documento a ser comparada. Se não for informada 
+    será utilizada a versão mais recente.
+    """
+
+    def __call__(
+        self, id: str, from_version_at: str, to_version_at: str = None
+    ) -> bytes:
+        session = self.Session()
+        document = session.documents.fetch(id)
+        from_version = document.data(version_at=from_version_at).splitlines()
+        if to_version_at:
+            _to_version_at = {"version_at": to_version_at}
+        else:
+            _to_version_at = {}
+        to_version = document.data(**_to_version_at).splitlines()
+        diff = difflib.diff_bytes(
+            difflib.unified_diff,
+            from_version,
+            to_version,
+            fromfile=from_version_at.encode("utf-8"),
+            tofile=to_version_at.encode("utf-8") if to_version_at else b"latest",
+            lineterm=b"",
+        )
+        return b"\n".join(diff)
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_document": RegisterDocument(Session),
@@ -136,4 +170,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "fetch_document_manifest": FetchDocumentManifest(Session),
         "fetch_assets_list": FetchAssetsList(Session),
         "register_asset_version": RegisterAssetVersion(Session),
+        "diff_document_versions": DiffDocumentVersions(Session),
     }
