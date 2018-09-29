@@ -6,7 +6,7 @@ __all__ = ["new", "add_version", "add_asset_version"]
 
 
 def utcnow():
-    return str(datetime.utcnow())
+    return str(datetime.utcnow().isoformat() + "Z")
 
 
 def new(doc_id: str) -> dict:

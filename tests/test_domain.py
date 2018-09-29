@@ -11,28 +11,28 @@ SAMPLE_MANIFEST = {
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": [
                     (
-                        "2018-08-05 23:03:44.971230",
+                        "2018-08-05T23:03:44.971230Z",
                         "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
                     ),
                     (
-                        "2018-08-05 23:08:41.590174",
+                        "2018-08-05T23:08:41.590174Z",
                         "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
                     ),
                 ]
             },
-            "timestamp": "2018-08-05 23:02:29.392990",
+            "timestamp": "2018-08-05T23:02:29.392990Z",
         },
         {
             "data": "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": [
                     (
-                        "2018-08-05 23:30:29.392995",
+                        "2018-08-05T23:30:29.392995Z",
                         "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
                     )
                 ]
             },
-            "timestamp": "2018-08-05 23:30:29.392990",
+            "timestamp": "2018-08-05T23:30:29.392990Z",
         },
     ],
 }
@@ -102,7 +102,7 @@ class DocumentTests(unittest.TestCase):
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"
             },
-            "timestamp": "2018-08-05 23:02:29.392990",
+            "timestamp": "2018-08-05T23:02:29.392990Z",
         }
         self.assertEqual(oldest, expected)
 
@@ -115,11 +115,11 @@ class DocumentTests(unittest.TestCase):
                     "assets": {
                         "0034-8910-rsp-48-2-0275-gf01.gif": [
                             (
-                                "2018-08-05 23:03:44.971230",
+                                "2018-08-05T23:03:44.971230Z",
                                 "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
                             ),
                             (
-                                "2018-08-05 23:03:49.971250",
+                                "2018-08-05T23:03:49.971250Z",
                                 "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
                             ),
                         ]
@@ -155,32 +155,38 @@ class DocumentTests(unittest.TestCase):
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"
             },
-            "timestamp": "2018-08-05 23:30:29.392990",
+            "timestamp": "2018-08-05T23:30:29.392990Z",
         }
         self.assertEqual(target, expected)
 
     def test_version_at_given_time(self):
         document = self.make_one()
-        target = document.version_at("2018-08-05 23:04:00")
+        target = document.version_at("2018-08-05T23:04:00Z")
         expected = {
             "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
             "assets": {
                 "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif"
             },
-            "timestamp": "2018-08-05 23:02:29.392990",
+            "timestamp": "2018-08-05T23:02:29.392990Z",
         }
         self.assertEqual(target, expected)
 
     def test_version_at_time_between_data_and_asset_registration(self):
         document = self.make_one()
-        target = document.version_at("2018-08-05 23:03:44")
+        target = document.version_at("2018-08-05T23:03:43Z")
         expected = {
             "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
             "assets": {"0034-8910-rsp-48-2-0275-gf01.gif": ""},
-            "timestamp": "2018-08-05 23:02:29.392990",
+            "timestamp": "2018-08-05T23:02:29.392990Z",
         }
         self.assertEqual(target, expected)
 
     def test_version_at_time_prior_to_data_registration(self):
         document = self.make_one()
         self.assertRaises(ValueError, lambda: document.version_at("2018-07-01"))
+
+    def test_version_at_non_UCT_time_raises_exception(self):
+        document = self.make_one()
+        self.assertRaises(
+            ValueError, lambda: document.version_at("2018-08-05 23:03:44")
+        )

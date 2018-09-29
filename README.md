@@ -14,55 +14,55 @@ A abstração básica se apoia no conceito do *manifesto do documento*:
       "assets": {
         "0034-8910-rsp-48-2-0347-gf01": [
           [
-            "2018-08-05 23:03:44.971230",
+            "2018-08-05T23:03:44.971230Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01.jpg"
           ]
         ],
         "0034-8910-rsp-48-2-0347-gf01-en": [
           [
-            "2018-08-05 23:08:41.590174",
+            "2018-08-05T23:08:41.590174Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01-en.jpg"
           ]
         ],
         "0034-8910-rsp-48-2-0347-gf02": [
           [
-            "2018-08-05 23:04:43.323527",
+            "2018-08-05T23:04:43.323527Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02.jpg"
           ]
         ],
         "0034-8910-rsp-48-2-0347-gf02-en": [
           [
-            "2018-08-05 23:08:50.331687",
+            "2018-08-05T23:08:50.331687Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02-en.jpg"
           ]
         ],
         "0034-8910-rsp-48-2-0347-gf03": [
           [
-            "2018-08-05 23:05:14.882129",
+            "2018-08-05T23:05:14.882129Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03.jpg"
           ]
         ],
         "0034-8910-rsp-48-2-0347-gf03-en": [
           [
-            "2018-08-05 23:08:59.691924",
+            "2018-08-05T23:08:59.691924Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03-en.jpg"
           ]
         ],
         "0034-8910-rsp-48-2-0347-gf04": [
           [
-            "2018-08-05 23:05:42.016837",
+            "2018-08-05T23:05:42.016837Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04.jpg"
           ]
         ],
         "0034-8910-rsp-48-2-0347-gf04-en": [
           [
-            "2018-08-05 23:09:09.569312",
+            "2018-08-05T23:09:09.569312Z",
             "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04-en.jpg"
           ]
         ]
       },
       "data": "https://raw.githubusercontent.com/scieloorg/packtools/master/tests/samples/0034-8910-rsp-48-2-0347.xml",
-      "timestamp": "2018-08-05 23:02:29.392990"
+      "timestamp": "2018-08-05T23:02:29.392990Z"
     }
   ]
 }

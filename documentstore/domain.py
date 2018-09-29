@@ -72,7 +72,9 @@ def assets_from_remote_xml(
 
 
 class Document:
-    _timestamp_pattern = r"[0-9]{4}-[0-9]{2}-[0-9]{2}( [0-9]{2}:[0-9]{2}(:[0-9]{2})?)?"
+    _timestamp_pattern = (
+        r"^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z)?$"
+    )
 
     def __init__(self, doc_id=None, manifest=None):
         assert any([doc_id, manifest])
@@ -152,12 +154,13 @@ class Document:
     def version_at(self, timestamp: str) -> dict:
         """Obtém os metadados da versão no momento `timestamp`.
 
-        :param timestamp: string de texto do timestamp UTC. A resolução pode
-        variar desde o dia, e.g., `2018-09-17`, dia horas e minutos, e.g.,
-        `2018-09-17 14:25`, ou dia horas minutos segundos (e frações em até 6
-        casas decimais). Caso a resolução esteja no nível do dia, a mesma
-        será ajustada automaticamente para o nível dos microsegundos por meio 
-        da concatenação da string ` 23:59:59:999999` ao valor de `timestamp`.
+        :param timestamp: string de texto do timestamp UTC ISO 8601 no formato
+        `YYYY-MM-DDTHH:MM:SSSSSSZ`. A resolução pode variar desde o dia, e.g., 
+        `2018-09-17`, dia horas e minutos, e.g., `2018-09-17T14:25Z`, ou dia 
+        horas minutos segundos (e frações em até 6 casas decimais). Caso a 
+        resolução esteja no nível do dia, a mesma será ajustada automaticamente 
+        para o nível dos microsegundos por meio da concatenação da string 
+        `T23:59:59:999999Z` ao valor de `timestamp`.
         """
         if not re.match(self._timestamp_pattern, timestamp):
             raise ValueError(
@@ -166,7 +169,7 @@ class Document:
             )
 
         if re.match(r"^\d{4}-\d{2}-\d{2}$", timestamp):
-            timestamp = f"{timestamp} 23:59:59:999999"
+            timestamp = f"{timestamp}T23:59:59.999999Z"
 
         try:
             target_version = max(
