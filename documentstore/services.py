@@ -1,5 +1,8 @@
 from typing import Callable, Dict
 import difflib
+from io import BytesIO
+
+from clea import join as clea_join, core as clea_core
 
 from .interfaces import Session
 from .domain import Document
@@ -162,6 +165,43 @@ class DiffDocumentVersions(CommandHandler):
         return b"\n".join(diff)
 
 
+class SanitizeDocumentFront(CommandHandler):
+    """Sanitiza o front-matter do documento.
+
+    :param xml_data: string de bytes do conteúdo do documento em XML.
+    """
+
+    def __call__(self, xml_data: bytes) -> dict:
+        clea_article = clea_core.Article(BytesIO(xml_data))
+        front_data = {
+            tag_name: [branch.data for branch in clea_article.get(tag_name)]
+            for tag_name in ["journal-meta", "article-meta"]
+        }
+        front_data["contrib"] = clea_join.aff_contrib_inner_join(clea_article)
+        return self._rearrange(front_data)
+
+    def _rearrange(self, data):
+        def _first(iterable, default=""):
+            try:
+                return next(iter(iterable))
+            except StopIteration:
+                return default
+
+        _data = {
+            "journal-meta": _first(data["journal-meta"], {}),
+            "article-meta": _first(data["article-meta"], {}),
+        }
+        _data["contrib"] = [
+            {
+                k: v
+                for k, v in contrib.items()
+                if k not in _data["journal-meta"] and k not in _data["article-meta"]
+            }
+            for contrib in data["contrib"]
+        ]
+        return _data
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_document": RegisterDocument(Session),
@@ -171,4 +211,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "fetch_assets_list": FetchAssetsList(Session),
         "register_asset_version": RegisterAssetVersion(Session),
         "diff_document_versions": DiffDocumentVersions(Session),
+        "sanitize_document_front": SanitizeDocumentFront(Session),
     }

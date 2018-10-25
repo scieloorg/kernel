@@ -30,6 +30,7 @@ setuptools.setup(
         "cornice",
         "colander",
         "python-slugify",
+        "scielo-clea",
     ],
     test_suite="tests",
     classifiers=(

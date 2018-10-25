@@ -48,6 +48,12 @@ diff = Service(
     description="Compare two versions of the same document.",
 )
 
+front = Service(
+    name="front",
+    path="/documents/{document_id}/front",
+    description="Front-matter of the document in a normalized schema.",
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -200,6 +206,12 @@ def diff_document_versions(request):
         )
     except (exceptions.DocumentDoesNotExist, ValueError) as exc:
         raise HTTPNotFound(exc)
+
+
+@front.get(renderer="json")
+def fetch_document_front(request):
+    data = fetch_document_data(request)
+    return request.services["sanitize_document_front"](data)
 
 
 class XMLRenderer:

@@ -14,7 +14,7 @@ COPY production.ini /app/config.ini
 COPY requirements.txt .
 
 RUN apk add --no-cache --virtual .build-deps \
-        make gcc libxml2-dev libxslt-dev musl-dev \
+        make gcc libxml2-dev libxslt-dev musl-dev g++ \
     && apk add libxml2 libxslt \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir gunicorn \
