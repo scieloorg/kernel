@@ -90,7 +90,7 @@ def fetch_document_data(request):
         return request.services["fetch_document_data"](
             id=request.matchdict["document_id"], **version
         )
-    except (exceptions.DocumentDoesNotExist, ValueError) as exc:
+    except (exceptions.DoesNotExist, ValueError) as exc:
         raise HTTPNotFound(exc)
 
 
@@ -111,7 +111,7 @@ def put_document(request):
         request.services["register_document"](
             id=request.matchdict["document_id"], data_url=data_url, assets=assets
         )
-    except exceptions.DocumentAlreadyExists:
+    except exceptions.AlreadyExists:
         try:
             request.services["register_document_version"](
                 id=request.matchdict["document_id"], data_url=data_url, assets=assets
@@ -133,7 +133,7 @@ def get_manifest(request):
         return request.services["fetch_document_manifest"](
             id=request.matchdict["document_id"]
         )
-    except exceptions.DocumentDoesNotExist as exc:
+    except exceptions.DoesNotExist as exc:
         raise HTTPNotFound(exc)
 
 
@@ -150,7 +150,7 @@ def get_assets_list(request):
         assets = request.services["fetch_assets_list"](
             id=request.matchdict["document_id"]
         )
-    except exceptions.DocumentDoesNotExist as exc:
+    except exceptions.DoesNotExist as exc:
         raise HTTPNotFound(exc)
 
     assets["assets"] = slugify_assets_ids(assets["assets"])
@@ -204,7 +204,7 @@ def diff_document_versions(request):
             from_version_at=from_when,
             to_version_at=request.GET.get("to_when", None),
         )
-    except (exceptions.DocumentDoesNotExist, ValueError) as exc:
+    except (exceptions.DoesNotExist, ValueError) as exc:
         raise HTTPNotFound(exc)
 
 

@@ -39,7 +39,7 @@ class DocumentStore:
         try:
             self._collection.insert_one(data)
         except pymongo.errors.DuplicateKeyError:
-            raise exceptions.DocumentAlreadyExists(
+            raise exceptions.AlreadyExists(
                 "cannot add document with id "
                 '"%s": the id is already in use' % document.doc_id()
             ) from None
@@ -55,6 +55,6 @@ class DocumentStore:
         if manifest:
             return domain.Document(manifest=manifest)
         else:
-            raise exceptions.DocumentDoesNotExist(
+            raise exceptions.DoesNotExist(
                 "cannot fetch document with id " '"%s": document does not exist' % id
             )

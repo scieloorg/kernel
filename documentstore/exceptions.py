@@ -11,15 +11,15 @@ class NonRetryableError(Exception):
     """
 
 
-class DocumentAlreadyExists(NonRetryableError):
-    """Erro que representa a tentativa de registro de um documento cujo
-    identificador está associado a outro documento no sistema.
+class AlreadyExists(NonRetryableError):
+    """Erro que representa a tentativa de registro de uma entidade cujo
+    identificador já está em uso.
     """
 
 
-class DocumentDoesNotExist(NonRetryableError):
-    """Erro que representa a tentativa de recuperar um documento à partir
-    de um identificador que não está associado a nenhum documento.
+class DoesNotExist(NonRetryableError):
+    """Erro que representa a tentativa de recuperar uma entidade à partir
+    de um identificador que não está associado a nenhuma delas.
     """
 
 

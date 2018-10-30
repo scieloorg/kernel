@@ -17,7 +17,7 @@ class InMemoryDocumentStore(interfaces.DocumentStore):
     def add(self, document):
         doc_id = document.doc_id()
         if doc_id in self._data:
-            raise exceptions.DocumentAlreadyExists()
+            raise exceptions.AlreadyExists()
         else:
             self.update(document)
 
@@ -31,7 +31,7 @@ class InMemoryDocumentStore(interfaces.DocumentStore):
         if manifest:
             return domain.Document(manifest=manifest)
         else:
-            raise exceptions.DocumentDoesNotExist()
+            raise exceptions.DoesNotExist()
 
 
 def document_registry_data_fixture(prefix=""):
