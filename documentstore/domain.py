@@ -2,12 +2,15 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
+from typing import Union, Callable
+from datetime import datetime
 
 import requests
 from lxml import etree
 
-from . import manifest as _manifest
 from . import exceptions
+
+__all__ = ["Document"]
 
 DEFAULT_XMLPARSER = etree.XMLParser(
     remove_blank_text=False,
@@ -16,6 +19,64 @@ DEFAULT_XMLPARSER = etree.XMLParser(
     no_network=True,
     collect_ids=False,
 )
+
+
+def utcnow():
+    return str(datetime.utcnow().isoformat() + "Z")
+
+
+class DocumentManifest:
+    """Namespace para funções que manipulam o manifesto do documento.
+    """
+
+    @staticmethod
+    def new(doc_id: str) -> dict:
+        return {"id": str(doc_id), "versions": []}
+
+    def _new_version(
+        data_uri: str, assets: Union[dict, list], now: Callable[[], str]
+    ) -> dict:
+        _assets = {str(aid): [] for aid in assets}
+        return {"data": data_uri, "assets": _assets, "timestamp": now()}
+
+    @staticmethod
+    def add_version(
+        manifest: dict,
+        data_uri: str,
+        assets: Union[dict, list],
+        now: Callable[[], str] = utcnow,
+    ) -> dict:
+        _manifest = deepcopy(manifest)
+        version = DocumentManifest._new_version(data_uri, assets, now=now)
+        for asset_id in assets:
+            try:
+                asset_uri = assets[asset_id]
+            except TypeError:
+                break
+            else:
+                if asset_uri:
+                    version = DocumentManifest._new_asset_version(
+                        version, asset_id, asset_uri, now=now
+                    )
+        _manifest["versions"].append(version)
+        return _manifest
+
+    def _new_asset_version(
+        version: dict, asset_id: str, asset_uri: str, now: Callable[[], str] = utcnow
+    ) -> dict:
+        _version = deepcopy(version)
+        _version["assets"][asset_id].append((now(), asset_uri))
+        return _version
+
+    @staticmethod
+    def add_asset_version(
+        manifest: dict, asset_id: str, asset_uri: str, now: Callable[[], str] = utcnow
+    ) -> dict:
+        _manifest = deepcopy(manifest)
+        _manifest["versions"][-1] = DocumentManifest._new_asset_version(
+            _manifest["versions"][-1], asset_id, asset_uri, now=now
+        )
+        return _manifest
 
 
 def get_static_assets(xml_et):
@@ -78,7 +139,7 @@ class Document:
 
     def __init__(self, doc_id=None, manifest=None):
         assert any([doc_id, manifest])
-        self.manifest = manifest or _manifest.new(doc_id)
+        self.manifest = manifest or DocumentManifest.new(doc_id)
 
     @property
     def manifest(self):
@@ -119,7 +180,7 @@ class Document:
         _, data_assets = assets_getter(data_url, timeout=timeout)
         data_assets_keys = [asset_key for asset_key, _ in data_assets]
         assets = self._link_assets(data_assets_keys)
-        self.manifest = _manifest.add_version(self._manifest, data_url, assets)
+        self.manifest = DocumentManifest.add_version(self._manifest, data_url, assets)
 
     def _link_assets(self, tolink: list) -> dict:
         """Retorna um mapa entre as chaves dos ativos em `tolink` e as
@@ -246,7 +307,7 @@ class Document:
             )
 
         try:
-            self.manifest = _manifest.add_asset_version(
+            self.manifest = DocumentManifest.add_asset_version(
                 self._manifest, asset_id, data_url
             )
         except KeyError:

@@ -1,15 +1,18 @@
 import functools
 import unittest
 
-from documentstore.manifest import new, add_version, add_asset_version
+from documentstore.domain import DocumentManifest
 
 
 def fake_utcnow():
     return "2018-08-05T22:33:49.795151Z"
 
 
-add_version = functools.partial(add_version, now=fake_utcnow)
-add_asset_version = functools.partial(add_asset_version, now=fake_utcnow)
+new = DocumentManifest.new
+add_version = functools.partial(DocumentManifest.add_version, now=fake_utcnow)
+add_asset_version = functools.partial(
+    DocumentManifest.add_asset_version, now=fake_utcnow
+)
 
 
 class TestNewManifest(unittest.TestCase):
