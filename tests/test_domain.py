@@ -1,7 +1,8 @@
 import unittest
+import functools
 from copy import deepcopy
 
-from documentstore import domain
+from documentstore import domain, exceptions
 
 SAMPLE_MANIFEST = {
     "id": "0034-8910-rsp-48-2-0275",
@@ -36,6 +37,13 @@ SAMPLE_MANIFEST = {
         },
     ],
 }
+
+
+def fake_utcnow():
+    return "2018-08-05T22:33:49.795151Z"
+
+
+new = functools.partial(domain.DocumentsBundle.new, now=fake_utcnow)
 
 
 class DocumentTests(unittest.TestCase):
@@ -80,7 +88,8 @@ class DocumentTests(unittest.TestCase):
         document = self.make_one()
         latest = document.version()
         self.assertEqual(
-            latest["data"], "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml"
+            latest["data"],
+            "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
         )
 
     def test_get_latest_version_when_there_isnt_any(self):
@@ -91,7 +100,8 @@ class DocumentTests(unittest.TestCase):
         document = self.make_one()
         oldest = document.version(0)
         self.assertEqual(
-            oldest["data"], "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml"
+            oldest["data"],
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
         )
 
     def test_version_only_shows_newest_assets(self):
@@ -190,3 +200,174 @@ class DocumentTests(unittest.TestCase):
         self.assertRaises(
             ValueError, lambda: document.version_at("2018-08-05 23:03:44")
         )
+
+
+class DocumentsBundleTest(unittest.TestCase):
+    def test_new(self):
+        fake_date = fake_utcnow()
+        expected = {
+            "id": "0034-8910-rsp-48-2",
+            "created": fake_date,
+            "updated": fake_date,
+            "items": [],
+            "metadata": {},
+        }
+        self.assertEqual(new("0034-8910-rsp-48-2"), expected)
+
+    def test_new_set_same_value_to_created_updated(self):
+        documents_bundle = domain.DocumentsBundle.new("0034-8910-rsp-48-2")
+        self.assertEqual(
+            documents_bundle["created"], documents_bundle["updated"]
+        )
+
+    def test_set_publication_year(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        current_updated = documents_bundle["updated"]
+        documents_bundle = domain.DocumentsBundle.set_publication_year(
+            documents_bundle, "2018"
+        )
+        self.assertEqual(
+            documents_bundle["metadata"]["publication_year"], "2018"
+        )
+        self.assertTrue(current_updated < documents_bundle["updated"])
+
+    def test_set_publication_year_convert_to_str(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = domain.DocumentsBundle.set_publication_year(
+            documents_bundle, 2018
+        )
+        self.assertEqual(
+            documents_bundle["metadata"]["publication_year"], "2018"
+        )
+
+    def test_set_volume(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        current_updated = documents_bundle["updated"]
+        documents_bundle = domain.DocumentsBundle.set_volume(
+            documents_bundle, "25"
+        )
+        self.assertEqual(documents_bundle["metadata"]["volume"], "25")
+        self.assertTrue(current_updated < documents_bundle["updated"])
+
+    def test_add_item(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        current_updated = documents_bundle["updated"]
+        documents_bundle = domain.DocumentsBundle.add_item(
+            documents_bundle, "/documents/0034-8910-rsp-48-2-0275"
+        )
+        self.assertEqual(
+            documents_bundle["items"][-1], "/documents/0034-8910-rsp-48-2-0275"
+        )
+        self.assertTrue(current_updated < documents_bundle["updated"])
+
+    def _assert_raises_with_message(self, type, message, func, *args):
+        try:
+            func(*args)
+        except type as exc:
+            self.assertEqual(
+                str(exc),
+                message
+            )
+        else:
+            self.assertTrue(False)
+
+    def test_add_item_raises_exception_if_item_already_exists(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = domain.DocumentsBundle.add_item(
+            documents_bundle, "/documents/0034-8910-rsp-48-2-0275"
+        )
+        current_updated = documents_bundle["updated"]
+        current_item_len = len(documents_bundle["items"])
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            "cannot add documents bundle item "
+            '"/documents/0034-8910-rsp-48-2-0275": the item already exists',
+            domain.DocumentsBundle.add_item,
+            documents_bundle,
+            "/documents/0034-8910-rsp-48-2-0275"
+        )
+        self.assertEqual(current_updated, documents_bundle["updated"])
+        self.assertEqual(current_item_len, len(documents_bundle["items"]))
+
+    def test_insert_item(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        current_updated = documents_bundle["updated"]
+        documents_bundle = domain.DocumentsBundle.add_item(
+            documents_bundle, "/documents/0034-8910-rsp-48-2-0775"
+        )
+        documents_bundle = domain.DocumentsBundle.insert_item(
+            documents_bundle, 0, "/documents/0034-8910-rsp-48-2-0275"
+        )
+        self.assertEqual(
+            documents_bundle["items"][0], "/documents/0034-8910-rsp-48-2-0275"
+        )
+        self.assertEqual(
+            documents_bundle["items"][1], "/documents/0034-8910-rsp-48-2-0775"
+        )
+        self.assertTrue(current_updated < documents_bundle["updated"])
+
+    def test_insert_item_raises_exception_if_item_already_exists(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = domain.DocumentsBundle.add_item(
+            documents_bundle, "/documents/0034-8910-rsp-48-2-0775"
+        )
+        current_updated = documents_bundle["updated"]
+        current_item_len = len(documents_bundle["items"])
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            "cannot insert documents bundle item "
+            '"/documents/0034-8910-rsp-48-2-0775": the item already exists',
+            domain.DocumentsBundle.insert_item,
+            documents_bundle,
+            0,
+            "/documents/0034-8910-rsp-48-2-0775"
+        )
+        self.assertEqual(current_updated, documents_bundle["updated"])
+        self.assertEqual(current_item_len, len(documents_bundle["items"]))
+
+    def test_insert_item_follows_python_semantics(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = domain.DocumentsBundle.add_item(
+            documents_bundle, "/documents/0034-8910-rsp-48-2-0475"
+        )
+        documents_bundle = domain.DocumentsBundle.insert_item(
+            documents_bundle, -10, "/documents/0034-8910-rsp-48-2-0275"
+        )
+        self.assertEqual(
+            documents_bundle["items"][0], "/documents/0034-8910-rsp-48-2-0275"
+        )
+        documents_bundle = domain.DocumentsBundle.insert_item(
+            documents_bundle, 10, "/documents/0034-8910-rsp-48-2-0975"
+        )
+        self.assertEqual(
+            documents_bundle["items"][-1], "/documents/0034-8910-rsp-48-2-0975"
+        )
+
+    def test_remove_item(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        current_updated = documents_bundle["updated"]
+        documents_bundle = domain.DocumentsBundle.add_item(
+            documents_bundle, "/documents/0034-8910-rsp-48-2-0475"
+        )
+        documents_bundle = domain.DocumentsBundle.remove_item(
+            documents_bundle, "/documents/0034-8910-rsp-48-2-0475"
+        )
+        self.assertNotIn(
+            "/documents/0034-8910-rsp-48-2-0475", documents_bundle["items"]
+        )
+        self.assertTrue(current_updated < documents_bundle["updated"])
+
+    def test_remove_item_raises_exception_if_item_does_not_exist(self):
+        documents_bundle = new("0034-8910-rsp-48-2")
+        current_updated = documents_bundle["updated"]
+        current_item_len = len(documents_bundle["items"])
+        self._assert_raises_with_message(
+            exceptions.DoesNotExist,
+            "cannot remove documents bundle item "
+            '"/documents/0034-8910-rsp-48-2-0775": the item does not exist',
+            domain.DocumentsBundle.remove_item,
+            documents_bundle,
+            "/documents/0034-8910-rsp-48-2-0775"
+        )
+        self.assertEqual(current_updated, documents_bundle["updated"])
+        self.assertEqual(current_item_len, len(documents_bundle["items"]))
