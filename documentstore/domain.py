@@ -62,10 +62,7 @@ class DocumentManifest:
         return _manifest
 
     def _new_asset_version(
-        version: dict,
-        asset_id: str,
-        asset_uri: str,
-        now: Callable[[], str] = utcnow,
+        version: dict, asset_id: str, asset_uri: str, now: Callable[[], str] = utcnow
     ) -> dict:
         _version = deepcopy(version)
         _version["assets"][asset_id].append((now(), asset_uri))
@@ -73,10 +70,7 @@ class DocumentManifest:
 
     @staticmethod
     def add_asset_version(
-        manifest: dict,
-        asset_id: str,
-        asset_uri: str,
-        now: Callable[[], str] = utcnow,
+        manifest: dict, asset_id: str, asset_uri: str, now: Callable[[], str] = utcnow
     ) -> dict:
         _manifest = deepcopy(manifest)
         _manifest["versions"][-1] = DocumentManifest._new_asset_version(
@@ -97,9 +91,7 @@ def get_static_assets(xml_et):
     ]
 
     iterators = [
-        xml_et.iterfind(
-            path, namespaces={"xlink": "http://www.w3.org/1999/xlink"}
-        )
+        xml_et.iterfind(path, namespaces={"xlink": "http://www.w3.org/1999/xlink"})
         for path in paths
     ]
 
@@ -116,11 +108,7 @@ def fetch_data(url: str, timeout: float = 2) -> bytes:
         response = requests.get(url, timeout=timeout)
     except (requests.ConnectionError, requests.Timeout) as exc:
         raise exceptions.RetryableError(exc) from exc
-    except (
-        requests.InvalidSchema,
-        requests.MissingSchema,
-        requests.InvalidURL,
-    ) as exc:
+    except (requests.InvalidSchema, requests.MissingSchema, requests.InvalidURL) as exc:
         raise exceptions.NonRetryableError(exc) from exc
     else:
         try:
@@ -192,9 +180,7 @@ class Document:
         _, data_assets = assets_getter(data_url, timeout=timeout)
         data_assets_keys = [asset_key for asset_key, _ in data_assets]
         assets = self._link_assets(data_assets_keys)
-        self.manifest = DocumentManifest.add_version(
-            self._manifest, data_url, assets
-        )
+        self.manifest = DocumentManifest.add_version(self._manifest, data_url, assets)
 
     def _link_assets(self, tolink: list) -> dict:
         """Retorna um mapa entre as chaves dos ativos em `tolink` e as
@@ -255,25 +241,19 @@ class Document:
                 key=lambda version: version.get("timestamp"),
             )
         except ValueError:
-            raise ValueError(
-                "missing version for timestamp: %s" % timestamp
-            ) from None
+            raise ValueError("missing version for timestamp: %s" % timestamp) from None
 
         def _at_time(uris):
             try:
                 target = max(
-                    itertools.takewhile(
-                        lambda asset: asset[0] <= timestamp, uris
-                    ),
+                    itertools.takewhile(lambda asset: asset[0] <= timestamp, uris),
                     key=lambda asset: asset[0],
                 )
             except ValueError:
                 return ""
             return target[1]
 
-        target_assets = {
-            a: _at_time(u) for a, u in target_version["assets"].items()
-        }
+        target_assets = {a: _at_time(u) for a, u in target_version["assets"].items()}
         target_version["assets"] = target_assets
         return target_version
 
@@ -300,18 +280,14 @@ class Document:
         no nível dos ativos digitais do documento.
         """
         version = (
-            self.version_at(version_at)
-            if version_at
-            else self.version(version_index)
+            self.version_at(version_at) if version_at else self.version(version_index)
         )
         xml_tree, data_assets = assets_getter(version["data"], timeout=timeout)
 
         version_assets = version["assets"]
         for asset_key, target_node in data_assets:
             version_href = version_assets.get(asset_key, "")
-            target_node.attrib[
-                "{http://www.w3.org/1999/xlink}href"
-            ] = version_href
+            target_node.attrib["{http://www.w3.org/1999/xlink}href"] = version_href
 
         return etree.tostring(xml_tree, encoding="utf-8", pretty_print=False)
 
@@ -340,8 +316,8 @@ class Document:
             ) from None
 
 
-class DocumentsBundle:
-    """Namespace para funções que manipulam o maço de documentos.
+class BundleManifest:
+    """Namespace para funções que manipulam maços.
     """
 
     @staticmethod
@@ -355,8 +331,8 @@ class DocumentsBundle:
             "metadata": {},
         }
 
-    def _set_metadata(
-        documents_bundle: dict, name: str, value: str, now: Callable[[], str]
+    def set_metadata(
+        documents_bundle: dict, name: str, value: str, now: Callable[[], str] = utcnow
     ) -> dict:
         _documents_bundle = deepcopy(documents_bundle)
         _documents_bundle["metadata"][name] = value
@@ -364,18 +340,10 @@ class DocumentsBundle:
         return _documents_bundle
 
     @staticmethod
-    def set_publication_year(
-        documents_bundle: dict, year: str, now: Callable[[], str] = utcnow
-    ) -> dict:
-        return DocumentsBundle._set_metadata(
-            documents_bundle, "publication_year", str(year), now
-        )
-
-    @staticmethod
     def set_volume(
         documents_bundle: dict, volume: str, now: Callable[[], str] = utcnow
     ) -> dict:
-        return DocumentsBundle._set_metadata(
+        return BundleManifest._set_metadata(
             documents_bundle, "volume", str(volume), now
         )
 
@@ -395,10 +363,7 @@ class DocumentsBundle:
 
     @staticmethod
     def insert_item(
-        documents_bundle: dict,
-        index: int,
-        item: str,
-        now: Callable[[], str] = utcnow,
+        documents_bundle: dict, index: int, item: str, now: Callable[[], str] = utcnow
     ) -> dict:
         if item in documents_bundle["items"]:
             raise exceptions.AlreadyExists(
@@ -417,9 +382,145 @@ class DocumentsBundle:
         if item not in documents_bundle["items"]:
             raise exceptions.DoesNotExist(
                 "cannot remove documents bundle item "
-                '"%s": the item does not exist' % item,
+                '"%s": the item does not exist' % item
             )
         _documents_bundle = deepcopy(documents_bundle)
         _documents_bundle["items"].remove(item)
         _documents_bundle["updated"] = now()
         return _documents_bundle
+
+
+class ClosedIssue:
+    """
+    A Closed Issue is an issue in which the officer has completed the reporting process
+     and no longer needs to add additional notes, photos, or audio files.
+    Issues should be closed when there is no additional information that needs to be
+    reported for that issue.
+    The table of content must be already defined.
+    """
+
+    def __init__(self, id: str = None, manifest: dict = None):
+        assert any([id, manifest])
+        self.manifest = manifest or BundleManifest.new(id)
+
+    @property
+    def manifest(self):
+        return deepcopy(self._manifest)
+
+    @manifest.setter
+    def manifest(self, value: dict):
+        self._manifest = value
+
+    @property
+    def publication_year(self):
+        return self._manifest["metadata"].get("publication_year", "")
+
+    @publication_year.setter
+    def publication_year(self, value: Union[str, int]):
+        _value = str(value)
+        if not re.match(r"^\d{4}$", _value):
+            raise ValueError(
+                "cannot set publication_year with value "
+                f'"{_value}": the value is not valid'
+            )
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "publication_year", _value
+        )
+
+    @property
+    def volume(self):
+        return self._manifest["metadata"].get("volume", "")
+
+    @volume.setter
+    def volume(self, value: Union[str, int]):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(self._manifest, "volume", _value)
+
+    @property
+    def number(self):
+        return self._manifest["metadata"].get("number", "")
+
+    @number.setter
+    def number(self, value: Union[str, int]):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(self._manifest, "number", _value)
+
+    @property
+    def supplement(self):
+        return self._manifest["metadata"].get("supplement", "")
+
+    @supplement.setter
+    def supplement(self, value: Union[str, int]):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "supplement", _value
+        )
+
+    def add_document(self, document: str):
+        self.manifest = BundleManifest.add_item(self._manifest, document)
+
+    def remove_document(self, document: str):
+        self.manifest = BundleManifest.remove_item(self._manifest, document)
+
+    def insert_document(self, index: int, document: str):
+        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
+
+    @property
+    def documents(self):
+        return self._manifest["items"]
+
+
+class AheadOfPrintArticles:
+    """
+    Ahead of Print is a set of articles which are not related to any closed issue yet.
+    """
+
+    def __init__(self, id: str = None, manifest: dict = None):
+        assert any([id, manifest])
+        self.manifest = manifest or BundleManifest.new(id)
+
+    @property
+    def manifest(self):
+        return deepcopy(self._manifest)
+
+    @manifest.setter
+    def manifest(self, value: dict):
+        self._manifest = value
+
+    def add_document(self, document: str):
+        self.manifest = BundleManifest.add_item(self._manifest, document)
+
+    @property
+    def documents(self):
+        return sorted(self._manifest["items"], reverse=True)
+
+
+class OpenIssue:
+    """
+    Open Issue: It's best to leave an issue open if it is an issue that is still in 
+    progress.
+    """
+
+    def __init__(self, id: str = None, manifest: dict = None):
+        assert any([id, manifest])
+        self.manifest = manifest or BundleManifest.new(id)
+
+    @property
+    def manifest(self):
+        return deepcopy(self._manifest)
+
+    @manifest.setter
+    def manifest(self, value: dict):
+        self._manifest = value
+
+    def add_document(self, document: str):
+        self.manifest = BundleManifest.add_item(self._manifest, document)
+
+    @property
+    def documents(self):
+        return sorted(self._manifest["items"], reverse=True)
+
+
+"""
+Lembrete: tratamento de ERRATA.
+"""
