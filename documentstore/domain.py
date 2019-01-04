@@ -390,7 +390,7 @@ class BundleManifest:
         return _documents_bundle
 
 
-class ClosedIssue:
+class BaseIssue:
     """
     A Closed Issue is an issue in which the officer has completed the reporting process
      and no longer needs to add additional notes, photos, or audio files.
@@ -490,12 +490,26 @@ class ClosedIssue:
     def remove_document(self, document: str):
         self.manifest = BundleManifest.remove_item(self._manifest, document)
 
-    def insert_document(self, index: int, document: str):
-        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
-
     @property
     def documents(self):
         return self._manifest["items"]
+
+
+class ClosedIssue(BaseIssue):
+
+    def insert_document(self, index: int, document: str):
+        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
+
+
+class OpenIssue(BaseIssue):
+    """
+    Open Issue: It's best to leave an issue open if it is an issue that is still in 
+    progress.
+    """
+
+    @property
+    def documents(self):
+        return sorted(self._manifest["items"], reverse=True)
 
 
 class AheadOfPrintArticles:
@@ -514,60 +528,6 @@ class AheadOfPrintArticles:
     @manifest.setter
     def manifest(self, value: dict):
         self._manifest = value
-
-    def add_document(self, document: str):
-        self.manifest = BundleManifest.add_item(self._manifest, document)
-
-    @property
-    def documents(self):
-        return sorted(self._manifest["items"], reverse=True)
-
-
-class OpenIssue:
-    """
-    Open Issue: It's best to leave an issue open if it is an issue that is still in 
-    progress.
-    """
-
-    def __init__(self, id: str = None, manifest: dict = None):
-        assert any([id, manifest])
-        self.manifest = manifest or BundleManifest.new(id)
-
-    @property
-    def manifest(self):
-        return deepcopy(self._manifest)
-
-    @manifest.setter
-    def manifest(self, value: dict):
-        self._manifest = value
-
-    def add_section(self, value: dict):
-        _sections = self.sections
-        if value in _sections:
-            raise exceptions.AlreadyExists(
-                f"cannot add section {value}: the section already exists."
-            )
-        _sections.append(value)
-        self.manifest = BundleManifest.set_metadata(
-            self._manifest, "sections", _sections
-        )
-
-    def remove_section(self, value: dict):
-        _sections = self.sections
-        try:
-            _sections.remove(value)
-        except ValueError:
-            raise exceptions.DoesNotExist(
-                f"cannot remove section {value}: the section does not exists."
-            ) from None
-        else:
-            self.manifest = BundleManifest.set_metadata(
-                self._manifest, "sections", _sections
-            )
-
-    @property
-    def sections(self):
-        return self._manifest["metadata"].get("sections", [])
 
     def add_document(self, document: str):
         self.manifest = BundleManifest.add_item(self._manifest, document)
