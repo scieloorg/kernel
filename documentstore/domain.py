@@ -390,7 +390,7 @@ class BundleManifest:
         return _documents_bundle
 
 
-class ClosedIssue:
+class BaseIssue:
     """
     A Closed Issue is an issue in which the officer has completed the reporting process
      and no longer needs to add additional notes, photos, or audio files.
@@ -462,43 +462,31 @@ class ClosedIssue:
     def remove_document(self, document: str):
         self.manifest = BundleManifest.remove_item(self._manifest, document)
 
-    def insert_document(self, index: int, document: str):
-        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
-
     @property
     def documents(self):
         return self._manifest["items"]
 
 
-class AheadOfPrintArticles:
+class ClosedIssue(BaseIssue):
+
+    def insert_document(self, index: int, document: str):
+        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
+
+
+class OpenIssue(BaseIssue):
     """
-    Ahead of Print is a set of articles which are not related to any closed issue yet.
+    Open Issue: It's best to leave an issue open if it is an issue that is still in 
+    progress.
     """
-
-    def __init__(self, id: str = None, manifest: dict = None):
-        assert any([id, manifest])
-        self.manifest = manifest or BundleManifest.new(id)
-
-    @property
-    def manifest(self):
-        return deepcopy(self._manifest)
-
-    @manifest.setter
-    def manifest(self, value: dict):
-        self._manifest = value
-
-    def add_document(self, document: str):
-        self.manifest = BundleManifest.add_item(self._manifest, document)
 
     @property
     def documents(self):
         return sorted(self._manifest["items"], reverse=True)
 
 
-class OpenIssue:
+class AheadOfPrintArticles:
     """
-    Open Issue: It's best to leave an issue open if it is an issue that is still in 
-    progress.
+    Ahead of Print is a set of articles which are not related to any closed issue yet.
     """
 
     def __init__(self, id: str = None, manifest: dict = None):
