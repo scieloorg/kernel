@@ -555,6 +555,58 @@ class ClosedIssueTest(UnittestMixin, unittest.TestCase):
         )
 
 
+class OpenIssueTest(UnittestMixin, unittest.TestCase):
+    def test_manifest_is_generated_on_init(self):
+        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
+        self.assertTrue(isinstance(open_issue.manifest, dict))
+
+    def test_manifest_as_arg_on_init(self):
+        existing_manifest = new("0034-8910-rsp-48-2")
+        open_issue = domain.OpenIssue(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, open_issue.manifest)
+
+    def test_manifest_schema_is_not_validated_on_init(self):
+        existing_manifest = {"test_list": []}
+        open_issue = domain.OpenIssue(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, open_issue.manifest)
+
+    def test_add_document(self):
+        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
+        open_issue.add_document("/documents/0034-8910-rsp-48-2-0275")
+        self.assertIn(
+            "/documents/0034-8910-rsp-48-2-0275", open_issue.manifest["items"]
+        )
+
+    def test_add_document_raises_exception_if_item_already_exists(self):
+        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
+        open_issue.add_document("/documents/0034-8910-rsp-48-2-0275")
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            "cannot add documents bundle item "
+            '"/documents/0034-8910-rsp-48-2-0275": the item already exists',
+            open_issue.add_document,
+            "/documents/0034-8910-rsp-48-2-0275",
+        )
+
+    def test_documents_returns_empty_list(self):
+        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
+        self.assertEqual(open_issue.documents, [])
+
+    def test_documents_returns_added_documents_list(self):
+        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
+        open_issue.add_document("/documents/0034-8910-rsp-48-2-0275")
+        open_issue.add_document("/documents/0034-8910-rsp-48-2-0276")
+        open_issue.add_document("/documents/0034-8910-rsp-48-2-0277")
+        self.assertEqual(
+            open_issue.documents,
+            [
+                "/documents/0034-8910-rsp-48-2-0277",
+                "/documents/0034-8910-rsp-48-2-0276",
+                "/documents/0034-8910-rsp-48-2-0275",
+            ],
+        )
+
+
 class AheadOfPrintArticlesTest(UnittestMixin, unittest.TestCase):
     def test_manifest_is_generated_on_init(self):
         aop_articles = domain.AheadOfPrintArticles(id="0034-8910-rsp-aop")
@@ -607,53 +659,64 @@ class AheadOfPrintArticlesTest(UnittestMixin, unittest.TestCase):
         )
 
 
-class OpenIssueTest(UnittestMixin, unittest.TestCase):
+class ProvisionalArticlesTest(UnittestMixin, unittest.TestCase):
     def test_manifest_is_generated_on_init(self):
-        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
-        self.assertTrue(isinstance(open_issue.manifest, dict))
+        provisional_articles = domain.ProvisionalArticles(
+            id="0034-8910-rsp-provisional"
+        )
+        self.assertTrue(isinstance(provisional_articles.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
-        existing_manifest = new("0034-8910-rsp-48-2")
-        open_issue = domain.OpenIssue(manifest=existing_manifest)
-        self.assertEqual(existing_manifest, open_issue.manifest)
+        existing_manifest = new("0034-8910-rsp-provisional")
+        provisional_articles = domain.ProvisionalArticles(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, provisional_articles.manifest)
 
     def test_manifest_schema_is_not_validated_on_init(self):
         existing_manifest = {"test_list": []}
-        open_issue = domain.OpenIssue(manifest=existing_manifest)
-        self.assertEqual(existing_manifest, open_issue.manifest)
+        provisional_articles = domain.ProvisionalArticles(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, provisional_articles.manifest)
 
     def test_add_document(self):
-        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
-        open_issue.add_document("/documents/0034-8910-rsp-48-2-0275")
+        provisional_articles = domain.ProvisionalArticles(
+            id="0034-8910-rsp-provisional"
+        )
+        provisional_articles.add_document("/documents/0034-8910-rsp-provisional-0275")
         self.assertIn(
-            "/documents/0034-8910-rsp-48-2-0275", open_issue.manifest["items"]
+            "/documents/0034-8910-rsp-provisional-0275",
+            provisional_articles.manifest["items"],
         )
 
     def test_add_document_raises_exception_if_item_already_exists(self):
-        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
-        open_issue.add_document("/documents/0034-8910-rsp-48-2-0275")
+        provisional_articles = domain.ProvisionalArticles(
+            id="0034-8910-rsp-provisional"
+        )
+        provisional_articles.add_document("/documents/0034-8910-rsp-provisional-0275")
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
             "cannot add documents bundle item "
-            '"/documents/0034-8910-rsp-48-2-0275": the item already exists',
-            open_issue.add_document,
-            "/documents/0034-8910-rsp-48-2-0275",
+            '"/documents/0034-8910-rsp-provisional-0275": the item already exists',
+            provisional_articles.add_document,
+            "/documents/0034-8910-rsp-provisional-0275",
         )
 
     def test_documents_returns_empty_list(self):
-        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
-        self.assertEqual(open_issue.documents, [])
+        provisional_articles = domain.ProvisionalArticles(
+            id="0034-8910-rsp-provisional"
+        )
+        self.assertEqual(provisional_articles.documents, [])
 
     def test_documents_returns_added_documents_list(self):
-        open_issue = domain.OpenIssue(id="0034-8910-rsp-48-2")
-        open_issue.add_document("/documents/0034-8910-rsp-48-2-0275")
-        open_issue.add_document("/documents/0034-8910-rsp-48-2-0276")
-        open_issue.add_document("/documents/0034-8910-rsp-48-2-0277")
+        provisional_articles = domain.ProvisionalArticles(
+            id="0034-8910-rsp-provisional"
+        )
+        provisional_articles.add_document("/documents/0034-8910-rsp-provisional-0275")
+        provisional_articles.add_document("/documents/0034-8910-rsp-provisional-0276")
+        provisional_articles.add_document("/documents/0034-8910-rsp-provisional-0277")
         self.assertEqual(
-            open_issue.documents,
+            provisional_articles.documents,
             [
-                "/documents/0034-8910-rsp-48-2-0277",
-                "/documents/0034-8910-rsp-48-2-0276",
-                "/documents/0034-8910-rsp-48-2-0275",
+                "/documents/0034-8910-rsp-provisional-0277",
+                "/documents/0034-8910-rsp-provisional-0276",
+                "/documents/0034-8910-rsp-provisional-0275",
             ],
         )

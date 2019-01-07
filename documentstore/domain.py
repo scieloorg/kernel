@@ -468,7 +468,6 @@ class BaseIssue:
 
 
 class ClosedIssue(BaseIssue):
-
     def insert_document(self, index: int, document: str):
         self.manifest = BundleManifest.insert_item(self._manifest, index, document)
 
@@ -484,9 +483,9 @@ class OpenIssue(BaseIssue):
         return sorted(self._manifest["items"], reverse=True)
 
 
-class AheadOfPrintArticles:
+class BaseArticlesSet:
     """
-    Ahead of Print is a set of articles which are not related to any closed issue yet.
+    BaseArticlesSet é um conjunto de artigos não associados a nenhum fascículo
     """
 
     def __init__(self, id: str = None, manifest: dict = None):
@@ -507,6 +506,20 @@ class AheadOfPrintArticles:
     @property
     def documents(self):
         return sorted(self._manifest["items"], reverse=True)
+
+
+class AheadOfPrintArticles(BaseArticlesSet):
+    """
+    Ahead of Print is a set of articles which are not related to any closed issue yet.
+    """
+
+
+class ProvisionalArticles(BaseArticlesSet):
+    """
+    Provisional Articles are articles which are approved
+    but they are not ready to be published,
+    they can be modified several times, including their titles
+    """
 
 
 """
