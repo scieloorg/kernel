@@ -844,3 +844,108 @@ class ProvisionalArticlesTest(UnittestMixin, unittest.TestCase):
                 "/documents/0034-8910-rsp-provisional-0275",
             ],
         )
+
+    
+class AheadOfPrintErrataTest(UnittestMixin, unittest.TestCase):
+    def test_manifest_is_generated_on_init(self):
+        aop_errata = domain.AheadOfPrintErrata(id="0034-8910-rsp-aop-errata")
+        self.assertTrue(isinstance(aop_errata.manifest, dict))
+
+    def test_manifest_as_arg_on_init(self):
+        existing_manifest = new("0034-8910-rsp-aop-errata")
+        aop_errata = domain.AheadOfPrintErrata(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, aop_errata.manifest)
+
+    def test_manifest_schema_is_not_validated_on_init(self):
+        existing_manifest = {"test_list": []}
+        aop_errata = domain.AheadOfPrintErrata(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, aop_errata.manifest)
+
+    def test_add_document(self):
+        aop_errata = domain.AheadOfPrintErrata(id="0034-8910-rsp-aop-errata")
+        aop_errata.add_document("/documents/0034-8910-rsp-aop-errata-0275")
+        self.assertIn(
+            "/documents/0034-8910-rsp-aop-errata-0275", aop_errata.manifest["items"]
+        )
+
+    def test_add_document_raises_exception_if_item_already_exists(self):
+        aop_errata = domain.AheadOfPrintErrata(id="0034-8910-rsp-aop-errata")
+        aop_errata.add_document("/documents/0034-8910-rsp-aop-errata-0275")
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            "cannot add documents bundle item "
+            '"/documents/0034-8910-rsp-aop-errata-0275": the item already exists',
+            aop_errata.add_document,
+            "/documents/0034-8910-rsp-aop-errata-0275",
+        )
+
+    def test_documents_returns_empty_list(self):
+        aop_errata = domain.AheadOfPrintErrata(id="0034-8910-rsp-aop-errata")
+        self.assertEqual(aop_errata.documents, [])
+
+    def test_documents_returns_added_documents_list(self):
+        aop_errata = domain.AheadOfPrintErrata(id="0034-8910-rsp-aop-errata")
+        aop_errata.add_document("/documents/0034-8910-rsp-aop-errata-0275")
+        aop_errata.add_document("/documents/0034-8910-rsp-aop-errata-0276")
+        aop_errata.add_document("/documents/0034-8910-rsp-aop-errata-0277")
+        self.assertEqual(
+            aop_errata.documents,
+            [
+                "/documents/0034-8910-rsp-aop-errata-0277",
+                "/documents/0034-8910-rsp-aop-errata-0276",
+                "/documents/0034-8910-rsp-aop-errata-0275",
+            ],
+        )
+
+
+class AheadOfPrintRetractionsTest(UnittestMixin, unittest.TestCase):
+    def test_manifest_is_generated_on_init(self):
+        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        self.assertTrue(isinstance(aop_retractions.manifest, dict))
+
+    def test_manifest_as_arg_on_init(self):
+        existing_manifest = new("0034-8910-rsp-aop-retractions")
+        aop_retractions = domain.AheadOfPrintRetractions(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, aop_retractions.manifest)
+
+    def test_manifest_schema_is_not_validated_on_init(self):
+        existing_manifest = {"test_list": []}
+        aop_retractions = domain.AheadOfPrintRetractions(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, aop_retractions.manifest)
+
+    def test_add_document(self):
+        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0275")
+        self.assertIn(
+            "/documents/0034-8910-rsp-aop-retractions-0275", aop_retractions.manifest["items"]
+        )
+
+    def test_add_document_raises_exception_if_item_already_exists(self):
+        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0275")
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            "cannot add documents bundle item "
+            '"/documents/0034-8910-rsp-aop-retractions-0275": the item already exists',
+            aop_retractions.add_document,
+            "/documents/0034-8910-rsp-aop-retractions-0275",
+        )
+
+    def test_documents_returns_empty_list(self):
+        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        self.assertEqual(aop_retractions.documents, [])
+
+    def test_documents_returns_added_documents_list(self):
+        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0275")
+        aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0276")
+        aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0277")
+        self.assertEqual(
+            aop_retractions.documents,
+            [
+                "/documents/0034-8910-rsp-aop-retractions-0277",
+                "/documents/0034-8910-rsp-aop-retractions-0276",
+                "/documents/0034-8910-rsp-aop-retractions-0275",
+            ],
+        )
+
