@@ -332,34 +332,27 @@ class BundleManifest:
         }
 
     def set_metadata(
-        documents_bundle: dict, name: str, value: str, now: Callable[[], str] = utcnow
+        bundle: dict, name: str, value: str, now: Callable[[], str] = utcnow
     ) -> dict:
-        _documents_bundle = deepcopy(documents_bundle)
-        _documents_bundle["metadata"][name] = value
-        _documents_bundle["updated"] = now()
-        return _documents_bundle
-
-    @staticmethod
-    def set_volume(
-        documents_bundle: dict, volume: str, now: Callable[[], str] = utcnow
-    ) -> dict:
-        return BundleManifest._set_metadata(
-            documents_bundle, "volume", str(volume), now
-        )
+        _bundle = deepcopy(bundle)
+        _bundle["metadata"][name] = value
+        _bundle["updated"] = now()
+        return _bundle
 
     @staticmethod
     def add_item(
-        documents_bundle: dict, item: str, now: Callable[[], str] = utcnow
+        bundle: dict, item: str, now: Callable[[], str] = utcnow
     ) -> dict:
-        if item in documents_bundle["items"]:
+        bundle_type = 'documents'
+        if item in bundle["items"]:
             raise exceptions.AlreadyExists(
                 "cannot add documents bundle item "
                 '"%s": the item already exists' % item
             )
-        _documents_bundle = deepcopy(documents_bundle)
-        _documents_bundle["items"].append(item)
-        _documents_bundle["updated"] = now()
-        return _documents_bundle
+        _bundle = deepcopy(bundle)
+        _bundle["items"].append(item)
+        _bundle["updated"] = now()
+        return _bundle
 
     @staticmethod
     def insert_item(
@@ -522,6 +515,22 @@ class ProvisionalArticles(BaseArticlesSet):
     """
 
 
+class AheadOfPrintErrata(BaseArticlesSet):
+    """
+    Erratas publicadas com urgência (publicação adiantada), 
+    que futuramente serão publicadas em um fascículo
+    """
+    
+    
+class AheadOfPrintRetractions(BaseArticlesSet):
+    """
+    Retratações publicadas com urgência (publicação adiantada), 
+    que futuramente serão publicadas em um fascículo
+    """
+
+
 """
-Lembrete: tratamento de ERRATA.
+Lembretes:
+- Ttratamento de ERRATA.
+- Tratamento de retrações (parcial e completas)
 """
