@@ -53,7 +53,8 @@ class UnittestMixin:
             self.assertTrue(False)
 
 
-new = functools.partial(domain.BundleManifest.new, now=fake_utcnow)
+new_bundle = functools.partial(domain.BundleManifest.new, now=fake_utcnow)
+new_journal = functools.partial(domain.Journal.new, now=fake_utcnow)
 
 
 class DocumentTests(unittest.TestCase):
@@ -220,14 +221,14 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             "items": [],
             "metadata": {},
         }
-        self.assertEqual(new("0034-8910-rsp-48-2"), expected)
+        self.assertEqual(new_bundle("0034-8910-rsp-48-2"), expected)
 
     def test_new_set_same_value_to_created_updated(self):
         documents_bundle = domain.BundleManifest.new("0034-8910-rsp-48-2")
         self.assertEqual(documents_bundle["created"], documents_bundle["updated"])
 
     def test_set_metadata(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "publication_year", "2018"
@@ -236,7 +237,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(current_updated < documents_bundle["updated"])
 
     def test_set_metadata_overwrites_existing_value(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "publication_year", "2018"
         )
@@ -247,7 +248,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertEqual(len(documents_bundle["metadata"]), 1)
 
     def test_set_metadata_to_preexisting_set(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "publication_year", "2018"
         )
@@ -259,7 +260,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertEqual(len(documents_bundle["metadata"]), 2)
 
     def test_add_item(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
         documents_bundle = domain.BundleManifest.add_item(
             documents_bundle, "/documents/0034-8910-rsp-48-2-0275"
@@ -270,7 +271,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(current_updated < documents_bundle["updated"])
 
     def test_add_item_raises_exception_if_item_already_exists(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.add_item(
             documents_bundle, "/documents/0034-8910-rsp-48-2-0275"
         )
@@ -288,7 +289,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertEqual(current_item_len, len(documents_bundle["items"]))
 
     def test_insert_item(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
         documents_bundle = domain.BundleManifest.add_item(
             documents_bundle, "/documents/0034-8910-rsp-48-2-0775"
@@ -305,7 +306,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(current_updated < documents_bundle["updated"])
 
     def test_insert_item_raises_exception_if_item_already_exists(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.add_item(
             documents_bundle, "/documents/0034-8910-rsp-48-2-0775"
         )
@@ -324,7 +325,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertEqual(current_item_len, len(documents_bundle["items"]))
 
     def test_insert_item_follows_python_semantics(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.add_item(
             documents_bundle, "/documents/0034-8910-rsp-48-2-0475"
         )
@@ -342,7 +343,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_remove_item(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
         documents_bundle = domain.BundleManifest.add_item(
             documents_bundle, "/documents/0034-8910-rsp-48-2-0475"
@@ -356,7 +357,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(current_updated < documents_bundle["updated"])
 
     def test_remove_item_raises_exception_if_item_does_not_exist(self):
-        documents_bundle = new("0034-8910-rsp-48-2")
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
         current_item_len = len(documents_bundle["items"])
         self._assert_raises_with_message(
@@ -377,7 +378,7 @@ class ClosedIssueTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(isinstance(closed_issue.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
-        existing_manifest = new("0034-8910-rsp-48-2")
+        existing_manifest = new_bundle("0034-8910-rsp-48-2")
         closed_issue = domain.ClosedIssue(manifest=existing_manifest)
         self.assertEqual(existing_manifest, closed_issue.manifest)
 
@@ -561,7 +562,7 @@ class OpenIssueTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(isinstance(open_issue.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
-        existing_manifest = new("0034-8910-rsp-48-2")
+        existing_manifest = new_bundle("0034-8910-rsp-48-2")
         open_issue = domain.OpenIssue(manifest=existing_manifest)
         self.assertEqual(existing_manifest, open_issue.manifest)
 
@@ -613,7 +614,7 @@ class AheadOfPrintArticlesTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(isinstance(aop_articles.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
-        existing_manifest = new("0034-8910-rsp-aop")
+        existing_manifest = new_bundle("0034-8910-rsp-aop")
         aop_articles = domain.AheadOfPrintArticles(manifest=existing_manifest)
         self.assertEqual(existing_manifest, aop_articles.manifest)
 
@@ -667,7 +668,7 @@ class ProvisionalArticlesTest(UnittestMixin, unittest.TestCase):
         self.assertTrue(isinstance(provisional_articles.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
-        existing_manifest = new("0034-8910-rsp-provisional")
+        existing_manifest = new_bundle("0034-8910-rsp-provisional")
         provisional_articles = domain.ProvisionalArticles(manifest=existing_manifest)
         self.assertEqual(existing_manifest, provisional_articles.manifest)
 
@@ -721,14 +722,14 @@ class ProvisionalArticlesTest(UnittestMixin, unittest.TestCase):
             ],
         )
 
-    
+
 class AheadOfPrintErrataTest(UnittestMixin, unittest.TestCase):
     def test_manifest_is_generated_on_init(self):
         aop_errata = domain.AheadOfPrintErrata(id="0034-8910-rsp-aop-errata")
         self.assertTrue(isinstance(aop_errata.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
-        existing_manifest = new("0034-8910-rsp-aop-errata")
+        existing_manifest = new_bundle("0034-8910-rsp-aop-errata")
         aop_errata = domain.AheadOfPrintErrata(manifest=existing_manifest)
         self.assertEqual(existing_manifest, aop_errata.manifest)
 
@@ -776,11 +777,13 @@ class AheadOfPrintErrataTest(UnittestMixin, unittest.TestCase):
 
 class AheadOfPrintRetractionsTest(UnittestMixin, unittest.TestCase):
     def test_manifest_is_generated_on_init(self):
-        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions = domain.AheadOfPrintRetractions(
+            id="0034-8910-rsp-aop-retractions"
+        )
         self.assertTrue(isinstance(aop_retractions.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
-        existing_manifest = new("0034-8910-rsp-aop-retractions")
+        existing_manifest = new_bundle("0034-8910-rsp-aop-retractions")
         aop_retractions = domain.AheadOfPrintRetractions(manifest=existing_manifest)
         self.assertEqual(existing_manifest, aop_retractions.manifest)
 
@@ -790,14 +793,19 @@ class AheadOfPrintRetractionsTest(UnittestMixin, unittest.TestCase):
         self.assertEqual(existing_manifest, aop_retractions.manifest)
 
     def test_add_document(self):
-        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions = domain.AheadOfPrintRetractions(
+            id="0034-8910-rsp-aop-retractions"
+        )
         aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0275")
         self.assertIn(
-            "/documents/0034-8910-rsp-aop-retractions-0275", aop_retractions.manifest["items"]
+            "/documents/0034-8910-rsp-aop-retractions-0275",
+            aop_retractions.manifest["items"],
         )
 
     def test_add_document_raises_exception_if_item_already_exists(self):
-        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions = domain.AheadOfPrintRetractions(
+            id="0034-8910-rsp-aop-retractions"
+        )
         aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0275")
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
@@ -808,11 +816,15 @@ class AheadOfPrintRetractionsTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_documents_returns_empty_list(self):
-        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions = domain.AheadOfPrintRetractions(
+            id="0034-8910-rsp-aop-retractions"
+        )
         self.assertEqual(aop_retractions.documents, [])
 
     def test_documents_returns_added_documents_list(self):
-        aop_retractions = domain.AheadOfPrintRetractions(id="0034-8910-rsp-aop-retractions")
+        aop_retractions = domain.AheadOfPrintRetractions(
+            id="0034-8910-rsp-aop-retractions"
+        )
         aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0275")
         aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0276")
         aop_retractions.add_document("/documents/0034-8910-rsp-aop-retractions-0277")
@@ -825,3 +837,41 @@ class AheadOfPrintRetractionsTest(UnittestMixin, unittest.TestCase):
             ],
         )
 
+
+class JournalTest(UnittestMixin, unittest.TestCase):
+    def test_new(self):
+        fake_date = fake_utcnow()
+        expected = {
+            "id": "0034-8910-rsp",
+            "created": fake_date,
+            "updated": fake_date,
+            "documents-bundles": {},
+            "metadata": {},
+        }
+        self.assertEqual(new_journal("0034-8910-rsp"), expected)
+
+    def test_create_ahead_of_print_bundle(self):
+        journal = domain.Journal.new("0034-8910-rsp")
+        journal = domain.Journal.create_ahead_of_print_bundle(journal)
+        self.assertIsInstance(
+            journal["documents-bundles"]["aop_articles"], domain.AheadOfPrintArticles
+        )
+
+    def test_add_ahead_of_print_article(self):
+        journal = domain.Journal.new("0034-8910-rsp")
+        domain.Journal.add_ahead_of_print_article(journal, pid="0034-8910-rsp-aop-0275")
+
+
+class DocumentsManagerTest(UnittestMixin, unittest.TestCase):
+    def test_add_ahead_of_print_article(self):
+        journal = domain.Journal.new("0034-8910-rsp")
+        domain.DocumentsManager.add_ahead_of_print_article(
+            journal, pid="0034-8910-rsp-aop-0275"
+        )
+
+    # def test_migrate_aop_to_closed_issue(self):
+    #     # old_pid
+    #     # pid
+    #     # dados do issue
+    #     journal = domain.Journal(id='abc')
+    #     journal.migrate_aop_to_closed_issue(old_pid, pid, issue_id)

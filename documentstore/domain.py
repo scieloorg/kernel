@@ -340,10 +340,8 @@ class BundleManifest:
         return _bundle
 
     @staticmethod
-    def add_item(
-        bundle: dict, item: str, now: Callable[[], str] = utcnow
-    ) -> dict:
-        bundle_type = 'documents'
+    def add_item(bundle: dict, item: str, now: Callable[[], str] = utcnow) -> dict:
+        bundle_type = "documents"
         if item in bundle["items"]:
             raise exceptions.AlreadyExists(
                 "cannot add documents bundle item "
@@ -520,13 +518,62 @@ class AheadOfPrintErrata(BaseArticlesSet):
     Erratas publicadas com urgência (publicação adiantada), 
     que futuramente serão publicadas em um fascículo
     """
-    
-    
+
+
 class AheadOfPrintRetractions(BaseArticlesSet):
     """
     Retratações publicadas com urgência (publicação adiantada), 
     que futuramente serão publicadas em um fascículo
     """
+
+
+class Journal:
+    @staticmethod
+    def new(id: str, now: Callable[[], str] = utcnow) -> dict:
+        timestamp = now()
+        return {
+            "id": str(id),
+            "created": timestamp,
+            "updated": timestamp,
+            "documents-bundles": {},
+            "metadata": {},
+        }
+
+    @staticmethod
+    def create_ahead_of_print_bundle(
+        journal: dict, now: Callable[[], str] = utcnow
+    ) -> dict:
+        _journal = deepcopy(journal)
+        if "aop_articles" not in _journal["documents-bundles"].keys():
+            _journal["documents-bundles"]["aop_articles"] = AheadOfPrintArticles(
+                journal["id"] + "-aop"
+            )
+            _journal["updated"] = now()
+        return _journal
+
+    @staticmethod
+    def add_ahead_of_print_article(
+        journal: dict, pid: str, now: Callable[[], str] = utcnow
+    ) -> dict:
+        _journal = deepcopy(journal)
+        _journal = Journal.create_ahead_of_print_bundle(_journal)
+        _journal["documents-bundles"]["aop_articles"].add_document(pid)
+        _journal["updated"] = now()
+        return _journal
+
+
+class DocumentsManager:
+    """
+    DocumentsManager é responsável por gerenciar a publicação dos documentos em
+    periódicos e fascículos, de acordo com as características delas, como a utilização
+    de Ahead of Print, a publicação de forma contínua etc.
+    """
+
+    @staticmethod
+    def add_ahead_of_print_article(
+        journal: Journal, pid: str, now: Callable[[], str] = utcnow
+    ) -> dict:
+        return Journal.add_ahead_of_print_article(journal, pid=pid)
 
 
 """
