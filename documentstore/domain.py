@@ -381,13 +381,11 @@ class BundleManifest:
         return _documents_bundle
 
 
-class BaseIssue:
+class DocumentsBundle:
     """
-    A Closed Issue is an issue in which the officer has completed the reporting process
-     and no longer needs to add additional notes, photos, or audio files.
-    Issues should be closed when there is no additional information that needs to be
-    reported for that issue.
-    The table of content must be already defined.
+    DocumentsBundle representa um conjunto de documentos agnóstico ao modelo de 
+    publicação. Exemplos de publicação que são DocumentsBundle: Fascículos fechados
+    e abertos, Ahead of Print, Documentos Provisórios, Erratas e Retratações.
     """
 
     def __init__(self, id: str = None, manifest: dict = None):
@@ -450,134 +448,12 @@ class BaseIssue:
     def add_document(self, document: str):
         self.manifest = BundleManifest.add_item(self._manifest, document)
 
+    def insert_document(self, index: int, document: str):
+        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
+
     def remove_document(self, document: str):
         self.manifest = BundleManifest.remove_item(self._manifest, document)
 
     @property
     def documents(self):
         return self._manifest["items"]
-
-
-class ClosedIssue(BaseIssue):
-    def insert_document(self, index: int, document: str):
-        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
-
-
-class OpenIssue(BaseIssue):
-    """
-    Open Issue: It's best to leave an issue open if it is an issue that is still in 
-    progress.
-    """
-
-    @property
-    def documents(self):
-        return sorted(self._manifest["items"], reverse=True)
-
-
-class BaseArticlesSet:
-    """
-    BaseArticlesSet é um conjunto de artigos não associados a nenhum fascículo
-    """
-
-    def __init__(self, id: str = None, manifest: dict = None):
-        assert any([id, manifest])
-        self.manifest = manifest or BundleManifest.new(id)
-
-    @property
-    def manifest(self):
-        return deepcopy(self._manifest)
-
-    @manifest.setter
-    def manifest(self, value: dict):
-        self._manifest = value
-
-    def add_document(self, document: str):
-        self.manifest = BundleManifest.add_item(self._manifest, document)
-
-    @property
-    def documents(self):
-        return sorted(self._manifest["items"], reverse=True)
-
-
-class AheadOfPrintArticles(BaseArticlesSet):
-    """
-    Ahead of Print is a set of articles which are not related to any closed issue yet.
-    """
-
-
-class ProvisionalArticles(BaseArticlesSet):
-    """
-    Provisional Articles are articles which are approved
-    but they are not ready to be published,
-    they can be modified several times, including their titles
-    """
-
-
-class AheadOfPrintErrata(BaseArticlesSet):
-    """
-    Erratas publicadas com urgência (publicação adiantada), 
-    que futuramente serão publicadas em um fascículo
-    """
-
-
-class AheadOfPrintRetractions(BaseArticlesSet):
-    """
-    Retratações publicadas com urgência (publicação adiantada), 
-    que futuramente serão publicadas em um fascículo
-    """
-
-
-class Journal:
-    @staticmethod
-    def new(id: str, now: Callable[[], str] = utcnow) -> dict:
-        timestamp = now()
-        return {
-            "id": str(id),
-            "created": timestamp,
-            "updated": timestamp,
-            "documents-bundles": {},
-            "metadata": {},
-        }
-
-    @staticmethod
-    def create_ahead_of_print_bundle(
-        journal: dict, now: Callable[[], str] = utcnow
-    ) -> dict:
-        _journal = deepcopy(journal)
-        if "aop_articles" not in _journal["documents-bundles"].keys():
-            _journal["documents-bundles"]["aop_articles"] = AheadOfPrintArticles(
-                journal["id"] + "-aop"
-            )
-            _journal["updated"] = now()
-        return _journal
-
-    @staticmethod
-    def add_ahead_of_print_article(
-        journal: dict, pid: str, now: Callable[[], str] = utcnow
-    ) -> dict:
-        _journal = deepcopy(journal)
-        _journal = Journal.create_ahead_of_print_bundle(_journal)
-        _journal["documents-bundles"]["aop_articles"].add_document(pid)
-        _journal["updated"] = now()
-        return _journal
-
-
-class DocumentsManager:
-    """
-    DocumentsManager é responsável por gerenciar a publicação dos documentos em
-    periódicos e fascículos, de acordo com as características delas, como a utilização
-    de Ahead of Print, a publicação de forma contínua etc.
-    """
-
-    @staticmethod
-    def add_ahead_of_print_article(
-        journal: Journal, pid: str, now: Callable[[], str] = utcnow
-    ) -> dict:
-        return Journal.add_ahead_of_print_article(journal, pid=pid)
-
-
-"""
-Lembretes:
-- Ttratamento de ERRATA.
-- Tratamento de retrações (parcial e completas)
-"""
