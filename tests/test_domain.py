@@ -386,6 +386,10 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(manifest=existing_manifest)
         self.assertEqual(existing_manifest, documents_bundle.manifest)
 
+    def test_id_returns_id(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self.assertEqual(documents_bundle.id(), "0034-8910-rsp-48-2")
+
     def test_publication_year_is_empty_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         self.assertEqual(documents_bundle.publication_year, "")

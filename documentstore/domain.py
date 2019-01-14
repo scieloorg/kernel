@@ -392,6 +392,9 @@ class DocumentsBundle:
         assert any([id, manifest])
         self.manifest = manifest or BundleManifest.new(id)
 
+    def id(self):
+        return self.manifest.get("id", "")
+
     @property
     def manifest(self):
         return deepcopy(self._manifest)
