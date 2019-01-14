@@ -27,6 +27,10 @@ class Session(interfaces.Session):
     def documents(self):
         return DocumentStore(self._collection)
 
+    @property
+    def documents_bundles(self):
+        return None
+
 
 class DocumentStore:
     def __init__(self, collection):

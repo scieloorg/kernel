@@ -5,7 +5,7 @@ from io import BytesIO
 from clea import join as clea_join, core as clea_core
 
 from .interfaces import Session
-from .domain import Document
+from .domain import Document, DocumentsBundle
 
 __all__ = ["get_handlers"]
 
@@ -202,6 +202,17 @@ class SanitizeDocumentFront(CommandHandler):
         return _data
 
 
+class CreateDocumentsBundle(CommandHandler):
+    def __call__(self, id: str, docs: list = None, metadata: dict = None) -> None:
+        session = self.Session()
+        _bundle = DocumentsBundle(id)
+        for doc in docs or []:
+            _bundle.add_document(doc)
+        for name, value in (metadata or {}).items():
+            setattr(_bundle, name, value)
+        return session.documents_bundles.add(_bundle)
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_document": RegisterDocument(Session),
@@ -212,4 +223,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "register_asset_version": RegisterAssetVersion(Session),
         "diff_document_versions": DiffDocumentVersions(Session),
         "sanitize_document_front": SanitizeDocumentFront(Session),
+        "create_documents_bundle": CreateDocumentsBundle(Session),
     }

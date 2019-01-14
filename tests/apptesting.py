@@ -4,10 +4,15 @@ from documentstore import interfaces, exceptions, domain
 class Session(interfaces.Session):
     def __init__(self):
         self._documents = InMemoryDocumentStore()
+        self._documents_bundles = InMemoryDocumentsBundleStore()
 
     @property
     def documents(self):
         return self._documents
+
+    @property
+    def documents_bundles(self):
+        return self._documents_bundles
 
 
 class InMemoryDocumentStore(interfaces.DocumentStore):
@@ -30,6 +35,30 @@ class InMemoryDocumentStore(interfaces.DocumentStore):
         manifest = self._data.get(id)
         if manifest:
             return domain.Document(manifest=manifest)
+        else:
+            raise exceptions.DoesNotExist()
+
+
+class InMemoryDocumentsBundleStore(interfaces.DocumentsBundleStore):
+    def __init__(self):
+        self._data = {}
+
+    def add(self, bundle):
+        id = bundle.id()
+        if id in self._data:
+            raise exceptions.AlreadyExists()
+        else:
+            self.update(bundle)
+
+    def update(self, bundle):
+        data = bundle.manifest
+        id = bundle.id()
+        self._data[id] = data
+
+    def fetch(self, id):
+        manifest = self._data.get(id)
+        if manifest:
+            return domain.DocumentsBundle(manifest=manifest)
         else:
             raise exceptions.DoesNotExist()
 
