@@ -219,6 +219,15 @@ class FetchDocumentsBundle(CommandHandler):
         return session.documents_bundles.fetch(id).manifest
 
 
+class UpdateDocumentsBundleMetadata(CommandHandler):
+    def __call__(self, id: str, metadata: dict) -> None:
+        session = self.Session()
+        _bundle = session.documents_bundles.fetch(id)
+        for name, value in metadata.items():
+            setattr(_bundle, name, value)
+        session.documents_bundles.update(_bundle)
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_document": RegisterDocument(Session),
@@ -231,4 +240,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "sanitize_document_front": SanitizeDocumentFront(Session),
         "create_documents_bundle": CreateDocumentsBundle(Session),
         "fetch_documents_bundle": FetchDocumentsBundle(Session),
+        "update_documents_bundle_metadata": UpdateDocumentsBundleMetadata(Session),
     }
