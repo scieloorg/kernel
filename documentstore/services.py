@@ -213,6 +213,12 @@ class CreateDocumentsBundle(CommandHandler):
         return session.documents_bundles.add(_bundle)
 
 
+class FetchDocumentsBundle(CommandHandler):
+    def __call__(self, id: str) -> dict:
+        session = self.Session()
+        return session.documents_bundles.fetch(id).manifest
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_document": RegisterDocument(Session),
@@ -224,4 +230,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "diff_document_versions": DiffDocumentVersions(Session),
         "sanitize_document_front": SanitizeDocumentFront(Session),
         "create_documents_bundle": CreateDocumentsBundle(Session),
+        "fetch_documents_bundle": FetchDocumentsBundle(Session),
     }
