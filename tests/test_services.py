@@ -118,3 +118,31 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         self.command(id="xpto", metadata={"volume": ""})
         result = self.services["fetch_documents_bundle"](id="xpto")
         self.assertEqual(result["metadata"], {"publication_year": "2018", "volume": ""})
+
+
+class AddDocumentToDocumentsBundleTest(unittest.TestCase):
+    def setUp(self):
+        self.services = make_services()
+        self.command = self.services.get("add_document_to_documents_bundle")
+
+    def test_command_interface(self):
+        self.assertIsNotNone(self.command)
+        self.assertTrue(callable(self.command))
+
+    def test_command_raises_exception_if_does_not_exist(self):
+        self.assertRaises(exceptions.DoesNotExist, self.command, id="xpto", doc="")
+
+    def test_command_success(self):
+        self.services["create_documents_bundle"](id="xpto")
+        self.command(id="xpto", doc="/document/1")
+        result = self.services["fetch_documents_bundle"](id="xpto")
+        self.assertEqual(result["items"], ["/document/1"])
+        self.command(id="xpto", doc="/document/2")
+        result = self.services["fetch_documents_bundle"](id="xpto")
+        self.assertEqual(result["items"], ["/document/1", "/document/2"])
+
+    def test_command_raises_exception_if_already_exists(self):
+        self.services["create_documents_bundle"](id="xpto", docs=["/document/1"])
+        self.assertRaises(
+            exceptions.AlreadyExists, self.command, id="xpto", doc="/document/1"
+        )
