@@ -130,7 +130,9 @@ class AddDocumentToDocumentsBundleTest(unittest.TestCase):
         self.assertTrue(callable(self.command))
 
     def test_command_raises_exception_if_does_not_exist(self):
-        self.assertRaises(exceptions.DoesNotExist, self.command, id="xpto", doc="")
+        self.assertRaises(
+            exceptions.DoesNotExist, self.command, id="xpto", doc="/document/1"
+        )
 
     def test_command_success(self):
         self.services["create_documents_bundle"](id="xpto")
@@ -145,4 +147,50 @@ class AddDocumentToDocumentsBundleTest(unittest.TestCase):
         self.services["create_documents_bundle"](id="xpto", docs=["/document/1"])
         self.assertRaises(
             exceptions.AlreadyExists, self.command, id="xpto", doc="/document/1"
+        )
+
+
+class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
+    def setUp(self):
+        self.services = make_services()
+        self.command = self.services.get("insert_document_to_documents_bundle")
+
+    def test_command_interface(self):
+        self.assertIsNotNone(self.command)
+        self.assertTrue(callable(self.command))
+
+    def test_command_raises_exception_if_does_not_exist(self):
+        self.assertRaises(
+            exceptions.DoesNotExist, self.command, id="xpto", index=0, doc="/document/1"
+        )
+
+    def test_command_success(self):
+        self.services["create_documents_bundle"](id="xpto")
+        self.command(id="xpto", index=1, doc="/document/1")
+        result = self.services["fetch_documents_bundle"](id="xpto")
+        self.assertEqual(result["items"], ["/document/1"])
+        self.command(id="xpto", index=0, doc="/document/2")
+        result = self.services["fetch_documents_bundle"](id="xpto")
+        self.assertEqual(result["items"], ["/document/2", "/document/1"])
+        self.command(id="xpto", index=10, doc="/document/3")
+        result = self.services["fetch_documents_bundle"](id="xpto")
+        self.assertEqual(result["items"], ["/document/2", "/document/1", "/document/3"])
+
+    def test_command_raises_exception_if_already_exists(self):
+        self.services["create_documents_bundle"](
+            id="xpto", docs=["/document/1", "/document/2"]
+        )
+        self.assertRaises(
+            exceptions.AlreadyExists,
+            self.command,
+            id="xpto",
+            index=0,
+            doc="/document/1",
+        )
+        self.assertRaises(
+            exceptions.AlreadyExists,
+            self.command,
+            id="xpto",
+            index=1,
+            doc="/document/1",
         )

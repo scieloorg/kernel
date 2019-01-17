@@ -236,6 +236,14 @@ class AddDocumentToDocumentsBundle(CommandHandler):
         session.documents_bundles.update(_bundle)
 
 
+class InsertDocumentToDocumentsBundle(CommandHandler):
+    def __call__(self, id: str, index: int, doc: str) -> None:
+        session = self.Session()
+        _bundle = session.documents_bundles.fetch(id)
+        _bundle.insert_document(index, doc)
+        session.documents_bundles.update(_bundle)
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_document": RegisterDocument(Session),
@@ -250,4 +258,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "fetch_documents_bundle": FetchDocumentsBundle(Session),
         "update_documents_bundle_metadata": UpdateDocumentsBundleMetadata(Session),
         "add_document_to_documents_bundle": AddDocumentToDocumentsBundle(Session),
+        "insert_document_to_documents_bundle": InsertDocumentToDocumentsBundle(Session),
     }
