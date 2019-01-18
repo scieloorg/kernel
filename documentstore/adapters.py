@@ -62,3 +62,39 @@ class DocumentStore:
             raise exceptions.DoesNotExist(
                 "cannot fetch document with id " '"%s": document does not exist' % id
             )
+
+
+class DocumentsBundleStore:
+    def __init__(self, collection):
+        self._collection = collection
+
+    def add(self, bundle: domain.DocumentsBundle) -> None:
+        data = bundle.manifest
+        if not data.get("_id"):
+            data["_id"] = bundle.id()
+        try:
+            self._collection.insert_one(data)
+        except pymongo.errors.DuplicateKeyError:
+            raise exceptions.AlreadyExists(
+                "cannot add bundle with id "
+                '"%s": the id is already in use' % bundle.id()
+            ) from None
+
+    def update(self, bundle: domain.DocumentsBundle) -> None:
+        data = bundle.manifest
+        if not data.get("_id"):
+            data["_id"] = bundle.id()
+        result = self._collection.replace_one({"_id": data["_id"]}, data)
+        if result.matched_count == 0:
+            raise exceptions.DoesNotExist(
+                "cannot update bundle with id " '"%s": bundle does not exist' % id
+            )
+
+    def fetch(self, id: str) -> domain.DocumentsBundle:
+        manifest = self._collection.find_one({"_id": id})
+        if manifest:
+            return domain.DocumentsBundle(manifest=manifest)
+        else:
+            raise exceptions.DoesNotExist(
+                "cannot fetch bundle with id " '"%s": bundle does not exist' % id
+            )
