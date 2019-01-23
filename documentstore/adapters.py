@@ -32,69 +32,47 @@ class Session(interfaces.Session):
         return None
 
 
-class DocumentStore:
+class BaseStore:
     def __init__(self, collection):
         self._collection = collection
 
-    def add(self, document):
-        data = document.manifest
-        if not data.get("_id"):
-            data["_id"] = document.id()
+    def add(self, data) -> None:
+        _manifest = data.manifest
+        if not _manifest.get("_id"):
+            _manifest["_id"] = data.id()
         try:
-            self._collection.insert_one(data)
+            self._collection.insert_one(_manifest)
         except pymongo.errors.DuplicateKeyError:
             raise exceptions.AlreadyExists(
-                "cannot add document with id "
-                '"%s": the id is already in use' % document.id()
+                "cannot add data with id "
+                '"%s": the id is already in use' % data.id()
             ) from None
 
-    def update(self, document):
-        data = document.manifest
-        if not data.get("_id"):
-            data["_id"] = document.id()
-        self._collection.replace_one({"_id": data["_id"]}, data)
-
-    def fetch(self, id):
-        manifest = self._collection.find_one({"_id": id})
-        if manifest:
-            return domain.Document(manifest=manifest)
-        else:
-            raise exceptions.DoesNotExist(
-                "cannot fetch document with id " '"%s": document does not exist' % id
-            )
-
-
-class DocumentsBundleStore:
-    def __init__(self, collection):
-        self._collection = collection
-
-    def add(self, bundle: domain.DocumentsBundle) -> None:
-        data = bundle.manifest
-        if not data.get("_id"):
-            data["_id"] = bundle.id()
-        try:
-            self._collection.insert_one(data)
-        except pymongo.errors.DuplicateKeyError:
-            raise exceptions.AlreadyExists(
-                "cannot add bundle with id "
-                '"%s": the id is already in use' % bundle.id()
-            ) from None
-
-    def update(self, bundle: domain.DocumentsBundle) -> None:
-        data = bundle.manifest
-        if not data.get("_id"):
-            data["_id"] = bundle.id()
-        result = self._collection.replace_one({"_id": data["_id"]}, data)
+    def update(self, data) -> None:
+        _manifest = data.manifest
+        if not _manifest.get("_id"):
+            _manifest["_id"] = data.id()
+        result = self._collection.replace_one({"_id": _manifest["_id"]}, _manifest)
         if result.matched_count == 0:
             raise exceptions.DoesNotExist(
-                "cannot update bundle with id " '"%s": bundle does not exist' % id
+                "cannot update data with id "
+                '"%s": data does not exist' % data.id()
             )
 
-    def fetch(self, id: str) -> domain.DocumentsBundle:
+    def fetch(self, id: str):
         manifest = self._collection.find_one({"_id": id})
         if manifest:
-            return domain.DocumentsBundle(manifest=manifest)
+            return self.DomainClass(manifest=manifest)
         else:
             raise exceptions.DoesNotExist(
-                "cannot fetch bundle with id " '"%s": bundle does not exist' % id
+                "cannot fetch data with id " '"%s": data does not exist' % id
             )
+
+
+class DocumentStore(BaseStore):
+    DomainClass = domain.Document
+
+
+class DocumentsBundleStore(BaseStore):
+    DomainClass = domain.DocumentsBundle
+
