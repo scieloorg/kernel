@@ -30,8 +30,8 @@ class DocumentManifest:
     """
 
     @staticmethod
-    def new(doc_id: str) -> dict:
-        return {"id": str(doc_id), "versions": []}
+    def new(id: str) -> dict:
+        return {"id": str(id), "versions": []}
 
     def _new_version(
         data_uri: str, assets: Union[dict, list], now: Callable[[], str]
@@ -137,9 +137,9 @@ class Document:
         r"^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z)?$"
     )
 
-    def __init__(self, doc_id=None, manifest=None):
-        assert any([doc_id, manifest])
-        self.manifest = manifest or DocumentManifest.new(doc_id)
+    def __init__(self, id=None, manifest=None):
+        assert any([id, manifest])
+        self.manifest = manifest or DocumentManifest.new(id)
 
     @property
     def manifest(self):
@@ -149,7 +149,7 @@ class Document:
     def manifest(self, value):
         self._manifest = value
 
-    def doc_id(self):
+    def id(self):
         return self.manifest.get("id", "")
 
     def new_version(

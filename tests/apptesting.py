@@ -15,16 +15,16 @@ class InMemoryDocumentStore(interfaces.DocumentStore):
         self._data = {}
 
     def add(self, document):
-        doc_id = document.doc_id()
-        if doc_id in self._data:
+        id = document.id()
+        if id in self._data:
             raise exceptions.AlreadyExists()
         else:
             self.update(document)
 
     def update(self, document):
         data = document.manifest
-        doc_id = document.doc_id()
-        self._data[doc_id] = data
+        id = document.id()
+        self._data[id] = data
 
     def fetch(self, id):
         manifest = self._data.get(id)

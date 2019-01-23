@@ -35,19 +35,19 @@ class DocumentStore:
     def add(self, document):
         data = document.manifest
         if not data.get("_id"):
-            data["_id"] = document.doc_id()
+            data["_id"] = document.id()
         try:
             self._collection.insert_one(data)
         except pymongo.errors.DuplicateKeyError:
             raise exceptions.AlreadyExists(
                 "cannot add document with id "
-                '"%s": the id is already in use' % document.doc_id()
+                '"%s": the id is already in use' % document.id()
             ) from None
 
     def update(self, document):
         data = document.manifest
         if not data.get("_id"):
-            data["_id"] = document.doc_id()
+            data["_id"] = document.id()
         self._collection.replace_one({"_id": data["_id"]}, data)
 
     def fetch(self, id):

@@ -20,7 +20,7 @@ class TestNewManifest(unittest.TestCase):
         expected = {"id": "0034-8910-rsp-48-2-0275", "versions": []}
         self.assertEqual(new("0034-8910-rsp-48-2-0275"), expected)
 
-    def test_doc_ids_are_converted_to_str(self):
+    def test_ids_are_converted_to_str(self):
         expected = {"id": "275", "versions": []}
         self.assertEqual(new(275), expected)
 

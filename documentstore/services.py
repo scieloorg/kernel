@@ -51,7 +51,7 @@ class RegisterDocument(BaseRegisterDocument):
     """
 
     def _get_document(self, session, id):
-        return Document(doc_id=id)
+        return Document(id=id)
 
     def _persist(self, session, document):
         return session.documents.add(document)

@@ -44,7 +44,7 @@ class DocumentTests(unittest.TestCase):
         return domain.Document(manifest=_manifest)
 
     def test_manifest_is_generated_on_init(self):
-        document = domain.Document(doc_id="0034-8910-rsp-48-2-0275")
+        document = domain.Document(id="0034-8910-rsp-48-2-0275")
         self.assertTrue(isinstance(document.manifest, dict))
 
     def test_manifest_as_arg_on_init(self):
@@ -57,14 +57,14 @@ class DocumentTests(unittest.TestCase):
         document = domain.Document(manifest=existing_manifest)
         self.assertEqual(existing_manifest, document.manifest)
 
-    def test_missing_doc_id_return_empty_string(self):
+    def test_missing_id_return_empty_string(self):
         existing_manifest = {"versions": []}
         document = domain.Document(manifest=existing_manifest)
-        self.assertEqual(document.doc_id(), "")
+        self.assertEqual(document.id(), "")
 
-    def test_doc_id(self):
-        document = domain.Document(doc_id="0034-8910-rsp-48-2-0275")
-        self.assertEqual(document.doc_id(), "0034-8910-rsp-48-2-0275")
+    def test_id(self):
+        document = domain.Document(id="0034-8910-rsp-48-2-0275")
+        self.assertEqual(document.id(), "0034-8910-rsp-48-2-0275")
 
     def test_new_version_of_data(self):
         document = self.make_one()
@@ -84,7 +84,7 @@ class DocumentTests(unittest.TestCase):
         )
 
     def test_get_latest_version_when_there_isnt_any(self):
-        document = domain.Document(doc_id="0034-8910-rsp-48-2-0275")
+        document = domain.Document(id="0034-8910-rsp-48-2-0275")
         self.assertRaises(ValueError, lambda: document.version())
 
     def test_get_oldest_version(self):
