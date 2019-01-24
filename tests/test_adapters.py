@@ -87,3 +87,9 @@ class DocumentsBundleStoreTest(StoreTestMixin, unittest.TestCase):
 
     Adapter = adapters.DocumentsBundleStore
     DomainClass = domain.DocumentsBundle
+
+
+class DocumentsStoreTest(StoreTestMixin, unittest.TestCase):
+
+    Adapter = adapters.DocumentStore
+    DomainClass = domain.Document

@@ -15,52 +15,36 @@ class Session(interfaces.Session):
         return self._documents_bundles
 
 
-class InMemoryDocumentStore(interfaces.DocumentStore):
+class InMemoryDataStore(interfaces.DataStore):
     def __init__(self):
-        self._data = {}
+        self._data_store = {}
 
-    def add(self, document):
-        id = document.id()
-        if id in self._data:
+    def add(self, data):
+        id = data.id()
+        if id in self._data_store:
             raise exceptions.AlreadyExists()
         else:
-            self.update(document)
+            self.update(data)
 
-    def update(self, document):
-        data = document.manifest
-        id = document.id()
-        self._data[id] = data
+    def update(self, data):
+        _manifest = data.manifest
+        id = data.id()
+        self._data_store[id] = _manifest
 
     def fetch(self, id):
-        manifest = self._data.get(id)
+        manifest = self._data_store.get(id)
         if manifest:
-            return domain.Document(manifest=manifest)
+            return self.DomainClass(manifest=manifest)
         else:
             raise exceptions.DoesNotExist()
 
 
-class InMemoryDocumentsBundleStore(interfaces.DocumentsBundleStore):
-    def __init__(self):
-        self._data = {}
+class InMemoryDocumentStore(InMemoryDataStore):
+    DomainClass = domain.Document
 
-    def add(self, bundle):
-        id = bundle.id()
-        if id in self._data:
-            raise exceptions.AlreadyExists()
-        else:
-            self.update(bundle)
 
-    def update(self, bundle):
-        data = bundle.manifest
-        id = bundle.id()
-        self._data[id] = data
-
-    def fetch(self, id):
-        manifest = self._data.get(id)
-        if manifest:
-            return domain.DocumentsBundle(manifest=manifest)
-        else:
-            raise exceptions.DoesNotExist()
+class InMemoryDocumentsBundleStore(InMemoryDataStore):
+    DomainClass = domain.DocumentsBundle
 
 
 def document_registry_data_fixture(prefix=""):

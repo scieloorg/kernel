@@ -32,7 +32,7 @@ class Session(interfaces.Session):
         return None
 
 
-class BaseStore:
+class BaseStore(interfaces.DataStore):
     def __init__(self, collection):
         self._collection = collection
 
@@ -44,8 +44,7 @@ class BaseStore:
             self._collection.insert_one(_manifest)
         except pymongo.errors.DuplicateKeyError:
             raise exceptions.AlreadyExists(
-                "cannot add data with id "
-                '"%s": the id is already in use' % data.id()
+                "cannot add data with id " '"%s": the id is already in use' % data.id()
             ) from None
 
     def update(self, data) -> None:
@@ -55,8 +54,7 @@ class BaseStore:
         result = self._collection.replace_one({"_id": _manifest["_id"]}, _manifest)
         if result.matched_count == 0:
             raise exceptions.DoesNotExist(
-                "cannot update data with id "
-                '"%s": data does not exist' % data.id()
+                "cannot update data with id " '"%s": data does not exist' % data.id()
             )
 
     def fetch(self, id: str):
@@ -75,4 +73,3 @@ class DocumentStore(BaseStore):
 
 class DocumentsBundleStore(BaseStore):
     DomainClass = domain.DocumentsBundle
-
