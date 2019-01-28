@@ -159,11 +159,11 @@ class Document:
 
         :param data_url: é a URL para a nova versão do documento.
         :param assets_getter: (optional) função que recebe 2 argumentos: 1)
-        a URL do XML do documento e 2) o timeout para a requisição e retorna 
+        a URL do XML do documento e 2) o timeout para a requisição e retorna
         o par ``(xml, [(href, xml_node), ...]`` onde ``xml`` é uma instância
         de *element tree* da *lxml* e ``[(href, xml_node), ...]`` é uma lista
         que associa as URIs dos ativos com os nós do XML onde se encontram.
-        Essa função deve ainda lançar as ``RetryableError`` e 
+        Essa função deve ainda lançar as ``RetryableError`` e
         ``NonRetryableError`` para representar problemas no acesso aos dados
         do XML.
         """
@@ -184,7 +184,7 @@ class Document:
 
     def _link_assets(self, tolink: list) -> dict:
         """Retorna um mapa entre as chaves dos ativos em `tolink` e as
-        referências já existentes na última versão. 
+        referências já existentes na última versão.
         """
         try:
             latest_version = self.version()
@@ -216,11 +216,11 @@ class Document:
         """Obtém os metadados da versão no momento `timestamp`.
 
         :param timestamp: string de texto do timestamp UTC ISO 8601 no formato
-        `YYYY-MM-DDTHH:MM:SSSSSSZ`. A resolução pode variar desde o dia, e.g., 
-        `2018-09-17`, dia horas e minutos, e.g., `2018-09-17T14:25Z`, ou dia 
-        horas minutos segundos (e frações em até 6 casas decimais). Caso a 
-        resolução esteja no nível do dia, a mesma será ajustada automaticamente 
-        para o nível dos microsegundos por meio da concatenação da string 
+        `YYYY-MM-DDTHH:MM:SSSSSSZ`. A resolução pode variar desde o dia, e.g.,
+        `2018-09-17`, dia horas e minutos, e.g., `2018-09-17T14:25Z`, ou dia
+        horas minutos segundos (e frações em até 6 casas decimais). Caso a
+        resolução esteja no nível do dia, a mesma será ajustada automaticamente
+        para o nível dos microsegundos por meio da concatenação da string
         `T23:59:59:999999Z` ao valor de `timestamp`.
         """
         if not re.match(self._timestamp_pattern, timestamp):
@@ -264,11 +264,11 @@ class Document:
         assets_getter=assets_from_remote_xml,
         timeout=2,
     ) -> bytes:
-        """Retorna o conteúdo do XML, codificado em UTF-8, já com as 
+        """Retorna o conteúdo do XML, codificado em UTF-8, já com as
         referências aos ativos digitais correspondendo às da versão solicitada.
 
-        Por meio dos argumentos `version_index` e `version_at` é possível 
-        explicitar a versão desejada a partir de 2 estratégias distintas: 
+        Por meio dos argumentos `version_index` e `version_at` é possível
+        explicitar a versão desejada a partir de 2 estratégias distintas:
         `version_index` recebe um valor inteiro referente ao índice da versão
         desejada (pense no acesso a uma lista de versões). Já o argumento
         `version_at` recebe um timestamp UTC, em formato textual, e retorna
@@ -276,7 +276,7 @@ class Document:
         mutuamente exclusivos, e `version_at` anula a presença do outro.
 
         Note que o argumento `version_at` é muito mais poderoso, uma vez que,
-        diferentemente do `version_index`, também recupera o estado desejado 
+        diferentemente do `version_index`, também recupera o estado desejado
         no nível dos ativos digitais do documento.
         """
         version = (
@@ -292,7 +292,7 @@ class Document:
         return etree.tostring(xml_tree, encoding="utf-8", pretty_print=False)
 
     def new_asset_version(self, asset_id, data_url) -> None:
-        """Adiciona `data_url` como uma nova versão do ativo `asset_id` vinculado 
+        """Adiciona `data_url` como uma nova versão do ativo `asset_id` vinculado
         a versão mais recente do documento. É importante notar que nenhuma validação
         será executada em `data_url`.
         """
@@ -333,7 +333,10 @@ class BundleManifest:
 
     @staticmethod
     def set_metadata(
-        bundle: dict, name: str, value: str, now: Callable[[], str] = utcnow
+        bundle: dict,
+        name: str,
+        value: Union[dict, str],
+        now: Callable[[], str] = utcnow,
     ) -> dict:
         _bundle = deepcopy(bundle)
         _now = now()
@@ -351,11 +354,9 @@ class BundleManifest:
 
     @staticmethod
     def add_item(bundle: dict, item: str, now: Callable[[], str] = utcnow) -> dict:
-        bundle_type = "documents"
         if item in bundle["items"]:
             raise exceptions.AlreadyExists(
-                "cannot add documents bundle item "
-                '"%s": the item already exists' % item
+                'cannot add item "%s" in bundle: ' "the item already exists" % item
             )
         _bundle = deepcopy(bundle)
         _bundle["items"].append(item)
@@ -364,36 +365,34 @@ class BundleManifest:
 
     @staticmethod
     def insert_item(
-        documents_bundle: dict, index: int, item: str, now: Callable[[], str] = utcnow
+        items_bundle: dict, index: int, item: str, now: Callable[[], str] = utcnow
     ) -> dict:
-        if item in documents_bundle["items"]:
+        if item in items_bundle["items"]:
             raise exceptions.AlreadyExists(
-                "cannot insert documents bundle item "
-                '"%s": the item already exists' % item
+                'cannot insert item "%s" in bundle: ' "the item already exists" % item
             )
-        _documents_bundle = deepcopy(documents_bundle)
-        _documents_bundle["items"].insert(index, item)
-        _documents_bundle["updated"] = now()
-        return _documents_bundle
+        _items_bundle = deepcopy(items_bundle)
+        _items_bundle["items"].insert(index, item)
+        _items_bundle["updated"] = now()
+        return _items_bundle
 
     @staticmethod
     def remove_item(
-        documents_bundle: dict, item: str, now: Callable[[], str] = utcnow
+        items_bundle: dict, item: str, now: Callable[[], str] = utcnow
     ) -> dict:
-        if item not in documents_bundle["items"]:
+        if item not in items_bundle["items"]:
             raise exceptions.DoesNotExist(
-                "cannot remove documents bundle item "
-                '"%s": the item does not exist' % item
+                'cannot remove item "%s" from bundle: ' "the item does not exist" % item
             )
-        _documents_bundle = deepcopy(documents_bundle)
-        _documents_bundle["items"].remove(item)
-        _documents_bundle["updated"] = now()
-        return _documents_bundle
+        _items_bundle = deepcopy(items_bundle)
+        _items_bundle["items"].remove(item)
+        _items_bundle["updated"] = now()
+        return _items_bundle
 
 
 class DocumentsBundle:
     """
-    DocumentsBundle representa um conjunto de documentos agnóstico ao modelo de 
+    DocumentsBundle representa um conjunto de documentos agnóstico ao modelo de
     publicação. Exemplos de publicação que são DocumentsBundle: Fascículos fechados
     e abertos, Ahead of Print, Documentos Provisórios, Erratas e Retratações.
     """
@@ -470,3 +469,37 @@ class DocumentsBundle:
     @property
     def documents(self):
         return self._manifest["items"]
+
+
+class Journal:
+    """
+    Journal representa um periodico cientifico que contem um conjunto de documentos
+    DocumentsBundle.
+    """
+
+    def __init__(self, id: str = None, manifest: dict = None):
+        assert any([id, manifest])
+        self.manifest = manifest or BundleManifest.new(id)
+
+    def id(self):
+        return self.manifest.get("id", "")
+
+    @property
+    def manifest(self):
+        return deepcopy(self._manifest)
+
+    @manifest.setter
+    def manifest(self, value: dict):
+        self._manifest = value
+
+    @property
+    def mission(self):
+        return BundleManifest.get_metadata(self._manifest, "mission")
+
+    @mission.setter
+    def mission(self, value: dict):
+        if not isinstance(value, dict):
+            raise ValueError(
+                "cannot set mission with value " '"%s": the value is not valid' % value
+            )
+        self.manifest = BundleManifest.set_metadata(self._manifest, "mission", value)
