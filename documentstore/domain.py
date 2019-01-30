@@ -2,7 +2,7 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
-from typing import Union, Callable
+from typing import Union, Callable, Any
 from datetime import datetime
 
 import requests
@@ -331,13 +331,23 @@ class BundleManifest:
             "metadata": {},
         }
 
+    @staticmethod
     def set_metadata(
         bundle: dict, name: str, value: str, now: Callable[[], str] = utcnow
     ) -> dict:
         _bundle = deepcopy(bundle)
-        _bundle["metadata"][name] = value
-        _bundle["updated"] = now()
+        _now = now()
+        metadata = _bundle["metadata"].setdefault(name, [])
+        metadata.append((_now, value))
+        _bundle["updated"] = _now
         return _bundle
+
+    @staticmethod
+    def get_metadata(bundle: dict, name: str, default="") -> Any:
+        try:
+            return bundle["metadata"].get(name, [])[-1][1]
+        except IndexError:
+            return default
 
     @staticmethod
     def add_item(bundle: dict, item: str, now: Callable[[], str] = utcnow) -> dict:
@@ -405,7 +415,7 @@ class DocumentsBundle:
 
     @property
     def publication_year(self):
-        return self._manifest["metadata"].get("publication_year", "")
+        return BundleManifest.get_metadata(self._manifest, "publication_year")
 
     @publication_year.setter
     def publication_year(self, value: Union[str, int]):
@@ -421,7 +431,7 @@ class DocumentsBundle:
 
     @property
     def volume(self):
-        return self._manifest["metadata"].get("volume", "")
+        return BundleManifest.get_metadata(self._manifest, "volume")
 
     @volume.setter
     def volume(self, value: Union[str, int]):
@@ -430,7 +440,7 @@ class DocumentsBundle:
 
     @property
     def number(self):
-        return self._manifest["metadata"].get("number", "")
+        return BundleManifest.get_metadata(self._manifest, "number")
 
     @number.setter
     def number(self, value: Union[str, int]):
@@ -439,7 +449,7 @@ class DocumentsBundle:
 
     @property
     def supplement(self):
-        return self._manifest["metadata"].get("supplement", "")
+        return BundleManifest.get_metadata(self._manifest, "supplement")
 
     @supplement.setter
     def supplement(self, value: Union[str, int]):

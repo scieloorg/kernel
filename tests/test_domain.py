@@ -1,6 +1,8 @@
 import unittest
+from unittest import mock
 import functools
 from copy import deepcopy
+import datetime
 
 from documentstore import domain, exceptions
 
@@ -228,14 +230,76 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
 
     def test_set_metadata(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle, "publication_year", "2018", now=fake_utcnow
+        )
+        self.assertEqual(
+            documents_bundle["metadata"]["publication_year"], [(fake_utcnow(), "2018")]
+        )
+
+    def test_set_metadata_updates_last_modification_date(self):
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "publication_year", "2018"
         )
-        self.assertEqual(documents_bundle["metadata"]["publication_year"], "2018")
         self.assertTrue(current_updated < documents_bundle["updated"])
 
-    def test_set_metadata_overwrites_existing_value(self):
+    def test_set_metadata_doesnt_overwrite_existing_values(self):
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle,
+            "publication_year",
+            "2018",
+            now=lambda: "2018-08-05T22:33:49.795151Z",
+        )
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle,
+            "publication_year",
+            "2019",
+            now=lambda: "2018-08-05T22:34:07.795151Z",
+        )
+        self.assertEqual(
+            documents_bundle["metadata"]["publication_year"],
+            [
+                ("2018-08-05T22:33:49.795151Z", "2018"),
+                ("2018-08-05T22:34:07.795151Z", "2019"),
+            ],
+        )
+        self.assertEqual(len(documents_bundle["metadata"]), 1)
+
+    def test_set_metadata_to_preexisting_set(self):
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle,
+            "publication_year",
+            "2018",
+            now=lambda: "2018-08-05T22:33:49.795151Z",
+        )
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle, "volume", "25", now=lambda: "2018-08-05T22:34:07.795151Z"
+        )
+        self.assertEqual(
+            documents_bundle["metadata"]["publication_year"],
+            [("2018-08-05T22:33:49.795151Z", "2018")],
+        )
+        self.assertEqual(
+            documents_bundle["metadata"]["volume"],
+            [("2018-08-05T22:34:07.795151Z", "25")],
+        )
+        self.assertEqual(len(documents_bundle["metadata"]), 2)
+
+    def test_get_metadata(self):
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle, "publication_year", "2018"
+        )
+        self.assertEqual(
+            domain.BundleManifest.get_metadata(documents_bundle, "publication_year"),
+            "2018",
+        )
+
+    def test_get_metadata_always_returns_latest(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "publication_year", "2018"
@@ -243,20 +307,25 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "publication_year", "2019"
         )
-        self.assertEqual(documents_bundle["metadata"]["publication_year"], "2019")
-        self.assertEqual(len(documents_bundle["metadata"]), 1)
+        self.assertEqual(
+            domain.BundleManifest.get_metadata(documents_bundle, "publication_year"),
+            "2019",
+        )
 
-    def test_set_metadata_to_preexisting_set(self):
+    def test_get_metadata_defaults_to_empty_str_when_missing(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
-        documents_bundle = domain.BundleManifest.set_metadata(
-            documents_bundle, "publication_year", "2018"
+        self.assertEqual(
+            domain.BundleManifest.get_metadata(documents_bundle, "publication_year"), ""
         )
-        documents_bundle = domain.BundleManifest.set_metadata(
-            documents_bundle, "volume", "25"
+
+    def test_get_metadata_with_user_defined_default(self):
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
+        self.assertEqual(
+            domain.BundleManifest.get_metadata(
+                documents_bundle, "publication_year", default="2019"
+            ),
+            "2019",
         )
-        self.assertEqual(documents_bundle["metadata"]["publication_year"], "2018")
-        self.assertEqual(documents_bundle["metadata"]["volume"], "25")
-        self.assertEqual(len(documents_bundle["metadata"]), 2)
 
     def test_add_item(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
@@ -372,6 +441,16 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
 
 
 class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
+    def setUp(self):
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            2018, 8, 5, 22, 33, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
+
     def test_manifest_is_generated_on_init(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         self.assertTrue(isinstance(documents_bundle.manifest, dict))
@@ -399,7 +478,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.publication_year = "2018"
         self.assertEqual(documents_bundle.publication_year, "2018")
         self.assertEqual(
-            documents_bundle.manifest["metadata"]["publication_year"], "2018"
+            documents_bundle.manifest["metadata"]["publication_year"],
+            [("2018-08-05T22:33:49.795151Z", "2018")],
         )
 
     def test_set_publication_year_convert_to_str(self):
@@ -426,7 +506,10 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.volume = "25"
         self.assertEqual(documents_bundle.volume, "25")
-        self.assertEqual(documents_bundle.manifest["metadata"]["volume"], "25")
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["volume"],
+            [("2018-08-05T22:33:49.795151Z", "25")],
+        )
 
     def test_set_volume_convert_to_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
@@ -446,7 +529,10 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.number = "3"
         self.assertEqual(documents_bundle.number, "3")
-        self.assertEqual(documents_bundle.manifest["metadata"]["number"], "3")
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["number"],
+            [("2018-08-05T22:33:49.795151Z", "3")],
+        )
 
     def test_set_number_convert_to_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
@@ -466,7 +552,10 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.supplement = "3"
         self.assertEqual(documents_bundle.supplement, "3")
-        self.assertEqual(documents_bundle.manifest["metadata"]["supplement"], "3")
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["supplement"],
+            [("2018-08-05T22:33:49.795151Z", "3")],
+        )
 
     def test_set_supplement_convert_to_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")

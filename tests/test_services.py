@@ -1,6 +1,9 @@
 import unittest
+from unittest import mock
+import functools
+import datetime
 
-from documentstore import services, exceptions
+from documentstore import services, exceptions, domain
 
 from . import apptesting
 
@@ -42,6 +45,15 @@ class FetchDocumentsBundleTest(unittest.TestCase):
         self.services = make_services()
         self.command = self.services.get("fetch_documents_bundle")
 
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            2018, 8, 5, 22, 33, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
+
     def test_command_interface(self):
         self.assertIsNotNone(self.command)
         self.assertTrue(callable(self.command))
@@ -62,25 +74,46 @@ class FetchDocumentsBundleTest(unittest.TestCase):
         self.assertEqual(result["items"], ["/document/1", "/document/2"])
 
     def test_command_with_metadata_success(self):
-        expected = {"publication_year": "2018", "volume": "2"}
-        self.services["create_documents_bundle"](id="xpto", metadata=expected)
+        self.services["create_documents_bundle"](
+            id="xpto", metadata={"publication_year": "2018", "volume": "2"}
+        )
         result = self.command(id="xpto")
-        self.assertEqual(result["metadata"], expected)
+        self.assertEqual(
+            result["metadata"],
+            {
+                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
+                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
+            },
+        )
 
     def test_command_with_unexpected_metadata(self):
-        expected = {"publication_year": "2018", "volume": "2"}
         self.services["create_documents_bundle"](
             id="xpto",
             metadata={"publication_year": "2018", "volume": "2", "unknown": "0"},
         )
         result = self.command(id="xpto")
-        self.assertEqual(result["metadata"], expected)
+        self.assertEqual(
+            result["metadata"],
+            {
+                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
+                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
+            },
+        )
 
 
 class UpdateDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
         self.services = make_services()
         self.command = self.services.get("update_documents_bundle_metadata")
+
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            2018, 8, 5, 22, 33, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
 
     def test_command_interface(self):
         self.assertIsNotNone(self.command)
@@ -96,15 +129,29 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         self.command(id="xpto", metadata={"publication_year": "2019"})
         result = self.services["fetch_documents_bundle"](id="xpto")
         self.assertEqual(
-            result["metadata"], {"publication_year": "2019", "volume": "2"}
+            result["metadata"],
+            {
+                "publication_year": [
+                    ("2018-08-05T22:33:49.795151Z", "2018"),
+                    ("2018-08-05T22:33:49.795151Z", "2019"),
+                ],
+                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
+            },
         )
 
     def test_command_with_unexpected_metadata(self):
-        expected = {"publication_year": "2018", "volume": "2"}
-        self.services["create_documents_bundle"](id="xpto", metadata=expected)
+        self.services["create_documents_bundle"](
+            id="xpto", metadata={"publication_year": "2018", "volume": "2"}
+        )
         self.command(id="xpto", metadata={"unknown": "0"})
         result = self.services["fetch_documents_bundle"](id="xpto")
-        self.assertEqual(result["metadata"], expected)
+        self.assertEqual(
+            result["metadata"],
+            {
+                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
+                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
+            },
+        )
 
     def test_command_remove_metadata(self):
         """
@@ -117,7 +164,16 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         )
         self.command(id="xpto", metadata={"volume": ""})
         result = self.services["fetch_documents_bundle"](id="xpto")
-        self.assertEqual(result["metadata"], {"publication_year": "2018", "volume": ""})
+        self.assertEqual(
+            result["metadata"],
+            {
+                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
+                "volume": [
+                    ("2018-08-05T22:33:49.795151Z", "2"),
+                    ("2018-08-05T22:33:49.795151Z", ""),
+                ],
+            },
+        )
 
 
 class AddDocumentToDocumentsBundleTest(unittest.TestCase):
