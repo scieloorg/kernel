@@ -663,3 +663,39 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_id_returns_id(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.id(), "0034-8910-rsp-48-2")
+
+    def test_set_mission(self):
+        documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
+        documents_bundle.mission = {
+            "pt": "Publicar trabajos científicos originales sobre Amazonia.",
+            "es": "Publicar trabalhos científicos originais sobre a Amazonia.",
+            "en": "To publish original scientific papers about Amazonia.",
+        }
+        self.assertEqual(
+            documents_bundle.mission,
+            {
+                "pt": "Publicar trabajos científicos originales sobre Amazonia.",
+                "es": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                "en": "To publish original scientific papers about Amazonia.",
+            },
+        )
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["mission"],
+            {
+                "pt": "Publicar trabajos científicos originales sobre Amazonia.",
+                "es": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                "en": "To publish original scientific papers about Amazonia.",
+            },
+        )
+
+    def test_set_mission_content_is_not_validated(self):
+        documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set mission with value "
+            '"mission-invalid": the value is not valid',
+            setattr,
+            documents_bundle,
+            "mission",
+            "mission-invalid",
+        )

@@ -333,7 +333,10 @@ class BundleManifest:
 
     @staticmethod
     def set_metadata(
-        bundle: dict, name: str, value: str, now: Callable[[], str] = utcnow
+        bundle: dict,
+        name: str,
+        value: Union[dict, str],
+        now: Callable[[], str] = utcnow,
     ) -> dict:
         _bundle = deepcopy(bundle)
         _now = now()
@@ -488,3 +491,15 @@ class Journal:
     @manifest.setter
     def manifest(self, value: dict):
         self._manifest = value
+
+    @property
+    def mission(self):
+        return self._manifest["metadata"].get("mission", {})
+
+    @mission.setter
+    def mission(self, value: dict):
+        if not isinstance(value, dict):
+            raise ValueError(
+                "cannot set mission with value " '"%s": the value is not valid' % value
+            )
+        self.manifest = BundleManifest.set_metadata(self._manifest, "mission", value)
