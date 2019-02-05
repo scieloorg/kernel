@@ -704,9 +704,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_set_mission_content_is_not_validated(self):
         documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
         self._assert_raises_with_message(
-            ValueError,
-            "cannot set mission with value "
-            '"mission-invalid": the value is not valid',
+            TypeError,
+            "cannot set mission with value " '"mission-invalid": value must be dict',
             setattr,
             documents_bundle,
             "mission",
