@@ -712,3 +712,87 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "mission",
             "mission-invalid",
         )
+
+    def test_subject_areas(self):
+        documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
+        documents_bundle.subject_areas = [
+            'AGRICULTURAL SCIENCES',
+            'APPLIED SOCIAL SCIENCES',
+            'BIOLOGICAL SCIENCES',
+            'ENGINEERING',
+            'EXACT AND EARTH SCIENCES',
+            'HEALTH SCIENCES',
+            'HUMAN SCIENCES',
+            'LINGUISTIC, LITERATURE AND ARTS',
+        ]
+        self.assertEqual(
+            documents_bundle.subject_areas,
+            [
+                'AGRICULTURAL SCIENCES',
+                'APPLIED SOCIAL SCIENCES',
+                'BIOLOGICAL SCIENCES',
+                'ENGINEERING',
+                'EXACT AND EARTH SCIENCES',
+                'HEALTH SCIENCES',
+                'HUMAN SCIENCES',
+                'LINGUISTIC, LITERATURE AND ARTS',
+            ]
+        )
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["subject_areas"][-1],
+            (
+                "2018-08-05T22:33:49.795151Z",
+                [
+                    'AGRICULTURAL SCIENCES',
+                    'APPLIED SOCIAL SCIENCES',
+                    'BIOLOGICAL SCIENCES',
+                    'ENGINEERING',
+                    'EXACT AND EARTH SCIENCES',
+                    'HEALTH SCIENCES',
+                    'HUMAN SCIENCES',
+                    'LINGUISTIC, LITERATURE AND ARTS',
+                ],
+            ),
+        )
+
+    def test_set_subject_areas_content_has_not_a_valid_type(self):
+        documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set subject_areas with value "
+            '"subject_areas-invalid": the value is not valid',
+            setattr,
+            documents_bundle,
+            "subject_areas",
+            "subject_areas-invalid",
+        )
+
+    def test_set_subject_areas_content_has_not_valid_values(self):
+        documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
+        subject_areas = [
+            'AGRICULTURAL',
+            'APPLIED SOCIAL',
+            'BIOLOGICAL',
+            'ENGINEERING',
+            'EXACT AND EARTH',
+            'HEALTH',
+            'HUMAN',
+            'LINGUISTIC, LITERATURE AND ARTS',
+        ]
+        invalid = [
+            'AGRICULTURAL',
+            'APPLIED SOCIAL',
+            'BIOLOGICAL',
+            'EXACT AND EARTH',
+            'HEALTH',
+            'HUMAN',
+        ]
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set subject_areas with value "
+            '"%s": these values are not valid' % invalid,
+            setattr,
+            documents_bundle,
+            "subject_areas",
+            subject_areas,
+        )

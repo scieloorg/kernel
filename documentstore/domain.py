@@ -20,6 +20,17 @@ DEFAULT_XMLPARSER = etree.XMLParser(
     collect_ids=False,
 )
 
+SUBJECT_AREAS = [
+    'AGRICULTURAL SCIENCES',
+    'APPLIED SOCIAL SCIENCES',
+    'BIOLOGICAL SCIENCES',
+    'ENGINEERING',
+    'EXACT AND EARTH SCIENCES',
+    'HEALTH SCIENCES',
+    'HUMAN SCIENCES',
+    'LINGUISTIC, LITERATURE AND ARTS',
+]
+
 
 def utcnow():
     return str(datetime.utcnow().isoformat() + "Z")
@@ -503,3 +514,24 @@ class Journal:
                 "cannot set mission with value " '"%s": the value is not valid' % value
             )
         self.manifest = BundleManifest.set_metadata(self._manifest, "mission", value)
+
+    @property
+    def subject_areas(self):
+        return BundleManifest.get_metadata(self._manifest, "subject_areas")
+
+    @subject_areas.setter
+    def subject_areas(self, value: list):
+        if not isinstance(value, list):
+            raise ValueError(
+                "cannot set subject_areas with value "
+                '"%s": the value is not valid' % value
+            )
+        invalid = [item for item in value if item not in SUBJECT_AREAS]
+        if invalid:
+            raise ValueError(
+                "cannot set subject_areas with value "
+                '"%s": these values are not valid' % invalid
+            )
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "subject_areas", value
+        )
