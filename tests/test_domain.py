@@ -347,8 +347,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         current_item_len = len(documents_bundle["items"])
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
-            "cannot add documents bundle item "
-            '"/documents/0034-8910-rsp-48-2-0275": the item already exists',
+            'cannot add item "/documents/0034-8910-rsp-48-2-0275" in bundle: '
+            "the item already exists",
             domain.BundleManifest.add_item,
             documents_bundle,
             "/documents/0034-8910-rsp-48-2-0275",
@@ -382,8 +382,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         current_item_len = len(documents_bundle["items"])
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
-            "cannot insert documents bundle item "
-            '"/documents/0034-8910-rsp-48-2-0775": the item already exists',
+            'cannot insert item "/documents/0034-8910-rsp-48-2-0775" in bundle: '
+            "the item already exists",
             domain.BundleManifest.insert_item,
             documents_bundle,
             0,
@@ -430,8 +430,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         current_item_len = len(documents_bundle["items"])
         self._assert_raises_with_message(
             exceptions.DoesNotExist,
-            "cannot remove documents bundle item "
-            '"/documents/0034-8910-rsp-48-2-0775": the item does not exist',
+            'cannot remove item "/documents/0034-8910-rsp-48-2-0775" from bundle: '
+            "the item does not exist",
             domain.BundleManifest.remove_item,
             documents_bundle,
             "/documents/0034-8910-rsp-48-2-0775",
@@ -574,8 +574,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.add_document("/documents/0034-8910-rsp-48-2-0275")
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
-            "cannot add documents bundle item "
-            '"/documents/0034-8910-rsp-48-2-0275": the item already exists',
+            'cannot add item "/documents/0034-8910-rsp-48-2-0275" in bundle: '
+            "the item already exists",
             documents_bundle.add_document,
             "/documents/0034-8910-rsp-48-2-0275",
         )
@@ -615,8 +615,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.add_document("/documents/0034-8910-rsp-48-2-0277")
         self._assert_raises_with_message(
             exceptions.DoesNotExist,
-            "cannot remove documents bundle item "
-            '"/documents/0034-8910-rsp-48-2-0275": the item does not exist',
+            'cannot remove item "/documents/0034-8910-rsp-48-2-0275" from bundle: '
+            "the item does not exist",
             documents_bundle.remove_document,
             "/documents/0034-8910-rsp-48-2-0275",
         )
@@ -637,9 +637,78 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.add_document("/documents/0034-8910-rsp-48-2-0275")
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
-            "cannot insert documents bundle item "
-            '"/documents/0034-8910-rsp-48-2-0275": the item already exists',
+            'cannot insert item "/documents/0034-8910-rsp-48-2-0275" in bundle: '
+            "the item already exists",
             documents_bundle.insert_document,
             1,
             "/documents/0034-8910-rsp-48-2-0275",
+        )
+
+
+class JournalTest(UnittestMixin, unittest.TestCase):
+    def setUp(self):
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            2018, 8, 5, 22, 33, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
+
+    def test_manifest_is_generated_on_init(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertTrue(isinstance(journal.manifest, dict))
+
+    def test_manifest_as_arg_on_init(self):
+        existing_manifest = new_bundle("0034-8910-rsp-48-2")
+        journal = domain.Journal(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, journal.manifest)
+
+    def test_manifest_schema_is_not_validated_on_init(self):
+        existing_manifest = {"versions": []}
+        journal = domain.Journal(manifest=existing_manifest)
+        self.assertEqual(existing_manifest, journal.manifest)
+
+    def test_id_returns_id(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.id(), "0034-8910-rsp-48-2")
+
+    def test_set_mission(self):
+        documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
+        documents_bundle.mission = {
+            "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
+            "es": "Publicar trabajos científicos originales sobre Amazonia.",
+            "en": "To publish original scientific papers about Amazonia.",
+        }
+        self.assertEqual(
+            documents_bundle.mission,
+            {
+                "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                "es": "Publicar trabajos científicos originales sobre Amazonia.",
+                "en": "To publish original scientific papers about Amazonia.",
+            },
+        )
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["mission"][-1],
+            (
+                "2018-08-05T22:33:49.795151Z",
+                {
+                    "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                    "es": "Publicar trabajos científicos originales sobre Amazonia.",
+                    "en": "To publish original scientific papers about Amazonia.",
+                },
+            ),
+        )
+
+    def test_set_mission_content_is_not_validated(self):
+        documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set mission with value "
+            '"mission-invalid": the value is not valid',
+            setattr,
+            documents_bundle,
+            "mission",
+            "mission-invalid",
         )
