@@ -235,10 +235,10 @@ class Document:
         try:
             target_version = max(
                 itertools.takewhile(
-                    lambda version: version.get("timestamp") <= timestamp,
+                    lambda version: version.get("timestamp", "") <= timestamp,
                     self.manifest["versions"],
                 ),
-                key=lambda version: version.get("timestamp"),
+                key=lambda version: version.get("timestamp", ""),
             )
         except ValueError:
             raise ValueError("missing version for timestamp: %s" % timestamp) from None
@@ -402,7 +402,7 @@ class DocumentsBundle:
         self.manifest = manifest or BundleManifest.new(id)
 
     def id(self):
-        return self.manifest.get("id")
+        return self.manifest.get("id", "")
 
     @property
     def manifest(self):
@@ -484,6 +484,12 @@ class Journal:
     def id(self):
         return self.manifest.get("id", "")
 
+    def created(self):
+        return self.manifest.get("created", "")
+
+    def updated(self):
+        return self.manifest.get("updated", "")
+
     @property
     def manifest(self):
         return deepcopy(self._manifest)
@@ -535,7 +541,7 @@ class Journal:
 
     @property
     def title_slug(self):
-        return BundleManifest.get_metadata(self._manifest, "volume")
+        return BundleManifest.get_metadata(self._manifest, "title_slug")
 
     @title_slug.setter
     def title_slug(self, value: str):
@@ -615,21 +621,3 @@ class Journal:
     @is_public.setter
     def is_public(self, value: bool):
         self.manifest = BundleManifest.set_metadata(self._manifest, "is_public", value)
-
-    @property
-    def created(self):
-        return BundleManifest.get_metadata(self._manifest, "created")
-
-    @created.setter
-    def created(self, value: Union[str, datetime]):
-        _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "created", _value)
-
-    @property
-    def updated(self):
-        return BundleManifest.get_metadata(self._manifest, "updated", True)
-
-    @updated.setter
-    def updated(self, value: Union[str, datetime]):
-        _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "updated", _value)

@@ -646,6 +646,16 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
 
 class JournalTest(UnittestMixin, unittest.TestCase):
+    def setUp(self):
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            2018, 8, 5, 22, 33, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
+
     def test_manifest_is_generated_on_init(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertTrue(isinstance(journal.manifest, dict))
@@ -667,25 +677,28 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_set_mission(self):
         documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
         documents_bundle.mission = {
-            "pt": "Publicar trabajos científicos originales sobre Amazonia.",
-            "es": "Publicar trabalhos científicos originais sobre a Amazonia.",
+            "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
+            "es": "Publicar trabajos científicos originales sobre Amazonia.",
             "en": "To publish original scientific papers about Amazonia.",
         }
         self.assertEqual(
             documents_bundle.mission,
             {
-                "pt": "Publicar trabajos científicos originales sobre Amazonia.",
-                "es": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                "es": "Publicar trabajos científicos originales sobre Amazonia.",
                 "en": "To publish original scientific papers about Amazonia.",
             },
         )
         self.assertEqual(
-            documents_bundle.manifest["metadata"]["mission"],
-            {
-                "pt": "Publicar trabajos científicos originales sobre Amazonia.",
-                "es": "Publicar trabalhos científicos originais sobre a Amazonia.",
-                "en": "To publish original scientific papers about Amazonia.",
-            },
+            documents_bundle.manifest["metadata"]["mission"][-1],
+            (
+                "2018-08-05T22:33:49.795151Z",
+                {
+                    "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                    "es": "Publicar trabajos científicos originales sobre Amazonia.",
+                    "en": "To publish original scientific papers about Amazonia.",
+                },
+            ),
         )
 
     def test_set_mission_content_is_not_validated(self):
@@ -706,7 +719,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_set_title(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.title = 'Rev. Saúde Pública'
+        journal.title = "Rev. Saúde Pública"
 
         self.assertEqual(journal.title, "Rev. Saúde Pública")
         self.assertEqual(
@@ -720,7 +733,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_set_title_iso(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.title_iso = 'Rev. Saúde Pública'
+        journal.title_iso = "Rev. Saúde Pública"
 
         self.assertEqual(journal.title_iso, "Rev. Saúde Pública")
         self.assertEqual(
@@ -734,7 +747,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_set_short_title(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.short_title = 'Rev. Saúde Pública'
+        journal.short_title = "Rev. Saúde Pública"
 
         self.assertEqual(journal.short_title, "Rev. Saúde Pública")
         self.assertEqual(
@@ -769,11 +782,11 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_scielo_issn_is_empty_str(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.scielo_issn, "")
 
     def test_set_scielo_issn(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.scielo_issn = "1809-4392"
         self.assertEqual(journal.scielo_issn, "1809-4392")
         self.assertEqual(
@@ -782,11 +795,11 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_print_issn_is_empty_str(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.print_issn, "")
 
     def test_set_print_issn(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.print_issn = "1809-4392"
         self.assertEqual(journal.print_issn, "1809-4392")
         self.assertEqual(
@@ -795,11 +808,11 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_eletronic_issn_is_empty_str(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.eletronic_issn, "")
 
     def test_set_eletronic_issn(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.eletronic_issn = "1809-4392"
         self.assertEqual(journal.eletronic_issn, "1809-4392")
         self.assertEqual(
@@ -808,11 +821,11 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_current_status_is_empty_str(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.current_status, "")
 
     def test_set_current_status(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.current_status = "current"
         self.assertEqual(journal.current_status, "current")
         self.assertEqual(
@@ -821,11 +834,11 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_unpublish_reason_is_empty_str(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.unpublish_reason, "")
 
     def test_set_unpublish_reason(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.unpublish_reason = "not-open-access"
         self.assertEqual(journal.unpublish_reason, "not-open-access")
         self.assertEqual(
@@ -833,20 +846,47 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             [("2018-08-05T22:33:49.795151Z", "not-open-access")],
         )
 
-    def test_is_public_is_empty_str(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.is_public, "")
+    def test_is_public_is_default_true(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertTrue(journal.is_public)
 
     def test_set_is_public(self):
-        journal = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.is_public = True
-        self.assertTrueEqual(journal.is_public)
+        self.assertTrue(journal.is_public)
         self.assertEqual(
             journal.manifest["metadata"]["is_public"],
             [("2018-08-05T22:33:49.795151Z", True)],
         )
 
+    def test_set_is_public_to_false(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.is_public = False
+        self.assertFalse(journal.is_public)
+        self.assertEqual(
+            journal.manifest["metadata"]["is_public"],
+            [("2018-08-05T22:33:49.795151Z", False)],
+        )
 
+    def test_get_created(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.created(), "2018-08-05T22:33:49.795151Z")
 
-# created
-# updated
+    def test_get_updated(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.updated(), "2018-08-05T22:33:49.795151Z")
+
+    def test_update_title_get_updated(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.updated(), "2018-08-05T22:33:49.795151Z")
+
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            2018, 8, 5, 22, 34, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
+        journal.title = "Novo Journal"
+        self.assertEqual(journal.updated(), "2018-08-05T22:34:49.795151Z")
