@@ -807,16 +807,16 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             [("2018-08-05T22:33:49.795151Z", "1809-4392")],
         )
 
-    def test_eletronic_issn_is_empty_str(self):
+    def test_electronic_issn_is_empty_str(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.eletronic_issn, "")
+        self.assertEqual(journal.electronic_issn, "")
 
-    def test_set_eletronic_issn(self):
+    def test_set_electronic_issn(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.eletronic_issn = "1809-4392"
-        self.assertEqual(journal.eletronic_issn, "1809-4392")
+        journal.electronic_issn = "1809-4392"
+        self.assertEqual(journal.electronic_issn, "1809-4392")
         self.assertEqual(
-            journal.manifest["metadata"]["eletronic_issn"],
+            journal.manifest["metadata"]["electronic_issn"],
             [("2018-08-05T22:33:49.795151Z", "1809-4392")],
         )
 
