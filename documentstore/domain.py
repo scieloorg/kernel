@@ -504,10 +504,12 @@ class Journal:
 
     @mission.setter
     def mission(self, value: dict):
-        if not isinstance(value, dict):
-            raise ValueError(
-                "cannot set mission with value " '"%s": the value is not valid' % value
-            )
+        try:
+            value = dict(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set mission with value " '"%s": value must be dict' % value
+            ) from None
         self.manifest = BundleManifest.set_metadata(self._manifest, "mission", value)
 
     @property
