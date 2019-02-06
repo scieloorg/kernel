@@ -238,7 +238,7 @@ class Document:
                     lambda version: version.get("timestamp", "") <= timestamp,
                     self.manifest["versions"],
                 ),
-                key=lambda version: version.get("timestamp"),
+                key=lambda version: version.get("timestamp", ""),
             )
         except ValueError:
             raise ValueError("missing version for timestamp: %s" % timestamp) from None
@@ -484,6 +484,12 @@ class Journal:
     def id(self):
         return self.manifest.get("id", "")
 
+    def created(self):
+        return self.manifest.get("created", "")
+
+    def updated(self):
+        return self.manifest.get("updated", "")
+
     @property
     def manifest(self):
         return deepcopy(self._manifest)
@@ -494,7 +500,7 @@ class Journal:
 
     @property
     def mission(self):
-        return BundleManifest.get_metadata(self._manifest, "mission")
+        return BundleManifest.get_metadata(self._manifest, "mission", {})
 
     @mission.setter
     def mission(self, value: dict):
@@ -503,3 +509,115 @@ class Journal:
                 "cannot set mission with value " '"%s": the value is not valid' % value
             )
         self.manifest = BundleManifest.set_metadata(self._manifest, "mission", value)
+
+    @property
+    def title(self):
+        return BundleManifest.get_metadata(self._manifest, "title")
+
+    @title.setter
+    def title(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(self._manifest, "title", _value)
+
+    @property
+    def title_iso(self):
+        return BundleManifest.get_metadata(self._manifest, "title_iso")
+
+    @title_iso.setter
+    def title_iso(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(self._manifest, "title_iso", _value)
+
+    @property
+    def short_title(self):
+        return BundleManifest.get_metadata(self._manifest, "short_title")
+
+    @short_title.setter
+    def short_title(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "short_title", _value
+        )
+
+    @property
+    def title_slug(self):
+        return BundleManifest.get_metadata(self._manifest, "title_slug")
+
+    @title_slug.setter
+    def title_slug(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "title_slug", _value
+        )
+
+    @property
+    def acronym(self):
+        return BundleManifest.get_metadata(self._manifest, "acronym")
+
+    @acronym.setter
+    def acronym(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(self._manifest, "acronym", _value)
+
+    @property
+    def scielo_issn(self):
+        return BundleManifest.get_metadata(self._manifest, "scielo_issn")
+
+    @scielo_issn.setter
+    def scielo_issn(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "scielo_issn", _value
+        )
+
+    @property
+    def print_issn(self):
+        return BundleManifest.get_metadata(self._manifest, "print_issn")
+
+    @print_issn.setter
+    def print_issn(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "print_issn", _value
+        )
+
+    @property
+    def eletronic_issn(self):
+        return BundleManifest.get_metadata(self._manifest, "eletronic_issn")
+
+    @eletronic_issn.setter
+    def eletronic_issn(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "eletronic_issn", _value
+        )
+
+    @property
+    def current_status(self):
+        return BundleManifest.get_metadata(self._manifest, "current_status")
+
+    @current_status.setter
+    def current_status(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "current_status", _value
+        )
+
+    @property
+    def unpublish_reason(self):
+        return BundleManifest.get_metadata(self._manifest, "unpublish_reason")
+
+    @unpublish_reason.setter
+    def unpublish_reason(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "unpublish_reason", _value
+        )
+
+    @property
+    def is_public(self):
+        return BundleManifest.get_metadata(self._manifest, "is_public", True)
+
+    @is_public.setter
+    def is_public(self, value: bool):
+        self.manifest = BundleManifest.set_metadata(self._manifest, "is_public", value)

@@ -712,3 +712,181 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "mission",
             "mission-invalid",
         )
+
+    def test_title_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.title, "")
+
+    def test_set_title(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.title = "Rev. Saúde Pública"
+
+        self.assertEqual(journal.title, "Rev. Saúde Pública")
+        self.assertEqual(
+            journal.manifest["metadata"]["title"],
+            [("2018-08-05T22:33:49.795151Z", "Rev. Saúde Pública")],
+        )
+
+    def test_title_iso_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.title_iso, "")
+
+    def test_set_title_iso(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.title_iso = "Rev. Saúde Pública"
+
+        self.assertEqual(journal.title_iso, "Rev. Saúde Pública")
+        self.assertEqual(
+            journal.manifest["metadata"]["title_iso"],
+            [("2018-08-05T22:33:49.795151Z", "Rev. Saúde Pública")],
+        )
+
+    def test_short_title_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.short_title, "")
+
+    def test_set_short_title(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.short_title = "Rev. Saúde Pública"
+
+        self.assertEqual(journal.short_title, "Rev. Saúde Pública")
+        self.assertEqual(
+            journal.manifest["metadata"]["short_title"],
+            [("2018-08-05T22:33:49.795151Z", "Rev. Saúde Pública")],
+        )
+
+    def test_title_slug_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.title_slug, "")
+
+    def test_set_title_slug(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.title_slug = "pesquisa-veterinaria-brasileira"
+        self.assertEqual(journal.title_slug, "pesquisa-veterinaria-brasileira")
+        self.assertEqual(
+            journal.manifest["metadata"]["title_slug"],
+            [("2018-08-05T22:33:49.795151Z", "pesquisa-veterinaria-brasileira")],
+        )
+
+    def test_acronym_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.acronym, "")
+
+    def test_set_acronym_slug(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.acronym = "rsp"
+        self.assertEqual(journal.acronym, "rsp")
+        self.assertEqual(
+            journal.manifest["metadata"]["acronym"],
+            [("2018-08-05T22:33:49.795151Z", "rsp")],
+        )
+
+    def test_scielo_issn_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.scielo_issn, "")
+
+    def test_set_scielo_issn(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.scielo_issn = "1809-4392"
+        self.assertEqual(journal.scielo_issn, "1809-4392")
+        self.assertEqual(
+            journal.manifest["metadata"]["scielo_issn"],
+            [("2018-08-05T22:33:49.795151Z", "1809-4392")],
+        )
+
+    def test_print_issn_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.print_issn, "")
+
+    def test_set_print_issn(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.print_issn = "1809-4392"
+        self.assertEqual(journal.print_issn, "1809-4392")
+        self.assertEqual(
+            journal.manifest["metadata"]["print_issn"],
+            [("2018-08-05T22:33:49.795151Z", "1809-4392")],
+        )
+
+    def test_eletronic_issn_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.eletronic_issn, "")
+
+    def test_set_eletronic_issn(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.eletronic_issn = "1809-4392"
+        self.assertEqual(journal.eletronic_issn, "1809-4392")
+        self.assertEqual(
+            journal.manifest["metadata"]["eletronic_issn"],
+            [("2018-08-05T22:33:49.795151Z", "1809-4392")],
+        )
+
+    def test_current_status_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.current_status, "")
+
+    def test_set_current_status(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.current_status = "current"
+        self.assertEqual(journal.current_status, "current")
+        self.assertEqual(
+            journal.manifest["metadata"]["current_status"],
+            [("2018-08-05T22:33:49.795151Z", "current")],
+        )
+
+    def test_unpublish_reason_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.unpublish_reason, "")
+
+    def test_set_unpublish_reason(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.unpublish_reason = "not-open-access"
+        self.assertEqual(journal.unpublish_reason, "not-open-access")
+        self.assertEqual(
+            journal.manifest["metadata"]["unpublish_reason"],
+            [("2018-08-05T22:33:49.795151Z", "not-open-access")],
+        )
+
+    def test_is_public_is_default_true(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertTrue(journal.is_public)
+
+    def test_set_is_public(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.is_public = True
+        self.assertTrue(journal.is_public)
+        self.assertEqual(
+            journal.manifest["metadata"]["is_public"],
+            [("2018-08-05T22:33:49.795151Z", True)],
+        )
+
+    def test_set_is_public_to_false(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.is_public = False
+        self.assertFalse(journal.is_public)
+        self.assertEqual(
+            journal.manifest["metadata"]["is_public"],
+            [("2018-08-05T22:33:49.795151Z", False)],
+        )
+
+    def test_get_created(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.created(), "2018-08-05T22:33:49.795151Z")
+
+    def test_get_updated(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.updated(), "2018-08-05T22:33:49.795151Z")
+
+    def test_update_title_get_updated(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.updated(), "2018-08-05T22:33:49.795151Z")
+
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            2018, 8, 5, 22, 34, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
+        journal.title = "Novo Journal"
+        self.assertEqual(journal.updated(), "2018-08-05T22:34:49.795151Z")
