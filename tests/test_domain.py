@@ -889,3 +889,102 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         self.addCleanup(datetime_patcher.stop)
         journal.title = "Novo Journal"
         self.assertEqual(journal.updated(), "2018-08-05T22:34:49.795151Z")
+
+    def test_subject_areas(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.subject_areas = [
+            "AGRICULTURAL SCIENCES",
+            "APPLIED SOCIAL SCIENCES",
+            "BIOLOGICAL SCIENCES",
+            "ENGINEERING",
+            "EXACT AND EARTH SCIENCES",
+            "HEALTH SCIENCES",
+            "HUMAN SCIENCES",
+            "LINGUISTIC, LITERATURE AND ARTS",
+        ]
+        self.assertEqual(
+            journal.subject_areas,
+            (
+                "AGRICULTURAL SCIENCES",
+                "APPLIED SOCIAL SCIENCES",
+                "BIOLOGICAL SCIENCES",
+                "ENGINEERING",
+                "EXACT AND EARTH SCIENCES",
+                "HEALTH SCIENCES",
+                "HUMAN SCIENCES",
+                "LINGUISTIC, LITERATURE AND ARTS",
+            ),
+        )
+        self.assertEqual(
+            journal.manifest["metadata"]["subject_areas"][-1],
+            (
+                "2018-08-05T22:33:49.795151Z",
+                (
+                    "AGRICULTURAL SCIENCES",
+                    "APPLIED SOCIAL SCIENCES",
+                    "BIOLOGICAL SCIENCES",
+                    "ENGINEERING",
+                    "EXACT AND EARTH SCIENCES",
+                    "HEALTH SCIENCES",
+                    "HUMAN SCIENCES",
+                    "LINGUISTIC, LITERATURE AND ARTS",
+                ),
+            ),
+        )
+
+    def test_set_subject_areas_content_raises_type_error(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        invalid = 1
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set subject_areas with value "
+            '"%s": value must be tuple' % invalid,
+            setattr,
+            journal,
+            "subject_areas",
+            invalid,
+        )
+
+    def test_set_subject_areas_content_raises_value_error(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        subject_areas = (
+            "AGRICULTURAL",
+            "APPLIED SOCIAL",
+            "BIOLOGICAL",
+            "ENGINEERING",
+            "EXACT AND EARTH",
+            "HEALTH",
+            "HUMAN",
+            "LINGUISTIC, LITERATURE AND ARTS",
+        )
+        invalid = [
+            "AGRICULTURAL",
+            "APPLIED SOCIAL",
+            "BIOLOGICAL",
+            "EXACT AND EARTH",
+            "HEALTH",
+            "HUMAN",
+        ]
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set subject_areas with value %s: " % repr(subject_areas)
+            + "%s are not valid" % repr(invalid),
+            setattr,
+            journal,
+            "subject_areas",
+            subject_areas,
+        )
+
+    def test_set_subject_areas_content_raises_value_error_for_string(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        subject_areas = "LINGUISTIC, LITERATURE AND ARTS"
+        invalid = list(subject_areas)
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set subject_areas with value %s: " % repr(tuple(subject_areas))
+            + "%s are not valid" % repr(invalid),
+            setattr,
+            journal,
+            "subject_areas",
+            subject_areas,
+        )
