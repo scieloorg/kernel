@@ -1046,3 +1046,47 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "sponsors",
             invalid_number_sponsors,
         )
+
+    def test_metrics_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.metrics, {})
+
+    def test_set_metrics(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.metrics = {
+            "scimago": {"url": "http://scimago.org", "title": "Scimago"},
+            "google": {"total_h5": 10, "h5_median": 5, "h5_year": 2018},
+            "scielo": "valor medio",
+        }
+        self.assertEqual(
+            journal.metrics,
+            {
+                "scimago": {"url": "http://scimago.org", "title": "Scimago"},
+                "google": {"total_h5": 10, "h5_median": 5, "h5_year": 2018},
+                "scielo": "valor medio",
+            },
+        )
+        self.assertEqual(
+            journal.manifest["metadata"]["metrics"],
+            [
+                (
+                    "2018-08-05T22:33:49.795151Z",
+                    {
+                        "scimago": {"url": "http://scimago.org", "title": "Scimago"},
+                        "google": {"total_h5": 10, "h5_median": 5, "h5_year": 2018},
+                        "scielo": "valor medio",
+                    },
+                )
+            ],
+        )
+
+    def test_set_metrics_content_is_not_validated(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set metrics with value " '"metrics-invalid": value must be dict',
+            setattr,
+            journal,
+            "metrics",
+            "metrics-invalid",
+        )
