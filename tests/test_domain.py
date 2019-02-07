@@ -988,3 +988,61 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "subject_areas",
             subject_areas,
         )
+
+    def test_set_sponsors(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.sponsors = (
+            {
+                "name": "FAPESP",
+                "url": "http://www.fapesp.br/",
+                "logo_path": "fixtures/imgs/fapesp.png",
+            },
+        )
+
+        self.assertEqual(
+            journal.sponsors,
+            (
+                {
+                    "name": "FAPESP",
+                    "url": "http://www.fapesp.br/",
+                    "logo_path": "fixtures/imgs/fapesp.png",
+                },
+            ),
+        )
+
+        self.assertEqual(
+            journal.manifest["metadata"]["sponsors"][-1],
+            (
+                "2018-08-05T22:33:49.795151Z",
+                (
+                    {
+                        "name": "FAPESP",
+                        "url": "http://www.fapesp.br/",
+                        "logo_path": "fixtures/imgs/fapesp.png",
+                    },
+                ),
+            ),
+        )
+
+    def test_set_sponsors_should_raise_type_error(self):
+        invalid_boolean_sponsors = ((True,),)
+        invalid_number_sponsors = ((1, 1.1),)
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set sponsors this type %s" % repr(invalid_boolean_sponsors),
+            setattr,
+            journal,
+            "sponsors",
+            invalid_boolean_sponsors,
+        )
+
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set sponsors this type %s" % repr(invalid_number_sponsors),
+            setattr,
+            journal,
+            "sponsors",
+            invalid_number_sponsors,
+        )

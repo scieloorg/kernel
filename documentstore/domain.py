@@ -2,7 +2,7 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
-from typing import Union, Callable, Any
+from typing import Union, Callable, Any, Tuple
 from datetime import datetime
 
 import requests
@@ -657,3 +657,16 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self._manifest, "subject_areas", value
         )
+
+    @property
+    def sponsors(self) -> Tuple[dict]:
+        return BundleManifest.get_metadata(self._manifest, "sponsors")
+
+    @sponsors.setter
+    def sponsors(self, value: Tuple[dict]) -> None:
+        try:
+            value = tuple([dict(sponsor) for sponsor in value])
+        except TypeError:
+            raise TypeError("cannot set sponsors this type %s" % repr(value)) from None
+
+        self.manifest = BundleManifest.set_metadata(self._manifest, "sponsors", value)
