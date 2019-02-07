@@ -595,14 +595,14 @@ class Journal:
         )
 
     @property
-    def eletronic_issn(self):
-        return BundleManifest.get_metadata(self._manifest, "eletronic_issn")
+    def electronic_issn(self):
+        return BundleManifest.get_metadata(self._manifest, "electronic_issn")
 
-    @eletronic_issn.setter
-    def eletronic_issn(self, value: str):
+    @electronic_issn.setter
+    def electronic_issn(self, value: str):
         _value = str(value)
         self.manifest = BundleManifest.set_metadata(
-            self._manifest, "eletronic_issn", _value
+            self._manifest, "electronic_issn", _value
         )
 
     @property
