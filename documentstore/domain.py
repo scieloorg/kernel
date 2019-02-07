@@ -2,7 +2,7 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
-from typing import Union, Callable, Any
+from typing import Union, Callable, Any, List
 from datetime import datetime
 
 import requests
@@ -657,3 +657,21 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self._manifest, "subject_areas", value
         )
+
+    @property
+    def other_titles(self) -> List[str]:
+        return BundleManifest.get_metadata(self._manifest, "other_titles")
+
+    @other_titles.setter
+    def other_titles(self, value: List[str]):
+        try:
+            _value = list(value)
+        except TypeError:
+            raise TypeError(
+                "cannot set other_titles with value "
+                "%r: the value is not valid" % repr(value)
+            ) from None
+        else:
+            self.manifest = BundleManifest.set_metadata(
+                self._manifest, "other_titles", _value
+            )

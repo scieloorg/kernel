@@ -988,3 +988,37 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "subject_areas",
             subject_areas,
         )
+
+    def test_set_other_titles(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.other_titles = [
+            "Journal of Public Health",
+            "Rev. Saúde Pública",
+            "Rev. saúde pública",
+        ]
+        self.assertEqual(
+            journal.other_titles,
+            ["Journal of Public Health", "Rev. Saúde Pública", "Rev. saúde pública"],
+        )
+        self.assertEqual(
+            journal.manifest["metadata"]["other_titles"][-1],
+            (
+                "2018-08-05T22:33:49.795151Z",
+                [
+                    "Journal of Public Health",
+                    "Rev. Saúde Pública",
+                    "Rev. saúde pública",
+                ],
+            ),
+        )
+
+    def test_other_titles_content_is_not_valid(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set other_titles with value " "'123456': the value is not valid",
+            setattr,
+            journal,
+            "other_titles",
+            123456,
+        )
