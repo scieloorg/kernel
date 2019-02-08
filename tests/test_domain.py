@@ -1122,3 +1122,17 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.institution_responsible_for = ["USP", "SCIELO"]
         self.assertEqual(journal.institution_responsible_for, ("USP", "SCIELO"))
+
+    def test_set_online_submission_url(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        url = "http://mc04.manuscriptcentral.com/rsp-scielo"
+        journal.online_submission_url = url
+        self.assertEqual(journal.online_submission_url, url)
+        self.assertEqual(
+            journal.manifest["metadata"]["online_submission_url"],
+            [("2018-08-05T22:33:49.795151Z", url)],
+        )
+
+    def test_online_submission_url_default_is_empty(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.online_submission_url, "")

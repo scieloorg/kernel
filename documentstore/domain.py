@@ -704,3 +704,14 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self.manifest, "institution_responsible_for", value
         )
+
+    @property
+    def online_submission_url(self):
+        return BundleManifest.get_metadata(self.manifest, "online_submission_url")
+
+    @online_submission_url.setter
+    def online_submission_url(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "online_submission_url", _value
+        )
