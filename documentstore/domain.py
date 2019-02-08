@@ -684,3 +684,19 @@ class Journal:
                 "cannot set metrics with value " '"%s": value must be dict' % value
             ) from None
         self.manifest = BundleManifest.set_metadata(self._manifest, "metrics", value)
+
+    @property
+    def subject_categories(self):
+        return BundleManifest.get_metadata(self.manifest, "subject_categories")
+
+    @mission.setter
+    def subject_categories(self, value: Union[list, tuple]):
+        if not isinstance(value, (list, tuple)):
+            raise TypeError(
+                "cannot set subject_categories with value "
+                '"%s": value must be list' % value
+            ) from None
+
+        self.manifest = BundleManifest.set_metadata(
+            self.manifest, "subject_categories", list(value)
+        )

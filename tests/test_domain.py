@@ -1090,3 +1090,51 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "metrics",
             "metrics-invalid",
         )
+
+    def test_set_subject_categories(self):
+        journal = domain.Journal(id="0234-8410-bjmbr-587-90")
+        categories = [
+            "Health Sciences Orthopedics",
+            "Human Sciences Psychology",
+            "Psychoanalysis",
+        ]
+        journal.subject_categories = categories
+        self.assertEqual(
+            journal.manifest["metadata"]["subject_categories"],
+            [("2018-08-05T22:33:49.795151Z", categories)],
+        )
+
+    def test_set_int_subject_categories_content_raises_type_error(self):
+        journal = domain.Journal(id="0234-8410-bjmbr-587-90")
+        invalid = 9
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set subject_categories with value "
+            '"%s": value must be list' % invalid,
+            setattr,
+            journal,
+            "subject_categories",
+            invalid,
+        )
+
+    def test_set_str_subject_categories_content_raises_type_error(self):
+        journal = domain.Journal(id="0234-8410-bjmbr-587-90")
+        invalid = "Health Sciences Orthopedics, Human Sciences Psychology"
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set subject_categories with value "
+            '"%s": value must be list' % invalid,
+            setattr,
+            journal,
+            "subject_categories",
+            invalid,
+        )
+
+    def test_set_tuple_subject_categories(self):
+        journal = domain.Journal(id="0234-8410-bjmbr-587-90")
+        categories = ("Health Sciences Orthopedics", "Human Sciences Psychology")
+        journal.subject_categories = categories
+        self.assertEqual(
+            journal.manifest["metadata"]["subject_categories"],
+            [("2018-08-05T22:33:49.795151Z", list(categories))],
+        )
