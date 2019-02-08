@@ -1236,3 +1236,39 @@ class JournalTest(UnittestMixin, unittest.TestCase):
                 {"status": "CEASED"},
             ],
         )
+
+    def test_contact_is_empty_list(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.contact, {})
+
+    def test_set_contact(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+
+        data_journal = {
+            "name": "Faculdade de Saúde Pública da Universidade de São Paulo",
+            "country": "Brasil",
+            "state": "SP",
+            "city": "São Paulo",
+            "address": "Avenida Dr. Arnaldo, 715\n01246-904 São Paulo SP Brazil",
+            "phone_number": "+55 11 3061-7985",
+            "email": "revsp@usp.br",
+            "enable_contact": "true",
+        }
+
+        journal.contact = data_journal
+        self.assertEqual(journal.contact, data_journal)
+        self.assertEqual(
+            journal.manifest["metadata"]["contact"],
+            [("2018-08-05T22:33:49.795151Z", data_journal)],
+        )
+
+    def test_set_contact_content_is_not_validated(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set contact with value 'contact-invalid': value must be dict",
+            setattr,
+            journal,
+            "contact",
+            "contact-invalid",
+        )
