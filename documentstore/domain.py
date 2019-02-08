@@ -684,3 +684,16 @@ class Journal:
                 "cannot set metrics with value " '"%s": value must be dict' % value
             ) from None
         self.manifest = BundleManifest.set_metadata(self._manifest, "metrics", value)
+
+    @property
+    def logo_url(self):
+        return BundleManifest.get_metadata(self.manifest, "logo_url")
+
+    @logo_url.setter
+    def logo_url(self, value: str):
+        if not isinstance(value, str):
+            raise TypeError(
+                "cannot set logo_url with value "
+                '"%s": value must be str' % repr(value)
+            ) from None
+        self.manifest = BundleManifest.set_metadata(self.manifest, "logo_url", value)
