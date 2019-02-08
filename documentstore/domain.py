@@ -670,3 +670,17 @@ class Journal:
             raise TypeError("cannot set sponsors this type %s" % repr(value)) from None
 
         self.manifest = BundleManifest.set_metadata(self._manifest, "sponsors", value)
+
+    @property
+    def metrics(self):
+        return BundleManifest.get_metadata(self._manifest, "metrics", {})
+
+    @metrics.setter
+    def metrics(self, value: dict):
+        try:
+            value = dict(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set metrics with value " '"%s": value must be dict' % value
+            ) from None
+        self.manifest = BundleManifest.set_metadata(self._manifest, "metrics", value)
