@@ -1090,3 +1090,45 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "metrics",
             "metrics-invalid",
         )
+
+    def test_set_publishers(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.publishers = (
+            {
+                "name": "Some random publisher",
+                "country": "Brazil",
+                "state": "SP",
+                "city": "São Paulo",
+                "address": "Random string address",
+                "telephone": "(11) 1111-1111",
+            },
+        )
+
+        self.assertEqual(
+            journal.publishers,
+            (
+                {
+                    "name": "Some random publisher",
+                    "country": "Brazil",
+                    "state": "SP",
+                    "city": "São Paulo",
+                    "address": "Random string address",
+                    "telephone": "(11) 1111-1111",
+                },
+            ),
+        )
+
+        journal.publishers = ({},)
+        self.assertEqual(journal.publishers, ({},))
+
+    def test_set_publishers_should_raise_type_error(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        publishers = ({}, True)
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set publishers with value: %s" % repr(publishers),
+            setattr,
+            journal,
+            "publishers",
+            publishers,
+        )
