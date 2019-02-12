@@ -691,10 +691,12 @@ class Journal:
 
     @subject_categories.setter
     def subject_categories(self, value: Union[list, tuple]):
-        if not isinstance(value, (list, tuple)):
+        try:
+            value = list(value)
+        except (TypeError, ValueError):
             raise TypeError(
                 "cannot set subject_categories with value "
-                '"%s": value must be list' % value
+                '"%s": value must be list like object' % value
             ) from None
 
         self.manifest = BundleManifest.set_metadata(

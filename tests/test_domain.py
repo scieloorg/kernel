@@ -1110,24 +1110,20 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         self._assert_raises_with_message(
             TypeError,
             "cannot set subject_categories with value "
-            '"%s": value must be list' % invalid,
+            '"%s": value must be list like object' % invalid,
             setattr,
             journal,
             "subject_categories",
             invalid,
         )
 
-    def test_set_str_subject_categories_content_raises_type_error(self):
+    def test_set_str_subject_categories(self):
         journal = domain.Journal(id="0234-8410-bjmbr-587-90")
-        invalid = "Health Sciences Orthopedics, Human Sciences Psychology"
-        self._assert_raises_with_message(
-            TypeError,
-            "cannot set subject_categories with value "
-            '"%s": value must be list' % invalid,
-            setattr,
-            journal,
-            "subject_categories",
-            invalid,
+        categories = "Health Sciences"
+        journal.subject_categories = categories
+        self.assertEqual(
+            journal.manifest["metadata"]["subject_categories"],
+            [("2018-08-05T22:33:49.795151Z", list(categories))],
         )
 
     def test_set_tuple_subject_categories(self):
@@ -1137,6 +1133,36 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         self.assertEqual(
             journal.manifest["metadata"]["subject_categories"],
             [("2018-08-05T22:33:49.795151Z", list(categories))],
+        )
+
+    def test_set_list_like_object_to_subject_categories(self):
+        journal = domain.Journal(id="0234-8410-bjmbr-587-90")
+
+        class Fibonacci:
+
+            def __init__(self, maximo=1000000):
+                self.current, self.p_element = 0, 1
+                self.maximo = maximo
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                if self.current > self.maximo:
+                    raise StopIteration
+
+                ret = self.current
+
+                self.current, self.p_element = self.p_element, self.current + self.p_element
+
+                return str(ret)
+
+        fib_obj = Fibonacci(maximo=10)
+
+        journal.subject_categories = fib_obj
+        self.assertEqual(
+            journal.manifest["metadata"]["subject_categories"],
+            [("2018-08-05T22:33:49.795151Z", ['0', '1', '1', '2', '3', '5', '8'])],
         )
 
     def test_institution_responsible_for_is_empty_str(self):
