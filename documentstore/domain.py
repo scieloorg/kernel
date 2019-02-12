@@ -617,25 +617,6 @@ class Journal:
         )
 
     @property
-    def unpublish_reason(self):
-        return BundleManifest.get_metadata(self._manifest, "unpublish_reason")
-
-    @unpublish_reason.setter
-    def unpublish_reason(self, value: str):
-        _value = str(value)
-        self.manifest = BundleManifest.set_metadata(
-            self._manifest, "unpublish_reason", _value
-        )
-
-    @property
-    def is_public(self):
-        return BundleManifest.get_metadata(self._manifest, "is_public", True)
-
-    @is_public.setter
-    def is_public(self, value: bool):
-        self.manifest = BundleManifest.set_metadata(self._manifest, "is_public", value)
-
-    @property
     def subject_areas(self):
         return BundleManifest.get_metadata(self._manifest, "subject_areas")
 
