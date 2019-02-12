@@ -689,7 +689,7 @@ class Journal:
     def subject_categories(self):
         return BundleManifest.get_metadata(self.manifest, "subject_categories")
 
-    @mission.setter
+    @subject_categories.setter
     def subject_categories(self, value: Union[list, tuple]):
         if not isinstance(value, (list, tuple)):
             raise TypeError(
