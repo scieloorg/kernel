@@ -684,3 +684,23 @@ class Journal:
                 "cannot set metrics with value " '"%s": value must be dict' % value
             ) from None
         self.manifest = BundleManifest.set_metadata(self._manifest, "metrics", value)
+
+    @property
+    def institution_responsible_for(self):
+        return BundleManifest.get_metadata(
+            self.manifest, "institution_responsible_for", ()
+        )
+
+    @institution_responsible_for.setter
+    def institution_responsible_for(self, value: tuple):
+        try:
+            value = tuple(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set institution_responsible_for with value "
+                '"%s": value must be tuple' % repr(value)
+            ) from None
+
+        self.manifest = BundleManifest.set_metadata(
+            self.manifest, "institution_responsible_for", value
+        )
