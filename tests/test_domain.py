@@ -832,19 +832,6 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             [("2018-08-05T22:33:49.795151Z", "current")],
         )
 
-    def test_unpublish_reason_is_empty_str(self):
-        journal = domain.Journal(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.unpublish_reason, "")
-
-    def test_set_unpublish_reason(self):
-        journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.unpublish_reason = "not-open-access"
-        self.assertEqual(journal.unpublish_reason, "not-open-access")
-        self.assertEqual(
-            journal.manifest["metadata"]["unpublish_reason"],
-            [("2018-08-05T22:33:49.795151Z", "not-open-access")],
-        )
-
     def test_get_created(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.created(), "2018-08-05T22:33:49.795151Z")
