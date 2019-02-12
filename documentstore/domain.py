@@ -700,3 +700,23 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self.manifest, "subject_categories", list(value)
         )
+
+    @property
+    def institution_responsible_for(self):
+        return BundleManifest.get_metadata(
+            self.manifest, "institution_responsible_for", ()
+        )
+
+    @institution_responsible_for.setter
+    def institution_responsible_for(self, value: tuple):
+        try:
+            value = tuple(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set institution_responsible_for with value "
+                '"%s": value must be tuple' % repr(value)
+            ) from None
+
+        self.manifest = BundleManifest.set_metadata(
+            self.manifest, "institution_responsible_for", value
+        )

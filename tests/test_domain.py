@@ -1138,3 +1138,35 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             journal.manifest["metadata"]["subject_categories"],
             [("2018-08-05T22:33:49.795151Z", list(categories))],
         )
+
+    def test_institution_responsible_for_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.institution_responsible_for, ())
+
+    def test_set_institution_responsible_for(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.institution_responsible_for = ("Usp", "Scielo")
+
+        self.assertEqual(journal.institution_responsible_for, ("Usp", "Scielo"))
+        self.assertEqual(
+            journal.manifest["metadata"]["institution_responsible_for"][-1],
+            ("2018-08-05T22:33:49.795151Z", ("Usp", "Scielo")),
+        )
+
+    def test_set_institution_responsible_for_content_raises_type_error(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        invalid = 1
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set institution_responsible_for with value "
+            '"%s": value must be tuple' % invalid,
+            setattr,
+            journal,
+            "institution_responsible_for",
+            invalid,
+        )
+
+    def test_institution_responsible_for_content_value_for_string(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.institution_responsible_for = ["USP", "SCIELO"]
+        self.assertEqual(journal.institution_responsible_for, ("USP", "SCIELO"))
