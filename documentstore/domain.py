@@ -628,14 +628,6 @@ class Journal:
         )
 
     @property
-    def is_public(self):
-        return BundleManifest.get_metadata(self._manifest, "is_public", True)
-
-    @is_public.setter
-    def is_public(self, value: bool):
-        self.manifest = BundleManifest.set_metadata(self._manifest, "is_public", value)
-
-    @property
     def subject_areas(self):
         return BundleManifest.get_metadata(self._manifest, "subject_areas")
 
