@@ -700,7 +700,7 @@ class Journal:
             ) from None
 
         self.manifest = BundleManifest.set_metadata(
-            self.manifest, "subject_categories", list(value)
+            self._manifest, "subject_categories", list(value)
         )
 
     @property
