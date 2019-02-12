@@ -704,3 +704,18 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self.manifest, "institution_responsible_for", value
         )
+
+    @property
+    def logo_url(self):
+        return BundleManifest.get_metadata(self.manifest, "logo_url")
+
+    @logo_url.setter
+    def logo_url(self, value: str):
+        try:
+            value = str(value)
+        except TypeError:
+            raise TypeError(
+                "cannot set logo_url with value "
+                '"%s": value must be str' % repr(value)
+            ) from None
+        self.manifest = BundleManifest.set_metadata(self._manifest, "logo_url", value)
