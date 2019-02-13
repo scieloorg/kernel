@@ -1,6 +1,7 @@
 from typing import Callable, Dict, List, Any
 import difflib
 from io import BytesIO
+from enum import Enum, auto
 
 from clea import join as clea_join, core as clea_core
 
@@ -8,6 +9,20 @@ from .interfaces import Session
 from .domain import Document, DocumentsBundle, Journal
 
 __all__ = ["get_handlers"]
+
+
+class Events(Enum):
+    """Eventos emitidos por instâncias de `CommandHandler`.
+    """
+
+    DOCUMENT_REGISTERED = auto()
+    DOCUMENT_VERSION_REGISTERED = auto()
+    ASSET_VERSION_REGISTERED = auto()
+    DOCUMENTSBUNDLE_CREATED = auto()
+    DOCUMENTSBUNDLE_METATADA_UPDATED = auto()
+    DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE = auto()
+    DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE = auto()
+    JOURNAL_CREATED = auto()
 
 
 class CommandHandler:
@@ -29,6 +44,9 @@ class BaseRegisterDocument(CommandHandler):
     def _persist(self, session: Session, document: Document) -> None:
         raise NotImplementedError()
 
+    def _notify(self, session: Session, data) -> None:
+        raise NotImplementedError()
+
     def __call__(self, id: str, data_url: str, assets: Dict[str, str] = None) -> None:
         try:
             assets = dict(assets)
@@ -40,6 +58,10 @@ class BaseRegisterDocument(CommandHandler):
         for asset_id, asset_url in assets.items():
             document.new_asset_version(asset_id, asset_url)
         self._persist(session, document)
+        self._notify(
+            session,
+            {"document": document, "id": id, "data_url": data_url, "assets": assets},
+        )
 
 
 class RegisterDocument(BaseRegisterDocument):
@@ -56,6 +78,9 @@ class RegisterDocument(BaseRegisterDocument):
     def _persist(self, session, document):
         return session.documents.add(document)
 
+    def _notify(self, session, data):
+        session.notify(Events.DOCUMENT_REGISTERED, data)
+
 
 class RegisterDocumentVersion(BaseRegisterDocument):
     """Registra uma nova versão de um documento já registrado.
@@ -70,6 +95,9 @@ class RegisterDocumentVersion(BaseRegisterDocument):
 
     def _persist(self, session, document):
         return session.documents.update(document)
+
+    def _notify(self, session, data):
+        session.notify(Events.DOCUMENT_VERSION_REGISTERED, data)
 
 
 class FetchDocumentData(CommandHandler):
@@ -129,7 +157,17 @@ class RegisterAssetVersion(BaseRegisterDocument):
         session = self.Session()
         document = session.documents.fetch(id)
         document.new_asset_version(asset_id=asset_id, data_url=asset_url)
-        return session.documents.update(document)
+        result = session.documents.update(document)
+        session.notify(
+            Events.ASSET_VERSION_REGISTERED,
+            {
+                "document": document,
+                "id": id,
+                "asset_id": asset_id,
+                "asset_url": asset_url,
+            },
+        )
+        return result
 
 
 class DiffDocumentVersions(CommandHandler):
@@ -210,7 +248,12 @@ class CreateDocumentsBundle(CommandHandler):
             _bundle.add_document(doc)
         for name, value in (metadata or {}).items():
             setattr(_bundle, name, value)
-        return session.documents_bundles.add(_bundle)
+        result = session.documents_bundles.add(_bundle)
+        session.notify(
+            Events.DOCUMENTSBUNDLE_CREATED,
+            {"bundle": _bundle, "id": id, "docs": docs, "metadata": metadata},
+        )
+        return result
 
 
 class FetchDocumentsBundle(CommandHandler):
@@ -226,6 +269,10 @@ class UpdateDocumentsBundleMetadata(CommandHandler):
         for name, value in metadata.items():
             setattr(_bundle, name, value)
         session.documents_bundles.update(_bundle)
+        session.notify(
+            Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
+            {"bundle": _bundle, "id": id, "metadata": metadata},
+        )
 
 
 class AddDocumentToDocumentsBundle(CommandHandler):
@@ -234,6 +281,10 @@ class AddDocumentToDocumentsBundle(CommandHandler):
         _bundle = session.documents_bundles.fetch(id)
         _bundle.add_document(doc)
         session.documents_bundles.update(_bundle)
+        session.notify(
+            Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
+            {"bundle": _bundle, "id": id, "doc": doc},
+        )
 
 
 class InsertDocumentToDocumentsBundle(CommandHandler):
@@ -242,6 +293,10 @@ class InsertDocumentToDocumentsBundle(CommandHandler):
         _bundle = session.documents_bundles.fetch(id)
         _bundle.insert_document(index, doc)
         session.documents_bundles.update(_bundle)
+        session.notify(
+            Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
+            {"bundle": _bundle, "id": id, "index": index, "doc": doc},
+        )
 
 
 class CreateJournal(CommandHandler):
@@ -250,23 +305,54 @@ class CreateJournal(CommandHandler):
         _journal = Journal(id)
         for name, value in (metadata or {}).items():
             setattr(_journal, name, value)
-        return session.journals.add(_journal)
+        result = session.journals.add(_journal)
+        session.notify(
+            Events.JOURNAL_CREATED,
+            {"journal": _journal, "id": id, "metadata": metadata},
+        )
+        return result
 
 
-def get_handlers(Session: Callable[[], Session]) -> dict:
+DEFAULT_SUBSCRIBERS = []
+
+
+def get_handlers(
+    Session: Callable[[], Session], subscribers=DEFAULT_SUBSCRIBERS
+) -> dict:
+    """Ponto de acesso aos serviços do Kernel.
+
+    :param Session: factory de instâncias de interfaces.Session.
+    :param subscribers (opcional): mapeamento entre eventos e callbacks, na
+    forma de lista associativa.
+    """
+
+    def SessionWrapper():
+        """Produz instância de `Session` inicializada com seus observadores. 
+        """
+        session = Session()
+        for event, callback in subscribers:
+            session.observe(event, callback)
+        return session
+
     return {
-        "register_document": RegisterDocument(Session),
-        "register_document_version": RegisterDocumentVersion(Session),
-        "fetch_document_data": FetchDocumentData(Session),
-        "fetch_document_manifest": FetchDocumentManifest(Session),
-        "fetch_assets_list": FetchAssetsList(Session),
-        "register_asset_version": RegisterAssetVersion(Session),
-        "diff_document_versions": DiffDocumentVersions(Session),
-        "sanitize_document_front": SanitizeDocumentFront(Session),
-        "create_documents_bundle": CreateDocumentsBundle(Session),
-        "fetch_documents_bundle": FetchDocumentsBundle(Session),
-        "update_documents_bundle_metadata": UpdateDocumentsBundleMetadata(Session),
-        "add_document_to_documents_bundle": AddDocumentToDocumentsBundle(Session),
-        "insert_document_to_documents_bundle": InsertDocumentToDocumentsBundle(Session),
-        "create_journal": CreateJournal(Session),
+        "register_document": RegisterDocument(SessionWrapper),
+        "register_document_version": RegisterDocumentVersion(SessionWrapper),
+        "fetch_document_data": FetchDocumentData(SessionWrapper),
+        "fetch_document_manifest": FetchDocumentManifest(SessionWrapper),
+        "fetch_assets_list": FetchAssetsList(SessionWrapper),
+        "register_asset_version": RegisterAssetVersion(SessionWrapper),
+        "diff_document_versions": DiffDocumentVersions(SessionWrapper),
+        "sanitize_document_front": SanitizeDocumentFront(SessionWrapper),
+        "create_documents_bundle": CreateDocumentsBundle(SessionWrapper),
+        "fetch_documents_bundle": FetchDocumentsBundle(SessionWrapper),
+        "update_documents_bundle_metadata": UpdateDocumentsBundleMetadata(
+            SessionWrapper
+        ),
+        "add_document_to_documents_bundle": AddDocumentToDocumentsBundle(
+            SessionWrapper
+        ),
+        "insert_document_to_documents_bundle": InsertDocumentToDocumentsBundle(
+            SessionWrapper
+        ),
+        "create_journal": CreateJournal(SessionWrapper),
     }

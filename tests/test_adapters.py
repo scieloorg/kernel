@@ -123,6 +123,50 @@ class SessionTestMixin:
         session = self.Session()
         self.assertIsInstance(session.journals, interfaces.DataStore)
 
+    def test_observe_returns_none(self):
+        session = self.Session()
+        self.assertIsNone(session.observe("test_event", lambda d: d))
+
+    def test_notify_runs_callbacks(self):
+        callback = Mock()
+        session = self.Session()
+        session.observe("test_event", callback)
+        session.notify("test_event", "foo")
+        callback.assert_called_once_with("foo", session)
+
+    def test_notify_doesnt_propagate_exceptions(self):
+        import logging
+
+        try:
+            # essa manobra de desligar temporariamente o log é para evitar
+            # que a mensagem que será emitida em decorrência da execução de
+            # `notify` suje o relatório de execução dos testes automatizados.
+            # caso essa manobra seja necessária novamente, sugiro transformá-la
+            # num decorator ou context-manager.
+            logging.disable(logging.CRITICAL)
+
+            session = self.Session()
+            session.observe("test_event", lambda d, s: 1 / 0)
+            self.assertIsNone(session.notify("test_event", "foo"))
+        finally:
+            logging.disable(logging.NOTSET)
+
+    def test_notify_logs_exceptions(self):
+        session = self.Session()
+        session.observe("test_event", lambda d, s: 1 / 0)
+        with self.assertLogs("documentstore.interfaces") as log:
+            session.notify("test_event", "foo")
+
+        has_message = False
+        for log_message in log.output:
+            if (
+                "ERROR:documentstore.interfaces:cannot run callback" in log_message
+                and "Traceback (most recent call last):" in log_message
+                and "ZeroDivisionError: division by zero" in log_message
+            ):
+                has_message = True
+        self.assertTrue(has_message)
+
 
 class AppTestingSessionTests(SessionTestMixin, unittest.TestCase):
     Session = apptesting.Session
