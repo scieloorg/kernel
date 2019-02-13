@@ -1,12 +1,8 @@
 import unittest
 from unittest.mock import Mock
 
-from documentstore import adapters, domain, exceptions
-
-
-class MongoClientStub:
-    def collection(self):
-        return None
+from documentstore import adapters, domain, exceptions, interfaces
+from . import apptesting
 
 
 class StoreTestMixin:
@@ -15,12 +11,6 @@ class StoreTestMixin:
         self.DBCollectionMock.insert_one = Mock()
         self.DBCollectionMock.find_one = Mock()
         self.DBCollectionMock.replace_one = Mock()
-
-    def test_session(self):
-        session = adapters.Session(MongoClientStub())
-        self.assertIsInstance(session.documents, adapters.DocumentStore)
-        self.assertIsInstance(session.documents_bundles, adapters.DocumentsBundleStore)
-        self.assertIsInstance(session.journals, adapters.JournalStore)
 
     def test_add(self):
         store = self.Adapter(self.DBCollectionMock)
@@ -110,3 +100,39 @@ class JournalStoreTest(StoreTestMixin, unittest.TestCase):
 
     Adapter = adapters.JournalStore
     DomainClass = domain.Journal
+
+
+class SessionTestMixin:
+    """Testa a interface de `interfaces.Session`. Qualquer classe que implementar
+    a interface mencionada deverá acompanhar um conjunto de testes que herdam
+    deste mixin, conforme o exemplo:
+
+        class AppTestingSessionTests(SessionTestMixin, inittest.TestCase):
+            Session = apptesting.Session
+    """
+
+    def test_documents_attribute(self):
+        session = self.Session()
+        self.assertIsInstance(session.documents, interfaces.DataStore)
+
+    def test_documents_bundles_attribute(self):
+        session = self.Session()
+        self.assertIsInstance(session.documents_bundles, interfaces.DataStore)
+
+    def test_journals_attribute(self):
+        session = self.Session()
+        self.assertIsInstance(session.journals, interfaces.DataStore)
+
+
+class AppTestingSessionTests(SessionTestMixin, unittest.TestCase):
+    Session = apptesting.Session
+
+
+class MongoClientStub:
+    def collection(self):
+        return None
+
+
+class SessionTests(SessionTestMixin, unittest.TestCase):
+    def Session(self):
+        return adapters.Session(MongoClientStub())
