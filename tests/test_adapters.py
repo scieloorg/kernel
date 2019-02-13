@@ -4,12 +4,23 @@ from unittest.mock import Mock
 from documentstore import adapters, domain, exceptions
 
 
+class MongoClientStub:
+    def collection(self):
+        return None
+
+
 class StoreTestMixin:
     def setUp(self):
         self.DBCollectionMock = Mock()
         self.DBCollectionMock.insert_one = Mock()
         self.DBCollectionMock.find_one = Mock()
         self.DBCollectionMock.replace_one = Mock()
+
+    def test_session(self):
+        session = adapters.Session(MongoClientStub())
+        self.assertIsInstance(session.documents, adapters.DocumentStore)
+        self.assertIsInstance(session.documents_bundles, adapters.DocumentsBundleStore)
+        self.assertIsInstance(session.journals, adapters.JournalStore)
 
     def test_add(self):
         store = self.Adapter(self.DBCollectionMock)
@@ -93,3 +104,9 @@ class DocumentsStoreTest(StoreTestMixin, unittest.TestCase):
 
     Adapter = adapters.DocumentStore
     DomainClass = domain.Document
+
+
+class JournalStoreTest(StoreTestMixin, unittest.TestCase):
+
+    Adapter = adapters.JournalStore
+    DomainClass = domain.Journal
