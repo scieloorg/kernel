@@ -426,6 +426,7 @@ class DocumentsBundle:
     @property
     def publication_year(self):
         return BundleManifest.get_metadata(self._manifest, "publication_year")
+        return BundleManifest.get_metadata(self.manifest, "publication_year")
 
     @publication_year.setter
     def publication_year(self, value: Union[str, int]):
@@ -441,7 +442,7 @@ class DocumentsBundle:
 
     @property
     def volume(self):
-        return BundleManifest.get_metadata(self._manifest, "volume")
+        return BundleManifest.get_metadata(self.manifest, "volume")
 
     @volume.setter
     def volume(self, value: Union[str, int]):
@@ -450,7 +451,7 @@ class DocumentsBundle:
 
     @property
     def number(self):
-        return BundleManifest.get_metadata(self._manifest, "number")
+        return BundleManifest.get_metadata(self.manifest, "number")
 
     @number.setter
     def number(self, value: Union[str, int]):
@@ -459,7 +460,7 @@ class DocumentsBundle:
 
     @property
     def supplement(self):
-        return BundleManifest.get_metadata(self._manifest, "supplement")
+        return BundleManifest.get_metadata(self.manifest, "supplement")
 
     @supplement.setter
     def supplement(self, value: Union[str, int]):
@@ -511,7 +512,7 @@ class Journal:
 
     @property
     def mission(self):
-        return BundleManifest.get_metadata(self._manifest, "mission", {})
+        return BundleManifest.get_metadata(self.manifest, "mission", {})
 
     @mission.setter
     def mission(self, value: dict):
@@ -525,7 +526,7 @@ class Journal:
 
     @property
     def title(self):
-        return BundleManifest.get_metadata(self._manifest, "title")
+        return BundleManifest.get_metadata(self.manifest, "title")
 
     @title.setter
     def title(self, value: str):
@@ -534,7 +535,7 @@ class Journal:
 
     @property
     def title_iso(self):
-        return BundleManifest.get_metadata(self._manifest, "title_iso")
+        return BundleManifest.get_metadata(self.manifest, "title_iso")
 
     @title_iso.setter
     def title_iso(self, value: str):
@@ -543,7 +544,7 @@ class Journal:
 
     @property
     def short_title(self):
-        return BundleManifest.get_metadata(self._manifest, "short_title")
+        return BundleManifest.get_metadata(self.manifest, "short_title")
 
     @short_title.setter
     def short_title(self, value: str):
@@ -554,7 +555,7 @@ class Journal:
 
     @property
     def title_slug(self):
-        return BundleManifest.get_metadata(self._manifest, "title_slug")
+        return BundleManifest.get_metadata(self.manifest, "title_slug")
 
     @title_slug.setter
     def title_slug(self, value: str):
@@ -565,7 +566,7 @@ class Journal:
 
     @property
     def acronym(self):
-        return BundleManifest.get_metadata(self._manifest, "acronym")
+        return BundleManifest.get_metadata(self.manifest, "acronym")
 
     @acronym.setter
     def acronym(self, value: str):
@@ -574,7 +575,7 @@ class Journal:
 
     @property
     def scielo_issn(self):
-        return BundleManifest.get_metadata(self._manifest, "scielo_issn")
+        return BundleManifest.get_metadata(self.manifest, "scielo_issn")
 
     @scielo_issn.setter
     def scielo_issn(self, value: str):
@@ -585,7 +586,7 @@ class Journal:
 
     @property
     def print_issn(self):
-        return BundleManifest.get_metadata(self._manifest, "print_issn")
+        return BundleManifest.get_metadata(self.manifest, "print_issn")
 
     @print_issn.setter
     def print_issn(self, value: str):
@@ -596,7 +597,7 @@ class Journal:
 
     @property
     def electronic_issn(self):
-        return BundleManifest.get_metadata(self._manifest, "electronic_issn")
+        return BundleManifest.get_metadata(self.manifest, "electronic_issn")
 
     @electronic_issn.setter
     def electronic_issn(self, value: str):
@@ -607,7 +608,7 @@ class Journal:
 
     @property
     def current_status(self):
-        return BundleManifest.get_metadata(self._manifest, "current_status")
+        return BundleManifest.get_metadata(self.manifest, "current_status")
 
     @current_status.setter
     def current_status(self, value: str):
@@ -618,7 +619,7 @@ class Journal:
 
     @property
     def subject_areas(self):
-        return BundleManifest.get_metadata(self._manifest, "subject_areas")
+        return BundleManifest.get_metadata(self.manifest, "subject_areas")
 
     @subject_areas.setter
     def subject_areas(self, value: tuple):
@@ -641,7 +642,7 @@ class Journal:
 
     @property
     def sponsors(self) -> Tuple[dict]:
-        return BundleManifest.get_metadata(self._manifest, "sponsors")
+        return BundleManifest.get_metadata(self.manifest, "sponsors")
 
     @sponsors.setter
     def sponsors(self, value: Tuple[dict]) -> None:
@@ -654,7 +655,7 @@ class Journal:
 
     @property
     def metrics(self):
-        return BundleManifest.get_metadata(self._manifest, "metrics", {})
+        return BundleManifest.get_metadata(self.manifest, "metrics", {})
 
     @metrics.setter
     def metrics(self, value: dict):
@@ -665,6 +666,24 @@ class Journal:
                 "cannot set metrics with value " '"%s": value must be dict' % value
             ) from None
         self.manifest = BundleManifest.set_metadata(self._manifest, "metrics", value)
+
+    @property
+    def subject_categories(self):
+        return BundleManifest.get_metadata(self.manifest, "subject_categories")
+
+    @subject_categories.setter
+    def subject_categories(self, value: Union[list, tuple]):
+        try:
+            value = list(value)
+        except TypeError:
+            raise TypeError(
+                "cannot set subject_categories with value "
+                '"%s": value must be list like object' % value
+            ) from None
+
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "subject_categories", list(value)
+        )
 
     @property
     def institution_responsible_for(self):
@@ -687,10 +706,19 @@ class Journal:
         )
 
     @property
-    def next_journal(self):
-        return BundleManifest.get_metadata(
-            self.manifest, "next_journal", {}
+    def online_submission_url(self):
+        return BundleManifest.get_metadata(self.manifest, "online_submission_url")
+
+    @online_submission_url.setter
+    def online_submission_url(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "online_submission_url", _value
         )
+
+    @property
+    def next_journal(self):
+        return BundleManifest.get_metadata(self.manifest, "next_journal", {})
 
     @next_journal.setter
     def next_journal(self, value: dict):
