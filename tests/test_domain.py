@@ -1087,3 +1087,61 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.institution_responsible_for = ["USP", "SCIELO"]
         self.assertEqual(journal.institution_responsible_for, ("USP", "SCIELO"))
+
+    def test_set_next_journal(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        next_journal = {"title": "Materials Research", "id": "journal/0034-8910"}
+        journal.next_journal = next_journal
+        self.assertEqual(
+            journal.manifest["metadata"]["next_journal"],
+            [("2018-08-05T22:33:49.795151Z", next_journal)],
+        )
+
+    def test_set_str_to_next_journal_should_raise_type_error(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        invalid = 'name'
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set next_journal with value "
+            '"%s": value must be dict' % repr(invalid),
+            setattr,
+            journal,
+            "next_journal",
+            invalid,
+        )
+
+    def test_set_int_to_next_journal_should_raise_type_error(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        invalid = 10
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set next_journal with value "
+            '"%s": value must be dict' % repr(invalid),
+            setattr,
+            journal,
+            "next_journal",
+            invalid,
+        )
+
+    def test_set_tuple_to_next_journal_should_raise_type_error(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        invalid = ('item 1', 'item 2')
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set next_journal with value "
+            '"%s": value must be dict' % repr(invalid),
+            setattr,
+            journal,
+            "next_journal",
+            invalid,
+        )
+
+    def test_next_journal_return_empty_dict(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        self.assertEqual(journal.next_journal, {})
+
+    def test_next_journal_return_raise_key_error_metadata(self):
+        journal = domain.Journal(id="0034-8910-MR")
+
+        with self.assertRaises(KeyError):
+            journal.manifest["metadata"]["next_journal"]

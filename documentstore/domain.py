@@ -685,3 +685,22 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self.manifest, "institution_responsible_for", value
         )
+
+    @property
+    def next_journal(self):
+        return BundleManifest.get_metadata(
+            self.manifest, "next_journal", {}
+        )
+
+    @next_journal.setter
+    def next_journal(self, value: dict):
+        try:
+            value = dict(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set next_journal with value "
+                '"%s": value must be dict' % repr(value)
+            ) from None
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "next_journal", value
+        )
