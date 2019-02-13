@@ -1175,3 +1175,17 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_online_submission_url_default_is_empty(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.online_submission_url, "")
+
+    def test_set_previous_journal(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        expected = {"title": "Título Anterior", "id": "ID título anterior"}
+        journal.previous_journal = expected
+        self.assertEqual(journal.previous_journal, expected)
+        self.assertEqual(
+            journal.manifest["metadata"]["previous_journal"],
+            [("2018-08-05T22:33:49.795151Z", expected)],
+        )
+
+    def test_previous_journal_default_is_empty(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.previous_journal, {})
