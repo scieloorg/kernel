@@ -667,6 +667,24 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(self._manifest, "metrics", value)
 
     @property
+    def subject_categories(self):
+        return BundleManifest.get_metadata(self.manifest, "subject_categories")
+
+    @subject_categories.setter
+    def subject_categories(self, value: Union[list, tuple]):
+        try:
+            value = list(value)
+        except TypeError:
+            raise TypeError(
+                "cannot set subject_categories with value "
+                '"%s": value must be list like object' % value
+            ) from None
+
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "subject_categories", list(value)
+        )
+
+    @property
     def institution_responsible_for(self):
         return BundleManifest.get_metadata(
             self.manifest, "institution_responsible_for", ()
