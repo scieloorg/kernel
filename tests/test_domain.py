@@ -687,6 +687,26 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.id(), "0034-8910-rsp-48-2")
 
+    def test_remove_bundle(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal._manifest["items"] = [
+            "/bundle/0034-8910-rsp-48-2",
+            "/bundle/0034-8910-rsp-48-3",
+        ]
+        journal.remove_bundle("/bundle/0034-8910-rsp-48-2")
+        self.assertNotIn("/bundle/0034-8910-rsp-48-2", journal.manifest["items"])
+        self.assertEqual(1, len(journal.manifest["items"]))
+
+    def test_remove_bundle_raises_exception_if_item_does_not_exist(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            exceptions.DoesNotExist,
+            'cannot remove item "/bundle/0034-8910-rsp-48-2" from bundle: '
+            "the item does not exist",
+            journal.remove_bundle,
+            "/bundle/0034-8910-rsp-48-2",
+        )
+
     def test_set_mission(self):
         documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
         documents_bundle.mission = {

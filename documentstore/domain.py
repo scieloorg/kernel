@@ -516,6 +516,9 @@ class Journal:
     def manifest(self, value: dict):
         self._manifest = value
 
+    def remove_bundle(self, bundle: str):
+        self.manifest = BundleManifest.remove_item(self._manifest, bundle)
+
     @property
     def mission(self):
         return BundleManifest.get_metadata(self.manifest, "mission", {})
@@ -750,7 +753,7 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self._manifest, "previous_journal", value
         )
-        
+
     @property
     def status_history(self):
         return BundleManifest.get_metadata_all(self.manifest, "status")
