@@ -1,11 +1,11 @@
-from typing import Callable, Dict
+from typing import Callable, Dict, List, Any
 import difflib
 from io import BytesIO
 
 from clea import join as clea_join, core as clea_core
 
 from .interfaces import Session
-from .domain import Document, DocumentsBundle
+from .domain import Document, DocumentsBundle, Journal
 
 __all__ = ["get_handlers"]
 
@@ -244,6 +244,15 @@ class InsertDocumentToDocumentsBundle(CommandHandler):
         session.documents_bundles.update(_bundle)
 
 
+class CreateJournal(CommandHandler):
+    def __call__(self, id: str, metadata: Dict[str, Any] = None) -> None:
+        session = self.Session()
+        _journal = Journal(id)
+        for name, value in (metadata or {}).items():
+            setattr(_journal, name, value)
+        return session.journals.add(_journal)
+
+
 def get_handlers(Session: Callable[[], Session]) -> dict:
     return {
         "register_document": RegisterDocument(Session),
@@ -259,4 +268,5 @@ def get_handlers(Session: Callable[[], Session]) -> dict:
         "update_documents_bundle_metadata": UpdateDocumentsBundleMetadata(Session),
         "add_document_to_documents_bundle": AddDocumentToDocumentsBundle(Session),
         "insert_document_to_documents_bundle": InsertDocumentToDocumentsBundle(Session),
+        "create_journal": CreateJournal(Session),
     }
