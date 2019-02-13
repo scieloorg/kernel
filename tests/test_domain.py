@@ -1189,7 +1189,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_set_str_to_next_journal_should_raise_type_error(self):
         journal = domain.Journal(id="0034-8910-MR")
-        invalid = 'name'
+        invalid = "name"
         self._assert_raises_with_message(
             TypeError,
             "cannot set next_journal with value "
@@ -1215,7 +1215,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_set_tuple_to_next_journal_should_raise_type_error(self):
         journal = domain.Journal(id="0034-8910-MR")
-        invalid = ('item 1', 'item 2')
+        invalid = ("item 1", "item 2")
         self._assert_raises_with_message(
             TypeError,
             "cannot set next_journal with value "

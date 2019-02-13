@@ -425,7 +425,6 @@ class DocumentsBundle:
 
     @property
     def publication_year(self):
-        return BundleManifest.get_metadata(self._manifest, "publication_year")
         return BundleManifest.get_metadata(self.manifest, "publication_year")
 
     @publication_year.setter
