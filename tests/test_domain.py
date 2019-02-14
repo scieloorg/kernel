@@ -299,6 +299,19 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             "2018",
         )
 
+    def test_get_metadata_all(self):
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle, "publication_year", "2018"
+        )
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle, "publication_year", "2019"
+        )
+        items = domain.BundleManifest.get_metadata_all(
+            documents_bundle, "publication_year"
+        )
+        self.assertEqual([data[1] for data in items], ["2018", "2019"])
+
     def test_get_metadata_always_returns_latest(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.set_metadata(
@@ -819,17 +832,17 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             [("2018-08-05T22:33:49.795151Z", "1809-4392")],
         )
 
-    def test_current_status_is_empty_str(self):
+    def test_status_is_empty_str(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.current_status, "")
+        self.assertEqual(journal.status, "")
 
-    def test_set_current_status(self):
+    def test_set_status(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.current_status = "current"
-        self.assertEqual(journal.current_status, "current")
+        journal.status = {"status": "current"}
+        self.assertEqual(journal.status, {"status": "current"})
         self.assertEqual(
-            journal.manifest["metadata"]["current_status"],
-            [("2018-08-05T22:33:49.795151Z", "current")],
+            journal.manifest["metadata"]["status"],
+            [("2018-08-05T22:33:49.795151Z", {"status": "current"})],
         )
 
     def test_get_created(self):
@@ -1235,3 +1248,49 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         with self.assertRaises(KeyError):
             journal.manifest["metadata"]["next_journal"]
+
+    def test_logo_url(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        url = "https://logo"
+        journal.logo_url = url
+        self.assertEqual(url, journal.logo_url)
+        self.assertEqual(
+            journal.manifest["metadata"]["logo_url"],
+            [("2018-08-05T22:33:49.795151Z", url)],
+        )
+
+    def test_logo_url_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.logo_url, "")
+
+    def test_set_previous_journal(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        expected = {"title": "Título Anterior", "id": "ID título anterior"}
+        journal.previous_journal = expected
+        self.assertEqual(journal.previous_journal, expected)
+        self.assertEqual(
+            journal.manifest["metadata"]["previous_journal"],
+            [("2018-08-05T22:33:49.795151Z", expected)],
+        )
+
+    def test_previous_journal_default_is_empty(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.previous_journal, {})
+
+    def test_status_history(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.status = {"status": "CURRENT"}
+        journal.status = {"status": "SUSPENDED", "notes": "motivo"}
+        journal.status = {"status": "CEASED"}
+        self.assertEqual(
+            [item[0] for item in journal.status_history],
+            sorted([item[0] for item in journal.status_history]),
+        )
+        self.assertEqual(
+            [item[1] for item in journal.status_history],
+            [
+                {"status": "CURRENT"},
+                {"status": "SUSPENDED", "notes": "motivo"},
+                {"status": "CEASED"},
+            ],
+        )
