@@ -1330,3 +1330,19 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "contact",
             "contact-invalid",
         )
+
+    def test_add_documents_bundle(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.add_documents_bundle("/bundles/0034-8910-rsp-48-2")
+        self.assertIn("/bundles/0034-8910-rsp-48-2", journal.manifest["items"])
+
+    def test_add_documents_bundle_raises_exception_if_item_already_exists(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.add_documents_bundle("/bundles/0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            'cannot add item "/bundles/0034-8910-rsp-48-2" in bundle: '
+            "the item already exists",
+            journal.add_documents_bundle,
+            "/bundles/0034-8910-rsp-48-2",
+        )
