@@ -5,6 +5,7 @@ class Session(interfaces.Session):
     def __init__(self):
         self._documents = InMemoryDocumentStore()
         self._documents_bundles = InMemoryDocumentsBundleStore()
+        self._journals = InMemoryJournalStore()
 
     @property
     def documents(self):
@@ -13,6 +14,10 @@ class Session(interfaces.Session):
     @property
     def documents_bundles(self):
         return self._documents_bundles
+
+    @property
+    def journals(self):
+        return self._journals
 
 
 class InMemoryDataStore(interfaces.DataStore):
@@ -45,6 +50,10 @@ class InMemoryDocumentStore(InMemoryDataStore):
 
 class InMemoryDocumentsBundleStore(InMemoryDataStore):
     DomainClass = domain.DocumentsBundle
+
+
+class InMemoryJournalStore(InMemoryDataStore):
+    DomainClass = domain.Journal
 
 
 def document_registry_data_fixture(prefix=""):

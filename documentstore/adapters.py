@@ -29,7 +29,11 @@ class Session(interfaces.Session):
 
     @property
     def documents_bundles(self):
-        return None
+        return DocumentsBundleStore(self._collection)
+
+    @property
+    def journals(self):
+        return JournalStore(self._collection)
 
 
 class BaseStore(interfaces.DataStore):
@@ -73,3 +77,7 @@ class DocumentStore(BaseStore):
 
 class DocumentsBundleStore(BaseStore):
     DomainClass = domain.DocumentsBundle
+
+
+class JournalStore(BaseStore):
+    DomainClass = domain.Journal

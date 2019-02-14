@@ -250,3 +250,31 @@ class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
             index=1,
             doc="/document/1",
         )
+
+
+class CreateJournalTest(unittest.TestCase):
+    def setUp(self):
+        self.services = make_services()
+        self.command = self.services.get("create_journal")
+
+    def test_command_interface(self):
+        self.assertIsNotNone(self.command)
+        self.assertTrue(callable(self.command))
+
+    def test_command_success(self):
+        self.assertIsNone(self.command(id="xpto"))
+
+    def test_command_with_metadata_success(self):
+        self.assertIsNone(
+            self.command(
+                id="xpto",
+                metadata={
+                    "title": "Journal Title",
+                    "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+                },
+            )
+        )
+
+    def test_command_raises_exception_if_already_exists(self):
+        self.command(id="xpto")
+        self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
