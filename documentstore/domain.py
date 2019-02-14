@@ -771,3 +771,20 @@ class Journal:
     @property
     def status_history(self):
         return BundleManifest.get_metadata_all(self.manifest, "status")
+
+    @property
+    def contact(self) -> dict:
+        return BundleManifest.get_metadata(self.manifest, "contact", {})
+
+    @contact.setter
+    def contact(self, value: dict) -> None:
+        try:
+            value = dict(value)
+        except (TypeError, ValueError) as ex:
+            raise type(ex)(
+                "cannot set contact with value "
+                "%s"
+                ": value must be dict" % repr(value)
+            ) from None
+
+        self.manifest = BundleManifest.set_metadata(self._manifest, "contact", value)
