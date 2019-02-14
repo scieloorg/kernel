@@ -726,6 +726,15 @@ class Journal:
         )
 
     @property
+    def logo_url(self):
+        return BundleManifest.get_metadata(self.manifest, "logo_url")
+
+    @logo_url.setter
+    def logo_url(self, value: str):
+        value = str(value)
+        self.manifest = BundleManifest.set_metadata(self._manifest, "logo_url", value)
+
+    @property
     def previous_journal(self):
         return BundleManifest.get_metadata(self.manifest, "previous_journal", {})
 

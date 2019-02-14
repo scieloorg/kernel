@@ -1191,6 +1191,20 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.online_submission_url, "")
 
+    def test_logo_url(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        url = "https://logo"
+        journal.logo_url = url
+        self.assertEqual(url, journal.logo_url)
+        self.assertEqual(
+            journal.manifest["metadata"]["logo_url"],
+            [("2018-08-05T22:33:49.795151Z", url)],
+        )
+
+    def test_logo_url_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.logo_url, "")
+
     def test_set_previous_journal(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         expected = {"title": "Título Anterior", "id": "ID título anterior"}
