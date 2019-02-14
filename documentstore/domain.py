@@ -364,6 +364,13 @@ class BundleManifest:
             return default
 
     @staticmethod
+    def get_metadata_all(bundle: dict, name: str) -> Any:
+        try:
+            return bundle["metadata"].get(name, [])
+        except IndexError:
+            return default
+
+    @staticmethod
     def add_item(bundle: dict, item: str, now: Callable[[], str] = utcnow) -> dict:
         if item in bundle["items"]:
             raise exceptions.AlreadyExists(
@@ -606,15 +613,18 @@ class Journal:
         )
 
     @property
-    def current_status(self):
-        return BundleManifest.get_metadata(self.manifest, "current_status")
+    def status(self):
+        return BundleManifest.get_metadata(self.manifest, "status")
 
-    @current_status.setter
-    def current_status(self, value: str):
-        _value = str(value)
-        self.manifest = BundleManifest.set_metadata(
-            self._manifest, "current_status", _value
-        )
+    @status.setter
+    def status(self, value: dict):
+        try:
+            value = dict(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set status with value " '"%s": value must be dict' % repr(value)
+            ) from None
+        self.manifest = BundleManifest.set_metadata(self._manifest, "status", value)
 
     @property
     def subject_areas(self):
@@ -731,3 +741,7 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self._manifest, "previous_journal", value
         )
+        
+    @property
+    def status_history(self):
+        return BundleManifest.get_metadata_all(self.manifest, "status")

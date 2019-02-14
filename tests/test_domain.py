@@ -299,6 +299,19 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             "2018",
         )
 
+    def test_get_metadata_all(self):
+        documents_bundle = new_bundle("0034-8910-rsp-48-2")
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle, "publication_year", "2018"
+        )
+        documents_bundle = domain.BundleManifest.set_metadata(
+            documents_bundle, "publication_year", "2019"
+        )
+        items = domain.BundleManifest.get_metadata_all(
+            documents_bundle, "publication_year"
+        )
+        self.assertEqual([data[1] for data in items], ["2018", "2019"])
+
     def test_get_metadata_always_returns_latest(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.set_metadata(
@@ -819,17 +832,17 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             [("2018-08-05T22:33:49.795151Z", "1809-4392")],
         )
 
-    def test_current_status_is_empty_str(self):
+    def test_status_is_empty_str(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.current_status, "")
+        self.assertEqual(journal.status, "")
 
-    def test_set_current_status(self):
+    def test_set_status(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.current_status = "current"
-        self.assertEqual(journal.current_status, "current")
+        journal.status = {"status": "current"}
+        self.assertEqual(journal.status, {"status": "current"})
         self.assertEqual(
-            journal.manifest["metadata"]["current_status"],
-            [("2018-08-05T22:33:49.795151Z", "current")],
+            journal.manifest["metadata"]["status"],
+            [("2018-08-05T22:33:49.795151Z", {"status": "current"})],
         )
 
     def test_get_created(self):
@@ -1104,7 +1117,6 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0234-8410-bjmbr-587-90")
 
         class Fibonacci:
-
             def __init__(self, maximo=1000000):
                 self.current, self.p_element = 0, 1
                 self.maximo = maximo
@@ -1118,7 +1130,10 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
                 ret = self.current
 
-                self.current, self.p_element = self.p_element, self.current + self.p_element
+                self.current, self.p_element = (
+                    self.p_element,
+                    self.current + self.p_element,
+                )
 
                 return str(ret)
 
@@ -1127,7 +1142,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.subject_categories = fib_obj
         self.assertEqual(
             journal.manifest["metadata"]["subject_categories"],
-            [("2018-08-05T22:33:49.795151Z", ['0', '1', '1', '2', '3', '5', '8'])],
+            [("2018-08-05T22:33:49.795151Z", ["0", "1", "1", "2", "3", "5", "8"])],
         )
 
     def test_institution_responsible_for_is_empty_str(self):
@@ -1189,3 +1204,21 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_previous_journal_default_is_empty(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.previous_journal, {})
+
+    def test_status_history(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.status = {"status": "CURRENT"}
+        journal.status = {"status": "SUSPENDED", "notes": "motivo"}
+        journal.status = {"status": "CEASED"}
+        self.assertEqual(
+            [item[0] for item in journal.status_history],
+            sorted([item[0] for item in journal.status_history]),
+        )
+        self.assertEqual(
+            [item[1] for item in journal.status_history],
+            [
+                {"status": "CURRENT"},
+                {"status": "SUSPENDED", "notes": "motivo"},
+                {"status": "CEASED"},
+            ],
+        )
