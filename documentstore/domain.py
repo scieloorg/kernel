@@ -726,5 +726,22 @@ class Journal:
         )
 
     @property
+    def previous_journal(self):
+        return BundleManifest.get_metadata(self.manifest, "previous_journal", {})
+
+    @previous_journal.setter
+    def previous_journal(self, value: dict):
+        try:
+            value = dict(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set previous_journal with value "
+                '"%s": value must be dict' % repr(value)
+            ) from None
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "previous_journal", value
+        )
+        
+    @property
     def status_history(self):
         return BundleManifest.get_metadata_all(self.manifest, "status")
