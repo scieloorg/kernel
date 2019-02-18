@@ -1330,3 +1330,81 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "contact",
             "contact-invalid",
         )
+
+    def test_add_issue(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.add_issue("0034-8910-rsp-48-2")
+        self.assertIn("0034-8910-rsp-48-2", journal.manifest["items"])
+
+    def test_add_issue_raises_exception_if_item_already_exists(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.add_issue("0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            'cannot add item "0034-8910-rsp-48-2" in bundle: '
+            "the item already exists",
+            journal.add_issue,
+            "0034-8910-rsp-48-2",
+        )
+
+    def test_insert_issue(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        input_expected = [
+            (0, "0034-8910-rsp-48-2", 0),
+            (1, "0034-8910-rsp-48-3", 1),
+            (10, "0034-8910-rsp-48-4", -1),
+        ]
+        for index, issue, expected in input_expected:
+            with self.subTest(index=index, issue=issue, expected=expected):
+                journal.insert_issue(index, issue)
+                self.assertEqual(issue, journal.manifest["items"][expected])
+
+    def test_insert_issue_shifts_item_in_current_position(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.insert_issue(0, "0034-8910-rsp-48-2")
+        journal.insert_issue(0, "0034-8910-rsp-48-3")
+        self.assertEqual(
+            ["0034-8910-rsp-48-3", "0034-8910-rsp-48-2"], journal.manifest["items"]
+        )
+
+    def test_insert_issue_shifts_item_in_the_last_position(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.insert_issue(0, "0034-8910-rsp-48-2")
+        journal.insert_issue(0, "0034-8910-rsp-48-3")
+        journal.insert_issue(-1, "0034-8910-rsp-48-4")
+        self.assertEqual(
+            ["0034-8910-rsp-48-3", "0034-8910-rsp-48-4", "0034-8910-rsp-48-2"],
+            journal.manifest["items"],
+        )
+
+    def test_insert_issue_raises_exception_if_item_already_exists(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.insert_issue(0, "0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            exceptions.AlreadyExists,
+            'cannot insert item "0034-8910-rsp-48-2" in bundle: '
+            "the item already exists",
+            journal.insert_issue,
+            1,
+            "0034-8910-rsp-48-2",
+        )
+
+    def test_remove_issue(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.add_issue("0034-8910-rsp-48-2")
+        journal.add_issue("0034-8910-rsp-48-3")
+        journal.add_issue("0034-8910-rsp-48-4")
+        journal.remove_issue("0034-8910-rsp-48-3")
+        self.assertEqual(
+            ["0034-8910-rsp-48-2", "0034-8910-rsp-48-4"], journal.manifest["items"]
+        )
+
+    def test_remove_issue_raises_exception_if_item_does_not_exist(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        self._assert_raises_with_message(
+            exceptions.DoesNotExist,
+            'cannot remove item "0034-8910-rsp-48-2" from bundle: '
+            "the item does not exist",
+            journal.remove_issue,
+            "0034-8910-rsp-48-2",
+        )

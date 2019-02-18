@@ -788,3 +788,12 @@ class Journal:
             ) from None
 
         self.manifest = BundleManifest.set_metadata(self._manifest, "contact", value)
+
+    def add_issue(self, issue: str) -> None:
+        self.manifest = BundleManifest.add_item(self._manifest, issue)
+
+    def insert_issue(self, index: int, issue: str) -> None:
+        self.manifest = BundleManifest.insert_item(self._manifest, index, issue)
+
+    def remove_issue(self, issue: str) -> None:
+        self.manifest = BundleManifest.remove_item(self._manifest, issue)
