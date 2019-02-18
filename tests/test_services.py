@@ -155,8 +155,8 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
 
     def test_command_remove_metadata(self):
         """
-        Por ora, a maneira de remover um metadado é através da atribuição de uma 
-        string vazia para o mesmo. Note que este procedimento não removerá o metadado 
+        Por ora, a maneira de remover um metadado é através da atribuição de uma
+        string vazia para o mesmo. Note que este procedimento não removerá o metadado
         do manifesto.
         """
         self.services["create_documents_bundle"](
@@ -278,3 +278,4 @@ class CreateJournalTest(unittest.TestCase):
     def test_command_raises_exception_if_already_exists(self):
         self.command(id="xpto")
         self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
+

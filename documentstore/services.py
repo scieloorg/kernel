@@ -1,12 +1,13 @@
 from typing import Callable, Dict, List, Any
 import difflib
+import functools
 from io import BytesIO
 from enum import Enum, auto
 
 from clea import join as clea_join, core as clea_core
 
 from .interfaces import Session
-from .domain import Document, DocumentsBundle, Journal
+from .domain import Document, DocumentsBundle, Journal, utcnow
 
 __all__ = ["get_handlers"]
 
@@ -34,7 +35,7 @@ class BaseRegisterDocument(CommandHandler):
     """Implementação abstrata de comando para registrar um novo documento.
 
     :param id: Identificador alfanumérico para o documento. Deve ser único.
-    :param data_url: URL válida e publicamente acessível para o documento em XML 
+    :param data_url: URL válida e publicamente acessível para o documento em XML
     SciELO PS.
     """
 
@@ -68,7 +69,7 @@ class RegisterDocument(BaseRegisterDocument):
     """Registra um novo documento.
 
     :param id: Identificador alfanumérico para o documento. Deve ser único.
-    :param data_url: URL válida e publicamente acessível para o documento em XML 
+    :param data_url: URL válida e publicamente acessível para o documento em XML
     SciELO PS.
     """
 
@@ -86,7 +87,7 @@ class RegisterDocumentVersion(BaseRegisterDocument):
     """Registra uma nova versão de um documento já registrado.
 
     :param id: Identificador alfanumérico para o documento.
-    :param data_url: URL válida e publicamente acessível para o documento em XML 
+    :param data_url: URL válida e publicamente acessível para o documento em XML
     SciELO PS.
     """
 
@@ -104,7 +105,7 @@ class FetchDocumentData(CommandHandler):
     """Recupera o documento em XML à partir de seu identificador.
 
     :param id: Identificador único do documento.
-    :param version_index: (opcional) Número inteiro correspondente a versão do 
+    :param version_index: (opcional) Número inteiro correspondente a versão do
     documento. Por padrão retorna a versão mais recente.
     :param version_at: (opcional) string de texto de um timestamp UTC
     referente a versão do documento no determinado momento. O uso do argumento
@@ -135,7 +136,7 @@ class FetchAssetsList(CommandHandler):
     """Recupera a lista de ativos do documento à partir de seu identificador.
 
     :param id: Identificador único do documento.
-    :param version_index: (opcional) Número inteiro correspondente a versão do 
+    :param version_index: (opcional) Número inteiro correspondente a versão do
     documento. Por padrão retorna a versão mais recente.
     """
 
@@ -174,10 +175,10 @@ class DiffDocumentVersions(CommandHandler):
     """Compara duas versões do Documento.
 
     :param id: Identificador único do documento.
-    :param from_version_at: string de texto de um timestamp UTC referente a 
+    :param from_version_at: string de texto de um timestamp UTC referente a
     versão do documento que será a base da comparação.
-    :param to_version_at: (opcional) string de texto de um timestamp UTC 
-    referente a versão final do documento a ser comparada. Se não for informada 
+    :param to_version_at: (opcional) string de texto de um timestamp UTC
+    referente a versão final do documento a ser comparada. Se não for informada
     será utilizada a versão mais recente.
     """
 
@@ -313,7 +314,44 @@ class CreateJournal(CommandHandler):
         return result
 
 
-DEFAULT_SUBSCRIBERS = []
+def log_change(data, session, now=utcnow, entity="", deleted=False):
+    change = {
+        "timestamp": now(),
+        "entity": entity,
+        "id": data["id"]
+    }
+
+    if deleted:
+        change["deleted"] = True
+
+    session.changes.add(change)
+
+
+DEFAULT_SUBSCRIBERS = [
+    (Events.DOCUMENT_REGISTERED, functools.partial(log_change, entity="Document")),
+    (
+        Events.DOCUMENT_VERSION_REGISTERED,
+        functools.partial(log_change, entity="Document"),
+    ),
+    (Events.ASSET_VERSION_REGISTERED, functools.partial(log_change, entity="Document")),
+    (
+        Events.DOCUMENTSBUNDLE_CREATED,
+        functools.partial(log_change, entity="DocumentsBundle"),
+    ),
+    (
+        Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
+        functools.partial(log_change, entity="DocumentsBundle"),
+    ),
+    (
+        Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
+        functools.partial(log_change, entity="DocumentsBundle"),
+    ),
+    (
+        Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
+        functools.partial(log_change, entity="DocumentsBundle"),
+    ),
+    (Events.JOURNAL_CREATED, functools.partial(log_change, entity="Journal")),
+]
 
 
 def get_handlers(
@@ -327,7 +365,7 @@ def get_handlers(
     """
 
     def SessionWrapper():
-        """Produz instância de `Session` inicializada com seus observadores. 
+        """Produz instância de `Session` inicializada com seus observadores.
         """
         session = Session()
         for event, callback in subscribers:

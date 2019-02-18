@@ -8,6 +8,7 @@ class Session(interfaces.Session):
         self._documents = InMemoryDocumentStore()
         self._documents_bundles = InMemoryDocumentsBundleStore()
         self._journals = InMemoryJournalStore()
+        self._changes = InMemoryChangesDataStore()
 
     @property
     def documents(self):
@@ -20,6 +21,10 @@ class Session(interfaces.Session):
     @property
     def journals(self):
         return self._journals
+
+    @property
+    def changes(self):
+        return self._changes
 
 
 class InMemoryDataStore(interfaces.DataStore):

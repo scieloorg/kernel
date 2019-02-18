@@ -23,6 +23,19 @@ class DataStore(abc.ABC):
         pass
 
 
+class ChangesDataStore(abc.ABC):
+    """Interface manipulação de dados de mudanças.
+    """
+
+    @abc.abstractmethod
+    def add(self, data: dict) -> None:
+        pass
+
+    @abc.abstractmethod
+    def filter(self, since: str = "", limit: int = 500) -> list:
+        pass
+
+
 class Session(abc.ABC):
     """Concentra os pontos de acesso aos repositórios de dados.
 
@@ -45,6 +58,13 @@ class Session(abc.ABC):
     @abc.abstractmethod
     def documents_bundles(self) -> DataStore:
         """Ponto de acesso à instância de ``DataStore``.
+        """
+        pass
+
+    @property
+    @abc.abstractmethod
+    def changes(self) -> ChangesDataStore:
+        """Ponto de acesso à instância de ``ChangesDataStore``.
         """
         pass
 
@@ -71,16 +91,3 @@ class Session(abc.ABC):
                     repr(callback),
                     event,
                 )
-
-
-class ChangesDataStore(abc.ABC):
-    """Interface manipulação de dados de mudanças.
-    """
-
-    @abc.abstractmethod
-    def add(self, data: dict) -> None:
-        pass
-
-    @abc.abstractmethod
-    def filter(self, since: str = "", limit: int = 500) -> list:
-        pass

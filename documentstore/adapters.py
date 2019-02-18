@@ -35,6 +35,10 @@ class Session(interfaces.Session):
     def journals(self):
         return JournalStore(self._collection)
 
+    @property
+    def changes(self):
+        pass
+
 
 class BaseStore(interfaces.DataStore):
     def __init__(self, collection):
