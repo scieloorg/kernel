@@ -314,12 +314,21 @@ class CreateJournal(CommandHandler):
         return result
 
 
+class FetchChanges(CommandHandler):
+    """Recupera lista de mudanças das entidades.
+
+    :param since: (Opcional) timestamp UTC, inicia a lista de resultados na mudança
+    imediatamente posterior ao timestamp informado.
+    :param limit: (Opcional) Limita o total de resultados obtidos. O valor padrão é 500.
+    """
+
+    def __call__(self, since: str = "", limit: int = 500):
+        session = self.Session()
+        return session.changes.filter(since=since, limit=limit)
+
+
 def log_change(data, session, now=utcnow, entity="", deleted=False):
-    change = {
-        "timestamp": now(),
-        "entity": entity,
-        "id": data["id"]
-    }
+    change = {"timestamp": now(), "entity": entity, "id": data["id"]}
 
     if deleted:
         change["deleted"] = True
@@ -393,4 +402,5 @@ def get_handlers(
             SessionWrapper
         ),
         "create_journal": CreateJournal(SessionWrapper),
+        "fetch_changes": FetchChanges(SessionWrapper),
     }

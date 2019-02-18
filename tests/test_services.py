@@ -39,6 +39,17 @@ class CreateDocumentsBundleTest(unittest.TestCase):
         self.command(id="xpto")
         self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
 
+    def test_command_adds_entry_to_changelog(self):
+        self.assertFalse(
+            ("xpto", "DocumentsBundle")
+            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
+        )
+        self.command(id="xpto")
+        self.assertTrue(
+            ("xpto", "DocumentsBundle")
+            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
+        )
+
 
 class FetchDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
@@ -176,6 +187,21 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         )
 
 
+class UpdateDocumentsBundle_NoDatetimeMock_Test(unittest.TestCase):
+    def setUp(self):
+        self.services = make_services()
+        self.command = self.services.get("update_documents_bundle_metadata")
+
+    def test_command_adds_entry_to_changelog(self):
+        self.assertEqual(0, len(self.services.get("fetch_changes")()))
+        self.services["create_documents_bundle"](
+            id="xpto", metadata={"publication_year": "2018", "volume": "2"}
+        )
+        self.assertEqual(1, len(self.services.get("fetch_changes")()))
+        self.command(id="xpto", metadata={"publication_year": "2019"})
+        self.assertEqual(2, len(self.services.get("fetch_changes")()))
+
+
 class AddDocumentToDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
         self.services = make_services()
@@ -204,6 +230,13 @@ class AddDocumentToDocumentsBundleTest(unittest.TestCase):
         self.assertRaises(
             exceptions.AlreadyExists, self.command, id="xpto", doc="/document/1"
         )
+
+    def test_command_adds_entry_to_changelog(self):
+        self.assertEqual(0, len(self.services.get("fetch_changes")()))
+        self.services["create_documents_bundle"](id="xpto")
+        self.assertEqual(1, len(self.services.get("fetch_changes")()))
+        self.command(id="xpto", doc="/document/1")
+        self.assertEqual(2, len(self.services.get("fetch_changes")()))
 
 
 class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
@@ -251,6 +284,13 @@ class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
             doc="/document/1",
         )
 
+    def test_command_adds_entry_to_changelog(self):
+        self.assertEqual(0, len(self.services["fetch_changes"]()))
+        self.services["create_documents_bundle"](id="xpto")
+        self.assertEqual(1, len(self.services["fetch_changes"]()))
+        self.command(id="xpto", index=2, doc="/document/1")
+        self.assertEqual(2, len(self.services["fetch_changes"]()))
+
 
 class CreateJournalTest(unittest.TestCase):
     def setUp(self):
@@ -279,3 +319,7 @@ class CreateJournalTest(unittest.TestCase):
         self.command(id="xpto")
         self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
 
+    def test_command_adds_entry_to_changelog(self):
+        self.assertEqual(0, len(self.services["fetch_changes"]()))
+        self.command(id="xpto")
+        self.assertEqual(1, len(self.services["fetch_changes"]()))
