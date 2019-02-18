@@ -24,6 +24,9 @@ class Events(Enum):
     DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE = auto()
     DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE = auto()
     JOURNAL_CREATED = auto()
+    ISSUE_ADDED_TO_JOURNAL = auto()
+    ISSUE_INSERTED_TO_JOURNAL = auto()
+    ISSUE_REMOVED_FROM_JOURNAL = auto()
 
 
 class CommandHandler:
@@ -314,6 +317,42 @@ class CreateJournal(CommandHandler):
         return result
 
 
+class AddIssueToJournal(CommandHandler):
+    def __call__(self, id: str, issue: str) -> None:
+        session = self.Session()
+        _journal = session.journals.fetch(id)
+        _journal.add_issue(issue)
+        session.journals.update(_journal)
+        session.notify(
+            Events.ISSUE_ADDED_TO_JOURNAL,
+            {"journal": _journal, "id": id, "issue": issue},
+        )
+
+
+class InsertIssueToJournal(CommandHandler):
+    def __call__(self, id: str, index: int, issue: str) -> None:
+        session = self.Session()
+        _journal = session.journals.fetch(id)
+        _journal.insert_issue(index, issue)
+        session.journals.update(_journal)
+        session.notify(
+            Events.ISSUE_INSERTED_TO_JOURNAL,
+            {"journal": _journal, "id": id, "index": index, "issue": issue},
+        )
+
+
+class RemoveIssueFromJournal(CommandHandler):
+    def __call__(self, id: str, issue: str) -> None:
+        session = self.Session()
+        _journal = session.journals.fetch(id)
+        _journal.remove_issue(issue)
+        session.journals.update(_journal)
+        session.notify(
+            Events.ISSUE_REMOVED_FROM_JOURNAL,
+            {"journal": _journal, "id": id, "issue": issue},
+        )
+
+
 class FetchChanges(CommandHandler):
     """Recupera lista de mudanças das entidades.
 
@@ -402,5 +441,8 @@ def get_handlers(
             SessionWrapper
         ),
         "create_journal": CreateJournal(SessionWrapper),
+        "add_issue_to_journal": AddIssueToJournal(SessionWrapper),
+        "insert_issue_to_journal": InsertIssueToJournal(SessionWrapper),
+        "remove_issue_from_journal": RemoveIssueFromJournal(SessionWrapper),
         "fetch_changes": FetchChanges(SessionWrapper),
     }
