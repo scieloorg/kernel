@@ -26,7 +26,7 @@ class DataStore(abc.ABC):
 class Session(abc.ABC):
     """Concentra os pontos de acesso aos repositórios de dados.
 
-    Classes `Session` implementam o padrão Observable com a finalidade de 
+    Classes `Session` implementam o padrão Observable com a finalidade de
     suportar um sistema de eventos.
     """
 
@@ -71,3 +71,16 @@ class Session(abc.ABC):
                     repr(callback),
                     event,
                 )
+
+
+class ChangesDataStore(abc.ABC):
+    """Interface manipulação de dados de mudanças.
+    """
+
+    @abc.abstractmethod
+    def add(self, data: dict) -> None:
+        pass
+
+    @abc.abstractmethod
+    def filter(self, since: str = "", limit: int = 500) -> list:
+        pass

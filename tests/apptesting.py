@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from documentstore import interfaces, exceptions, domain
 
 
@@ -94,3 +96,27 @@ def document_registry_data_fixture(prefix=""):
             },
         ],
     }
+
+
+class InMemoryChangesDataStore(interfaces.ChangesDataStore):
+    def __init__(self):
+        self._data_store = OrderedDict()
+
+    def add(self, change: dict):
+
+        if change["timestamp"] in self._data_store:
+            raise exceptions.AlreadyExists()
+        else:
+            self._data_store[change["timestamp"]] = change
+
+    def filter(self, since: str = "", limit: int = 500):
+
+        first = 0
+        for i, change_key in enumerate(self._data_store):
+            if self._data_store[change_key]["timestamp"] < since:
+                continue
+            else:
+                first = i
+                break
+
+        return list(self._data_store.values())[first:limit]
