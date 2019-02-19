@@ -51,20 +51,19 @@ class CreateDocumentsBundleTest(unittest.TestCase):
         )
 
     def test_command_notify_event(self):
-        mock_callback = mock.Mock()
-        _services, session = make_services(
-            subscribers=[(services.Events.DOCUMENTSBUNDLE_CREATED, mock_callback)]
-        )
-        _services.get("create_documents_bundle")(id="xpto", docs=["/document/1"])
-        mock_callback.assert_called_once_with(
-            {
-                "id": "xpto",
-                "docs": ["/document/1"],
-                "metadata": None,
-                "bundle": mock.ANY,
-            },
-            session,
-        )
+        _services, session = make_services()
+
+        with mock.patch.object(session, "notify") as mock_notify:
+            _services.get("create_documents_bundle")(id="xpto", docs=["/document/1"])
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENTSBUNDLE_CREATED,
+                {
+                    "id": "xpto",
+                    "docs": ["/document/1"],
+                    "metadata": None,
+                    "bundle": mock.ANY,
+                },
+            )
 
 
 class FetchDocumentsBundleTest(unittest.TestCase):
