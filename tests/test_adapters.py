@@ -173,7 +173,7 @@ class AppTestingSessionTests(SessionTestMixin, unittest.TestCase):
 
 
 class MongoClientStub:
-    def collection(self):
+    def collection(self, colname):
         return None
 
 
