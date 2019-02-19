@@ -1,88 +1,39 @@
-# SciELO Document Store
+# Kernel
 
+Kernel é o componente central da nova arquitetura de sistemas de informação da
+Metodologia SciELO, ainda em fase de desenvolvimento. É responsável pela gestão,
+preservação e desempenha o papel de fonte autoritativa dos dados de uma coleção
+de periódicos científicos.
 
-Trata-se de uma implementação experimental de um pacote Python que busca 
-tratar da persistência de documentos XML em multiplas versões.
-
-A abstração básica se apoia no conceito do *manifesto do documento*:
-
-```javascript
-{
-  "id": "S0034-89102014000200347",
-  "versions": [
-    {
-      "assets": {
-        "0034-8910-rsp-48-2-0347-gf01": [
-          [
-            "2018-08-05T23:03:44.971230Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01.jpg"
-          ]
-        ],
-        "0034-8910-rsp-48-2-0347-gf01-en": [
-          [
-            "2018-08-05T23:08:41.590174Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01-en.jpg"
-          ]
-        ],
-        "0034-8910-rsp-48-2-0347-gf02": [
-          [
-            "2018-08-05T23:04:43.323527Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02.jpg"
-          ]
-        ],
-        "0034-8910-rsp-48-2-0347-gf02-en": [
-          [
-            "2018-08-05T23:08:50.331687Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02-en.jpg"
-          ]
-        ],
-        "0034-8910-rsp-48-2-0347-gf03": [
-          [
-            "2018-08-05T23:05:14.882129Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03.jpg"
-          ]
-        ],
-        "0034-8910-rsp-48-2-0347-gf03-en": [
-          [
-            "2018-08-05T23:08:59.691924Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf03-en.jpg"
-          ]
-        ],
-        "0034-8910-rsp-48-2-0347-gf04": [
-          [
-            "2018-08-05T23:05:42.016837Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04.jpg"
-          ]
-        ],
-        "0034-8910-rsp-48-2-0347-gf04-en": [
-          [
-            "2018-08-05T23:09:09.569312Z",
-            "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf04-en.jpg"
-          ]
-        ]
-      },
-      "data": "https://raw.githubusercontent.com/scieloorg/packtools/master/tests/samples/0034-8910-rsp-48-2-0347.xml",
-      "timestamp": "2018-08-05T23:02:29.392990Z"
-    }
-  ]
-}
+```
+                            +------------+  +--------------------+
+                            | Public     |  | OAI-PMH            |
+                            | website    |  | data provider, etc |
+                            +------------+  +--------------------+
+                                    ^              ^
+                                    |              |
++-------------------+       +------------------------------+      +--------------+
+|  Data ingestion   |       |                              |      |              |
+|  workflow         |------>|            Kernel            |----->| Integrations |
+|                   |       |                              |      |              |
++-------------------+       +------------------------------+      +--------------+
 ```
 
-O *manifesto do documento* é um objeto JSON que representa as relações entre
-a identidade de um documento e seus estados. A identidade do documento é 
-representada por meio da chave ``id``, que deve ser única. Os estados do
-documento são representados pela chave ``versions``, que está associada a uma
-coleção de objetos que representam versões. A coleção ``versions`` é ordenada
-da versão mais antiga para a mais recente. Cada versão contém uma URI para o 
-artigo codificado em XML segundo a especificação SciELO PS na chave ``data``,
-o *timestamp* UTC datando sua criação e a coleção ``assets``, composta pelo
-mapeamento dos ativos digitais referenciados pelo documento em XML e pares
-*timestamp* e URI.
+Principais características:
+
+* Opera como um serviço Web, por meio de interface RESTful;
+* Suporta a representação de fascículos ou qualquer outro grupo de documentos
+por meio de uma abstração chamada *Documents bundle*;
+* Preservação das versões dos metadados de Periódicos e *Documents bundle*;
+* Preservação dos documentos XML e seus ativos digitais em múltiplas versões;
+* Garantia da integridade referencial entre o documento em XML e seus ativos
+digitais;
+* Replicação por meio de log de mudanças e notificação em barramento de eventos.
 
 
 ## Requisitos
 
-* Python 3.6+
+* Python 3.7+
 * MongoDB
 
 
@@ -111,4 +62,3 @@ of the BSD license. Please see LICENSE in the source code for more
 information.
 
 https://github.com/scieloorg/document-store/blob/master/LICENSE
-
