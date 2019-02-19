@@ -76,7 +76,7 @@ class Session(abc.ABC):
             self._observers = {}
             observers = self._observers
 
-        observers.setdefault(event, []).append(callback)
+        observers.setdefault(event, set()).add(callback)
 
     def notify(self, event, data):
         """Notifica a ocorrência de `event`.

@@ -8,14 +8,14 @@ from documentstore import services, exceptions, domain
 from . import apptesting
 
 
-def make_services():
+def make_services(**kwargs):
     session = apptesting.Session()
-    return services.get_handlers(lambda: session)
+    return services.get_handlers(lambda: session, **kwargs), session
 
 
 class CreateDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, _ = make_services()
         self.command = self.services.get("create_documents_bundle")
 
     def test_command_interface(self):
@@ -50,10 +50,26 @@ class CreateDocumentsBundleTest(unittest.TestCase):
             in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
         )
 
+    def test_command_notify_event(self):
+        mock_callback = mock.Mock()
+        _services, session = make_services(
+            subscribers=[(services.Events.DOCUMENTSBUNDLE_CREATED, mock_callback)]
+        )
+        _services.get("create_documents_bundle")(id="xpto", docs=["/document/1"])
+        mock_callback.assert_called_once_with(
+            {
+                "id": "xpto",
+                "docs": ["/document/1"],
+                "metadata": None,
+                "bundle": mock.ANY,
+            },
+            session,
+        )
+
 
 class FetchDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, _ = make_services()
         self.command = self.services.get("fetch_documents_bundle")
 
         datetime_patcher = mock.patch.object(
@@ -114,7 +130,7 @@ class FetchDocumentsBundleTest(unittest.TestCase):
 
 class UpdateDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, _ = make_services()
         self.command = self.services.get("update_documents_bundle_metadata")
 
         datetime_patcher = mock.patch.object(
@@ -189,7 +205,7 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
 
 class UpdateDocumentsBundle_NoDatetimeMock_Test(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, _ = make_services()
         self.command = self.services.get("update_documents_bundle_metadata")
 
     def test_command_adds_entry_to_changelog(self):
@@ -201,10 +217,32 @@ class UpdateDocumentsBundle_NoDatetimeMock_Test(unittest.TestCase):
         self.command(id="xpto", metadata={"publication_year": "2019"})
         self.assertEqual(2, len(self.services.get("fetch_changes")()))
 
+    def test_command_notify_event(self):
+        mock_callback = mock.Mock()
+        _services, session = make_services(
+            subscribers=[
+                (services.Events.DOCUMENTSBUNDLE_METATADA_UPDATED, mock_callback)
+            ]
+        )
+        _services["create_documents_bundle"](
+            id="xpto", metadata={"publication_year": "2018", "volume": "2"}
+        )
+        _services["update_documents_bundle_metadata"](
+            id="xpto", metadata={"publication_year": "2019"}
+        )
+        mock_callback.assert_called_once_with(
+            {
+                "id": "xpto",
+                "metadata": {"publication_year": "2019"},
+                "bundle": mock.ANY,
+            },
+            session,
+        )
+
 
 class AddDocumentToDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, _ = make_services()
         self.command = self.services.get("add_document_to_documents_bundle")
 
     def test_command_interface(self):
@@ -237,11 +275,15 @@ class AddDocumentToDocumentsBundleTest(unittest.TestCase):
         self.assertEqual(1, len(self.services.get("fetch_changes")()))
         self.command(id="xpto", doc="/document/1")
         self.assertEqual(2, len(self.services.get("fetch_changes")()))
+        self.assertTrue(
+            ("xpto", "DocumentsBundle")
+            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
+        )
 
 
 class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, _ = make_services()
         self.command = self.services.get("insert_document_to_documents_bundle")
 
     def test_command_interface(self):
@@ -290,11 +332,15 @@ class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
         self.assertEqual(1, len(self.services["fetch_changes"]()))
         self.command(id="xpto", index=2, doc="/document/1")
         self.assertEqual(2, len(self.services["fetch_changes"]()))
+        self.assertTrue(
+            ("xpto", "DocumentsBundle")
+            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
+        )
 
 
 class CreateJournalTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, _ = make_services()
         self.command = self.services.get("create_journal")
 
     def test_command_interface(self):
@@ -323,3 +369,7 @@ class CreateJournalTest(unittest.TestCase):
         self.assertEqual(0, len(self.services["fetch_changes"]()))
         self.command(id="xpto")
         self.assertEqual(1, len(self.services["fetch_changes"]()))
+        self.assertTrue(
+            ("xpto", "Journal")
+            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
+        )
