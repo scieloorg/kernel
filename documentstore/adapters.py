@@ -37,7 +37,7 @@ class Session(interfaces.Session):
 
     @property
     def changes(self):
-        pass
+        return ChangesStore(self._collection)
 
 
 class BaseStore(interfaces.DataStore):
@@ -73,6 +73,30 @@ class BaseStore(interfaces.DataStore):
             raise exceptions.DoesNotExist(
                 "cannot fetch data with id " '"%s": data does not exist' % id
             )
+
+
+class ChangesStore(interfaces.ChangesDataStore):
+    def __init__(self, collection):
+        self._collection = collection
+
+    def add(self, change: dict):
+        change["_id"] = change["timestamp"]
+        try:
+            self._collection.insert_one(change)
+        except pymongo.errors.DuplicateKeyError:
+            raise exceptions.AlreadyExists(
+                "cannot add data with id "
+                '"%s": the id is already in use' % change["_id"]
+            ) from None
+
+    def filter(self, since: str = "", limit: int = 500):
+        changes = self._collection.find({"timestamp": {"$gte": since}}).limit(limit)
+
+        def _clean_result(c):
+            _ = c.pop("_id", None)
+            return c
+
+        return (_clean_result(c) for c in changes)
 
 
 class DocumentStore(BaseStore):
