@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-import functools
 import datetime
 
 from documentstore import services, exceptions, domain
@@ -8,14 +7,14 @@ from documentstore import services, exceptions, domain
 from . import apptesting
 
 
-def make_services(**kwargs):
+def make_services():
     session = apptesting.Session()
-    return services.get_handlers(lambda: session, **kwargs), session
+    return services.get_handlers(lambda: session), session
 
 
 class CreateDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services, _ = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("create_documents_bundle")
 
     def test_command_interface(self):
@@ -39,22 +38,9 @@ class CreateDocumentsBundleTest(unittest.TestCase):
         self.command(id="xpto")
         self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
 
-    def test_command_adds_entry_to_changelog(self):
-        self.assertFalse(
-            ("xpto", "DocumentsBundle")
-            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
-        )
-        self.command(id="xpto")
-        self.assertTrue(
-            ("xpto", "DocumentsBundle")
-            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
-        )
-
     def test_command_notify_event(self):
-        _services, session = make_services()
-
-        with mock.patch.object(session, "notify") as mock_notify:
-            _services.get("create_documents_bundle")(id="xpto", docs=["/document/1"])
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", docs=["/document/1"])
             mock_notify.assert_called_once_with(
                 services.Events.DOCUMENTSBUNDLE_CREATED,
                 {
@@ -68,7 +54,7 @@ class CreateDocumentsBundleTest(unittest.TestCase):
 
 class FetchDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services, _ = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("fetch_documents_bundle")
 
         datetime_patcher = mock.patch.object(
@@ -129,7 +115,7 @@ class FetchDocumentsBundleTest(unittest.TestCase):
 
 class UpdateDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services, _ = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("update_documents_bundle_metadata")
 
         datetime_patcher = mock.patch.object(
@@ -201,47 +187,25 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
             },
         )
 
-
-class UpdateDocumentsBundle_NoDatetimeMock_Test(unittest.TestCase):
-    def setUp(self):
-        self.services, _ = make_services()
-        self.command = self.services.get("update_documents_bundle_metadata")
-
-    def test_command_adds_entry_to_changelog(self):
-        self.assertEqual(0, len(self.services.get("fetch_changes")()))
+    def test_command_notify_event(self):
         self.services["create_documents_bundle"](
             id="xpto", metadata={"publication_year": "2018", "volume": "2"}
         )
-        self.assertEqual(1, len(self.services.get("fetch_changes")()))
-        self.command(id="xpto", metadata={"publication_year": "2019"})
-        self.assertEqual(2, len(self.services.get("fetch_changes")()))
-
-    def test_command_notify_event(self):
-        mock_callback = mock.Mock()
-        _services, session = make_services(
-            subscribers=[
-                (services.Events.DOCUMENTSBUNDLE_METATADA_UPDATED, mock_callback)
-            ]
-        )
-        _services["create_documents_bundle"](
-            id="xpto", metadata={"publication_year": "2018", "volume": "2"}
-        )
-        _services["update_documents_bundle_metadata"](
-            id="xpto", metadata={"publication_year": "2019"}
-        )
-        mock_callback.assert_called_once_with(
-            {
-                "id": "xpto",
-                "metadata": {"publication_year": "2019"},
-                "bundle": mock.ANY,
-            },
-            session,
-        )
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", metadata={"publication_year": "2019"})
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
+                {
+                    "id": "xpto",
+                    "metadata": {"publication_year": "2019"},
+                    "bundle": mock.ANY,
+                },
+            )
 
 
 class AddDocumentToDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services, _ = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("add_document_to_documents_bundle")
 
     def test_command_interface(self):
@@ -268,21 +232,19 @@ class AddDocumentToDocumentsBundleTest(unittest.TestCase):
             exceptions.AlreadyExists, self.command, id="xpto", doc="/document/1"
         )
 
-    def test_command_adds_entry_to_changelog(self):
-        self.assertEqual(0, len(self.services.get("fetch_changes")()))
+    def test_command_notify_event(self):
         self.services["create_documents_bundle"](id="xpto")
-        self.assertEqual(1, len(self.services.get("fetch_changes")()))
-        self.command(id="xpto", doc="/document/1")
-        self.assertEqual(2, len(self.services.get("fetch_changes")()))
-        self.assertTrue(
-            ("xpto", "DocumentsBundle")
-            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
-        )
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", doc="/document/1")
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
+                {"id": "xpto", "doc": "/document/1", "bundle": mock.ANY},
+            )
 
 
 class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services, _ = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("insert_document_to_documents_bundle")
 
     def test_command_interface(self):
@@ -325,21 +287,19 @@ class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
             doc="/document/1",
         )
 
-    def test_command_adds_entry_to_changelog(self):
-        self.assertEqual(0, len(self.services["fetch_changes"]()))
+    def test_command_notify_event(self):
         self.services["create_documents_bundle"](id="xpto")
-        self.assertEqual(1, len(self.services["fetch_changes"]()))
-        self.command(id="xpto", index=2, doc="/document/1")
-        self.assertEqual(2, len(self.services["fetch_changes"]()))
-        self.assertTrue(
-            ("xpto", "DocumentsBundle")
-            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
-        )
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", index=10, doc="/document/3")
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
+                {"id": "xpto", "doc": "/document/3", "index": 10, "bundle": mock.ANY},
+            )
 
 
 class CreateJournalTest(unittest.TestCase):
     def setUp(self):
-        self.services, _ = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("create_journal")
 
     def test_command_interface(self):
@@ -364,11 +324,10 @@ class CreateJournalTest(unittest.TestCase):
         self.command(id="xpto")
         self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
 
-    def test_command_adds_entry_to_changelog(self):
-        self.assertEqual(0, len(self.services["fetch_changes"]()))
-        self.command(id="xpto")
-        self.assertEqual(1, len(self.services["fetch_changes"]()))
-        self.assertTrue(
-            ("xpto", "Journal")
-            in [(c["id"], c["entity"]) for c in self.services.get("fetch_changes")()]
-        )
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="jxpto")
+            mock_notify.assert_called_once_with(
+                services.Events.JOURNAL_CREATED,
+                {"id": "jxpto", "journal": mock.ANY, "metadata": None},
+            )
