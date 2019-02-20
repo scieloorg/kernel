@@ -92,3 +92,51 @@ class PutDocumentUnitTests(unittest.TestCase):
         request.validated = apptesting.document_registry_data_fixture()
         restfulapi.put_document(request)
         self.assertIsInstance(restfulapi.put_document(request), HTTPNoContent)
+
+
+class ParseSettingsFunctionTests(unittest.TestCase):
+    def test_known_values_are_preserved_when_given(self):
+        defaults = [("apptest.foo", "APPTEST_FOO", str, "modified foo")]
+        self.assertEqual(
+            restfulapi.parse_settings(
+                {"apptest.foo": "original foo"}, defaults=defaults
+            ),
+            {"apptest.foo": "original foo"},
+        )
+
+    def test_use_default_when_value_is_missing(self):
+        defaults = [("apptest.foo", "APPTEST_FOO", str, "foo value")]
+        self.assertEqual(
+            restfulapi.parse_settings({}, defaults=defaults),
+            {"apptest.foo": "foo value"},
+        )
+
+    def test_env_vars_have_precedence_over_given_values(self):
+        try:
+            os.environ["APPTEST_FOO"] = "foo from env"
+
+            defaults = [("apptest.foo", "APPTEST_FOO", str, "foo value")]
+            self.assertEqual(
+                restfulapi.parse_settings({}, defaults=defaults),
+                {"apptest.foo": "foo from env"},
+            )
+        finally:
+            os.environ.pop("APPTEST_FOO", None)
+
+    def test_known_values_always_have_their_types_converted(self):
+        defaults = [("apptest.foo", "APPTEST_FOO", int, "42")]
+        self.assertEqual(
+            restfulapi.parse_settings({}, defaults=defaults), {"apptest.foo": 42}
+        )
+        self.assertEqual(
+            restfulapi.parse_settings({"apptest.foo": "17"}, defaults=defaults),
+            {"apptest.foo": 17},
+        )
+        try:
+            os.environ["APPTEST_FOO"] = "13"
+
+            self.assertEqual(
+                restfulapi.parse_settings({}, defaults=defaults), {"apptest.foo": 13}
+            )
+        finally:
+            os.environ.pop("APPTEST_FOO", None)

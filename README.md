@@ -39,6 +39,15 @@ digitais;
 
 ## Implantação local
 
+Configurando a aplicação:
+
+
+diretiva no arquivo .ini | variável de ambiente   | valor padrão
+-------------------------|------------------------|--------------------
+kernel.app.mongodb.dsn   | KERNEL_APP_MONGODB_DSN | mongodb://db:27017
+
+
+
 Executando a aplicação:
 
 ```docker-compose up -d```

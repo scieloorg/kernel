@@ -1,4 +1,5 @@
 import logging
+import os
 
 from pyramid.config import Configurator
 from pyramid.httpexceptions import (
@@ -250,14 +251,44 @@ class PlainTextRenderer:
         return value
 
 
+DEFAULT_SETTINGS = [
+    ("kernel.app.mongodb.dsn", "KERNEL_APP_MONGODB_DSN", str, "mongodb://db:27017/")
+]
+
+
+def parse_settings(settings, defaults=DEFAULT_SETTINGS):
+    """Analisa e retorna as configurações da app com base no arquivo .ini e env.
+
+    As variáveis de ambiente possuem precedência em relação aos valores
+    definidos no arquivo .ini.
+
+    O argumento `defaults` deve receber uma lista associativa na forma:
+        
+      [
+        (<diretiva de config>, <variável de ambiente>, <função de conversão>, <valor padrão>),
+      ]
+    """
+    parsed = {}
+    cfg = list(defaults)
+
+    for name, envkey, convert, default in cfg:
+        value = os.environ.get(envkey, settings.get(name, default))
+        if convert is not None:
+            value = convert(value)
+        parsed[name] = value
+
+    return parsed
+
+
 def main(global_config, **settings):
+    settings.update(parse_settings(settings))
     config = Configurator(settings=settings)
     config.include("cornice")
     config.scan()
     config.add_renderer("xml", XMLRenderer)
     config.add_renderer("text", PlainTextRenderer)
 
-    mongo = adapters.MongoDB("mongodb://db:27017/")
+    mongo = adapters.MongoDB(settings["kernel.app.mongodb.dsn"])
     Session = adapters.Session.partial(mongo)
 
     config.add_request_method(
