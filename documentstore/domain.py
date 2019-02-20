@@ -823,3 +823,13 @@ class Journal:
 
     def remove_issue(self, issue: str) -> None:
         self.manifest = BundleManifest.remove_item(self._manifest, issue)
+
+    @property
+    def provisional(self):
+        return BundleManifest.get_component(self.manifest, "provisional")
+
+    @provisional.setter
+    def provisional(self, provisional: str) -> None:
+        self.manifest = BundleManifest.set_component(
+            self._manifest, "provisional", provisional
+        )
