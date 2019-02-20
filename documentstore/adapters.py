@@ -6,34 +6,34 @@ from . import domain
 
 
 class MongoDB:
-    def __init__(self, uri, dbname="document-store", colname="manifests"):
+    def __init__(self, uri, dbname="document-store"):
         self._client = pymongo.MongoClient(uri)
         self._dbname = dbname
-        self._colname = colname
 
     def db(self):
         return self._client[self._dbname]
 
-    def collection(self):
-        return self.db()[self._colname]
+    def collection(self, colname):
+        return self.db()[colname]
 
 
 class Session(interfaces.Session):
     def __init__(self, mongodb_client):
         self._mongodb_client = mongodb_client
-        self._collection = self._mongodb_client.collection()
 
     @property
     def documents(self):
-        return DocumentStore(self._collection)
+        return DocumentStore(self._mongodb_client.collection(colname="documents"))
 
     @property
     def documents_bundles(self):
-        return DocumentsBundleStore(self._collection)
+        return DocumentsBundleStore(
+            self._mongodb_client.collection(colname="documents_bundles")
+        )
 
     @property
     def journals(self):
-        return JournalStore(self._collection)
+        return JournalStore(self._mongodb_client.collection(colname="journals"))
 
     @property
     def changes(self):

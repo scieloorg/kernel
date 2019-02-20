@@ -134,6 +134,16 @@ class SessionTestMixin:
         session.notify("test_event", "foo")
         callback.assert_called_once_with("foo", session)
 
+    def test_observe_ignores_duplicated_event_callback_pairs(self):
+        """Serão ignorados os registros duplicados de pares evento-callback. 
+        """
+        callback = Mock()
+        session = self.Session()
+        session.observe("test_event", callback)
+        session.observe("test_event", callback)
+        session.notify("test_event", "foo")
+        callback.assert_called_once_with("foo", session)
+
     def test_notify_doesnt_propagate_exceptions(self):
         import logging
 
@@ -173,7 +183,7 @@ class AppTestingSessionTests(SessionTestMixin, unittest.TestCase):
 
 
 class MongoClientStub:
-    def collection(self):
+    def collection(self, colname):
         return None
 
 
