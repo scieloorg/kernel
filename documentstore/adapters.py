@@ -37,7 +37,7 @@ class Session(interfaces.Session):
 
     @property
     def changes(self):
-        return ChangesStore(self._collection)
+        return ChangesStore(self._mongodb_client.collection(colname="changes"))
 
 
 class BaseStore(interfaces.DataStore):
