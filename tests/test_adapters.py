@@ -135,7 +135,7 @@ class SessionTestMixin:
         callback.assert_called_once_with("foo", session)
 
     def test_observe_ignores_duplicated_event_callback_pairs(self):
-        """Serão ignorados os registros duplicados de pares evento-callback. 
+        """Serão ignorados os registros duplicados de pares evento-callback.
         """
         callback = Mock()
         session = self.Session()
@@ -206,7 +206,7 @@ class ChangesStoreTestMixin:
             )
         )
 
-    def test_add_requires_timestamp(self):
+    def test_add_raises_error_when_timestamp_key_doesnt_exist(self):
         store = self.Store()
 
         self.assertRaises(
@@ -242,7 +242,7 @@ class ChangesStoreTestMixin:
 
     def test_filter_returns_empty_list(self):
         store = self.Store()
-        self.assertEqual(store.filter(), [])
+        self.assertEqual(list(store.filter()), [])
 
     def test_filter_returns_list(self):
         store = self.Store()
@@ -263,7 +263,7 @@ class ChangesStoreTestMixin:
         for change in changes:
             store.add(change)
 
-        self.assertEqual(store.filter(), changes)
+        self.assertEqual(list(store.filter()), changes)
 
     def test_filter_since(self):
 
@@ -290,7 +290,7 @@ class ChangesStoreTestMixin:
         for change in changes:
             store.add(change)
 
-        self.assertEqual(store.filter(since="2018-08-05T23:03:47.891432Z"), changes[1:])
+        self.assertEqual(list(store.filter(since="2018-08-05T23:03:47.891432Z")), changes[1:])
 
     def test_filter_limit(self):
 
@@ -317,8 +317,13 @@ class ChangesStoreTestMixin:
         for change in changes:
             store.add(change)
 
-        self.assertEqual(store.filter(limit=2), changes[:2])
+        self.assertEqual(list(store.filter(limit=2)), changes[:2])
 
 
 class InMemoryChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
     Store = apptesting.InMemoryChangesDataStore
+
+
+class ChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
+    def Store(self):
+        return adapters.ChangesStore(apptesting.MongoDBCollectionStub())

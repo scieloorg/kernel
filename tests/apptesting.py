@@ -125,3 +125,39 @@ class InMemoryChangesDataStore(interfaces.ChangesDataStore):
                 break
 
         return list(self._data_store.values())[first:limit]
+
+
+class MongoDBCollectionStub:
+
+    def __init__(self):
+        self._mongo_store = OrderedDict()
+
+    def insert_one(self, data):
+        import pymongo
+
+        if data["_id"] in self._mongo_store:
+            raise pymongo.errors.DuplicateKeyError("")
+        else:
+            self._mongo_store[data["_id"]] = data
+
+    def find(self, query):
+        since = query["_id"]["$gte"]
+
+        first = 0
+        for i, change_key in enumerate(self._mongo_store):
+            if self._mongo_store[change_key]["_id"] < since:
+                continue
+            else:
+                first = i
+                break
+
+        return SliceResultStub(list(self._mongo_store.values())[first:])
+
+
+class SliceResultStub:
+
+    def __init__(self, data):
+        self._data = data
+
+    def limit(self, val):
+        return self._data[:val]

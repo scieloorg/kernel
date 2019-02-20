@@ -90,7 +90,7 @@ class ChangesStore(interfaces.ChangesDataStore):
             ) from None
 
     def filter(self, since: str = "", limit: int = 500):
-        changes = self._collection.find({"timestamp": {"$gte": since}}).limit(limit)
+        changes = self._collection.find({"_id": {"$gte": since}}).limit(limit)
 
         def _clean_result(c):
             _ = c.pop("_id", None)
