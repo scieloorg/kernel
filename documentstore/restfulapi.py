@@ -1,3 +1,4 @@
+import os
 import logging
 
 from pyramid.config import Configurator
@@ -96,9 +97,9 @@ def fetch_document_data(request):
 
 @documents.put(schema=RegisterDocumentSchema(), validators=(colander_body_validator,))
 def put_document(request):
-    """Adiciona ou atualiza registro de documento. A atualização do documento é 
+    """Adiciona ou atualiza registro de documento. A atualização do documento é
     idempotente.
-    
+
     A semântica desta view-function está definida conforme a especificação:
     https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
     """
@@ -159,9 +160,9 @@ def get_assets_list(request):
 
 @assets.put(schema=AssetSchema(), validators=(colander_body_validator,))
 def put_asset(request):
-    """Adiciona ou atualiza registro de ativo do documento. A atualização do 
+    """Adiciona ou atualiza registro de ativo do documento. A atualização do
     ativo é idempotente.
-    
+
     A semântica desta view-function está definida conforme a especificação:
     https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
     """
@@ -257,7 +258,10 @@ def main(global_config, **settings):
     config.add_renderer("xml", XMLRenderer)
     config.add_renderer("text", PlainTextRenderer)
 
-    mongo = adapters.MongoDB("mongodb://db:27017/")
+    mongo_dsn = os.environ.get(
+        "APP_MONGODB_DSN", config.get("mongo_dsn", "mongodb://db:27017/")
+    )
+    mongo = adapters.MongoDB(mongo_dsn)
     Session = adapters.Session.partial(mongo)
 
     config.add_request_method(
