@@ -407,6 +407,32 @@ class BundleManifest:
         _items_bundle["updated"] = now()
         return _items_bundle
 
+    @staticmethod
+    def set_component(
+        components_bundle: dict, name: str, value: Any, now: Callable[[], str] = utcnow
+    ) -> None:
+        _components_bundle = deepcopy(components_bundle)
+        _components_bundle[name] = value
+        _components_bundle["updated"] = now()
+        return _components_bundle
+
+    @staticmethod
+    def get_component(components_bundle: dict, name: str, default: str = "") -> Any:
+        return components_bundle.get(name, default)
+
+    @staticmethod
+    def remove_component(components_bundle: dict, name: str) -> dict:
+        _components_bundle = deepcopy(components_bundle)
+        try:
+            del _components_bundle[name]
+        except KeyError:
+            raise exceptions.DoesNotExist(
+                f'cannot remove component "{name}" from bundle: '
+                "the component does not exist"
+            ) from None
+        else:
+            return _components_bundle
+
 
 class DocumentsBundle:
     """

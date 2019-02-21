@@ -340,6 +340,75 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             "2019",
         )
 
+    def test_set_component(self):
+        bundle = new_bundle("0034-8910-rsp")
+        bundle = domain.BundleManifest.set_component(
+            bundle, "component-1", "component-1"
+        )
+        self.assertEqual(bundle["component-1"], "component-1")
+
+    def test_set_component_updates_last_modification_date(self):
+        bundle = new_bundle("0034-8910-rsp-48-2")
+        current_updated = bundle["updated"]
+        bundle = domain.BundleManifest.set_component(
+            bundle, "component-1", "component-1"
+        )
+        self.assertTrue(current_updated < bundle["updated"])
+
+    def test_set_component_to_preexisting_set(self):
+        bundle = new_bundle("0034-8910-rsp-48-2")
+        bundle = domain.BundleManifest.set_component(
+            bundle, "component-1", "component-1"
+        )
+        bundle = domain.BundleManifest.set_component(
+            bundle, "component-1", "component-123"
+        )
+        self.assertEqual(bundle["component-1"], "component-123")
+
+    def test_get_component_returns_empty_str(self):
+        bundle = new_bundle("0034-8910-rsp")
+        self.assertEqual(
+            domain.BundleManifest.get_component(bundle, "component-1", ""), ""
+        )
+
+    def test_get_component_returns_given_default_value(self):
+        bundle = new_bundle("0034-8910-rsp")
+        self.assertEqual(
+            domain.BundleManifest.get_component(bundle, "component-1", [1, 2, 3]),
+            [1, 2, 3],
+        )
+
+    def test_get_component_returns_component_set(self):
+        bundle = new_bundle("0034-8910-rsp")
+        bundle = domain.BundleManifest.set_component(
+            bundle, "component-1", "component-123"
+        )
+        self.assertEqual(
+            domain.BundleManifest.get_component(bundle, "component-1", ""),
+            "component-123",
+        )
+
+    def test_remove_component(self):
+        bundle = new_bundle("0034-8910-rsp")
+        bundle = domain.BundleManifest.set_component(
+            bundle, "component-1", "component-123"
+        )
+        _bundle = domain.BundleManifest.remove_component(bundle, "component-1")
+        self.assertEqual(
+            domain.BundleManifest.get_component(_bundle, "component-1"), ""
+        )
+
+    def test_remove_component_raises_exception_if_does_not_exist(self):
+        bundle = new_bundle("0034-8910-rsp")
+        self._assert_raises_with_message(
+            exceptions.DoesNotExist,
+            'cannot remove component "component-1" from bundle: '
+            "the component does not exist",
+            domain.BundleManifest.remove_component,
+            bundle,
+            "component-1",
+        )
+
     def test_add_item(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
