@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-import functools
 import datetime
 
 from documentstore import services, exceptions, domain
@@ -10,12 +9,12 @@ from . import apptesting
 
 def make_services():
     session = apptesting.Session()
-    return services.get_handlers(lambda: session)
+    return services.get_handlers(lambda: session), session
 
 
 class CreateDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("create_documents_bundle")
 
     def test_command_interface(self):
@@ -39,10 +38,23 @@ class CreateDocumentsBundleTest(unittest.TestCase):
         self.command(id="xpto")
         self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
 
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", docs=["/document/1"])
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENTSBUNDLE_CREATED,
+                {
+                    "id": "xpto",
+                    "docs": ["/document/1"],
+                    "metadata": None,
+                    "bundle": mock.ANY,
+                },
+            )
+
 
 class FetchDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("fetch_documents_bundle")
 
         datetime_patcher = mock.patch.object(
@@ -103,7 +115,7 @@ class FetchDocumentsBundleTest(unittest.TestCase):
 
 class UpdateDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("update_documents_bundle_metadata")
 
         datetime_patcher = mock.patch.object(
@@ -155,8 +167,8 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
 
     def test_command_remove_metadata(self):
         """
-        Por ora, a maneira de remover um metadado é através da atribuição de uma 
-        string vazia para o mesmo. Note que este procedimento não removerá o metadado 
+        Por ora, a maneira de remover um metadado é através da atribuição de uma
+        string vazia para o mesmo. Note que este procedimento não removerá o metadado
         do manifesto.
         """
         self.services["create_documents_bundle"](
@@ -175,10 +187,25 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
             },
         )
 
+    def test_command_notify_event(self):
+        self.services["create_documents_bundle"](
+            id="xpto", metadata={"publication_year": "2018", "volume": "2"}
+        )
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", metadata={"publication_year": "2019"})
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
+                {
+                    "id": "xpto",
+                    "metadata": {"publication_year": "2019"},
+                    "bundle": mock.ANY,
+                },
+            )
+
 
 class AddDocumentToDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("add_document_to_documents_bundle")
 
     def test_command_interface(self):
@@ -205,10 +232,19 @@ class AddDocumentToDocumentsBundleTest(unittest.TestCase):
             exceptions.AlreadyExists, self.command, id="xpto", doc="/document/1"
         )
 
+    def test_command_notify_event(self):
+        self.services["create_documents_bundle"](id="xpto")
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", doc="/document/1")
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
+                {"id": "xpto", "doc": "/document/1", "bundle": mock.ANY},
+            )
+
 
 class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("insert_document_to_documents_bundle")
 
     def test_command_interface(self):
@@ -251,10 +287,19 @@ class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
             doc="/document/1",
         )
 
+    def test_command_notify_event(self):
+        self.services["create_documents_bundle"](id="xpto")
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="xpto", index=10, doc="/document/3")
+            mock_notify.assert_called_once_with(
+                services.Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
+                {"id": "xpto", "doc": "/document/3", "index": 10, "bundle": mock.ANY},
+            )
+
 
 class CreateJournalTest(unittest.TestCase):
     def setUp(self):
-        self.services = make_services()
+        self.services, self.session = make_services()
         self.command = self.services.get("create_journal")
 
     def test_command_interface(self):
@@ -278,3 +323,11 @@ class CreateJournalTest(unittest.TestCase):
     def test_command_raises_exception_if_already_exists(self):
         self.command(id="xpto")
         self.assertRaises(exceptions.AlreadyExists, self.command, id="xpto")
+
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="jxpto")
+            mock_notify.assert_called_once_with(
+                services.Events.JOURNAL_CREATED,
+                {"id": "jxpto", "journal": mock.ANY, "metadata": None},
+            )

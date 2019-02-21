@@ -135,7 +135,7 @@ class SessionTestMixin:
         callback.assert_called_once_with("foo", session)
 
     def test_observe_ignores_duplicated_event_callback_pairs(self):
-        """Serão ignorados os registros duplicados de pares evento-callback. 
+        """Serão ignorados os registros duplicados de pares evento-callback.
         """
         callback = Mock()
         session = self.Session()
@@ -190,3 +190,140 @@ class MongoClientStub:
 class SessionTests(SessionTestMixin, unittest.TestCase):
     def Session(self):
         return adapters.Session(MongoClientStub())
+
+
+class ChangesStoreTestMixin:
+    def test_add_returns_none(self):
+        store = self.Store()
+
+        self.assertIsNone(
+            store.add(
+                {
+                    "timestamp": "2018-08-05T23:03:44.971230Z",
+                    "id": "0034-8910-rsp-48-2-0347",
+                    "entity": "document",
+                }
+            )
+        )
+
+    def test_add_raises_error_when_timestamp_key_doesnt_exist(self):
+        store = self.Store()
+
+        self.assertRaises(
+            KeyError,
+            store.add,
+            {
+                "seq": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            },
+        )
+
+    def test_add_raises_error_when_timestamp_already_exists(self):
+        store = self.Store()
+
+        store.add(
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            }
+        )
+
+        self.assertRaises(
+            exceptions.AlreadyExists,
+            store.add,
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            },
+        )
+
+    def test_filter_returns_empty_list(self):
+        store = self.Store()
+        self.assertEqual(list(store.filter()), [])
+
+    def test_filter_returns_list(self):
+        store = self.Store()
+
+        changes = [
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:03:47.891432Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+            },
+        ]
+
+        for change in changes:
+            store.add(change)
+
+        self.assertEqual(list(store.filter()), changes)
+
+    def test_filter_since(self):
+
+        store = self.Store()
+
+        changes = [
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:03:47.891432Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:06:47.621560Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+            },
+        ]
+
+        for change in changes:
+            store.add(change)
+
+        self.assertEqual(list(store.filter(since="2018-08-05T23:03:47.891432Z")), changes[1:])
+
+    def test_filter_limit(self):
+
+        store = self.Store()
+
+        changes = [
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:03:47.891432Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:06:47.621560Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+            },
+        ]
+
+        for change in changes:
+            store.add(change)
+
+        self.assertEqual(list(store.filter(limit=2)), changes[:2])
+
+
+class InMemoryChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
+    Store = apptesting.InMemoryChangesDataStore
+
+
+class ChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
+    def Store(self):
+        return adapters.ChangesStore(apptesting.MongoDBCollectionStub())

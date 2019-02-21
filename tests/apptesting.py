@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from documentstore import interfaces, exceptions, domain
 
 
@@ -6,6 +8,7 @@ class Session(interfaces.Session):
         self._documents = InMemoryDocumentStore()
         self._documents_bundles = InMemoryDocumentsBundleStore()
         self._journals = InMemoryJournalStore()
+        self._changes = InMemoryChangesDataStore()
 
     @property
     def documents(self):
@@ -18,6 +21,10 @@ class Session(interfaces.Session):
     @property
     def journals(self):
         return self._journals
+
+    @property
+    def changes(self):
+        return self._changes
 
 
 class InMemoryDataStore(interfaces.DataStore):
@@ -94,3 +101,63 @@ def document_registry_data_fixture(prefix=""):
             },
         ],
     }
+
+
+class InMemoryChangesDataStore(interfaces.ChangesDataStore):
+    def __init__(self):
+        self._data_store = OrderedDict()
+
+    def add(self, change: dict):
+
+        if change["timestamp"] in self._data_store:
+            raise exceptions.AlreadyExists()
+        else:
+            self._data_store[change["timestamp"]] = change
+
+    def filter(self, since: str = "", limit: int = 500):
+
+        first = 0
+        for i, change_key in enumerate(self._data_store):
+            if self._data_store[change_key]["timestamp"] < since:
+                continue
+            else:
+                first = i
+                break
+
+        return list(self._data_store.values())[first:limit]
+
+
+class MongoDBCollectionStub:
+
+    def __init__(self):
+        self._mongo_store = OrderedDict()
+
+    def insert_one(self, data):
+        import pymongo
+
+        if data["_id"] in self._mongo_store:
+            raise pymongo.errors.DuplicateKeyError("")
+        else:
+            self._mongo_store[data["_id"]] = data
+
+    def find(self, query):
+        since = query["_id"]["$gte"]
+
+        first = 0
+        for i, change_key in enumerate(self._mongo_store):
+            if self._mongo_store[change_key]["_id"] < since:
+                continue
+            else:
+                first = i
+                break
+
+        return SliceResultStub(list(self._mongo_store.values())[first:])
+
+
+class SliceResultStub:
+
+    def __init__(self, data):
+        self._data = data
+
+    def limit(self, val):
+        return self._data[:val]
