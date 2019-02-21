@@ -1477,3 +1477,13 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             journal.remove_issue,
             "0034-8910-rsp-48-2",
         )
+
+    def test_provisional_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.provisional, "")
+
+    def test_set_provisional(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.provisional = "0034-8910-rsp-48-3"
+        self.assertEqual(journal.provisional, "0034-8910-rsp-48-3")
+        self.assertEqual(journal.manifest["provisional"], "0034-8910-rsp-48-3")
