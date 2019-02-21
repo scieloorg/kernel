@@ -2,7 +2,7 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
-from typing import Union, Callable, Any, Tuple
+from typing import Union, Callable, Any, Tuple, List
 from datetime import datetime
 
 import requests
@@ -823,6 +823,10 @@ class Journal:
 
     def remove_issue(self, issue: str) -> None:
         self.manifest = BundleManifest.remove_item(self._manifest, issue)
+
+    @property
+    def issues(self) -> List[str]:
+        return self.manifest["items"]
 
     @property
     def provisional(self):
