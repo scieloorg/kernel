@@ -1487,3 +1487,12 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.provisional = "0034-8910-rsp-48-3"
         self.assertEqual(journal.provisional, "0034-8910-rsp-48-3")
         self.assertEqual(journal.manifest["provisional"], "0034-8910-rsp-48-3")
+
+    def test_set_ahead_of_print_bundle(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.ahead_of_print_bundle = "0034-8910-rsp-aop"
+        self.assertEqual("0034-8910-rsp-aop", journal.manifest["aop"])
+
+    def test_ahead_of_print_bundle_return_empty_str(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        self.assertEqual(journal.ahead_of_print_bundle, "")
