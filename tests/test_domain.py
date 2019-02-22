@@ -1478,6 +1478,26 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "0034-8910-rsp-48-2",
         )
 
+    def test_get_issues(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        input_issues = [
+            "0034-8910-rsp-48-1",
+            "0034-8910-rsp-48-2",
+            "0034-8910-rsp-48-3",
+        ]
+
+        for issue in input_issues:
+            journal.insert_issue(0, issue)
+
+        self.assertEqual(
+            ["0034-8910-rsp-48-3", "0034-8910-rsp-48-2", "0034-8910-rsp-48-1"],
+            journal.issues,
+        )
+
+    def test_get_issues_should_be_empty(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        self.assertEqual([], journal.issues)
+
     def test_provisional_is_empty_str(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.provisional, "")
