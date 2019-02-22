@@ -831,5 +831,13 @@ class Journal:
     @provisional.setter
     def provisional(self, provisional: str) -> None:
         self.manifest = BundleManifest.set_component(
-            self._manifest, "provisional", provisional
+            self._manifest, "provisional", str(provisional)
         )
+
+    @property
+    def ahead_of_print_bundle(self) -> str:
+        return BundleManifest.get_component(self.manifest, "aop", "")
+
+    @ahead_of_print_bundle.setter
+    def ahead_of_print_bundle(self, value: str) -> None:
+        self.manifest = BundleManifest.set_component(self._manifest, "aop", str(value))
