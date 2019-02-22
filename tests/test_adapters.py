@@ -290,7 +290,9 @@ class ChangesStoreTestMixin:
         for change in changes:
             store.add(change)
 
-        self.assertEqual(list(store.filter(since="2018-08-05T23:03:47.891432Z")), changes[1:])
+        self.assertEqual(
+            list(store.filter(since="2018-08-05T23:03:47.891432Z")), changes[1:]
+        )
 
     def test_filter_limit(self):
 
