@@ -512,7 +512,7 @@ class DocumentsBundle:
 
     @property
     def documents(self):
-        return self._manifest["items"]
+        return self.manifest["items"]
 
 
 class Journal:
