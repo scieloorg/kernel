@@ -27,6 +27,8 @@ class Events(Enum):
     ISSUE_ADDED_TO_JOURNAL = auto()
     ISSUE_INSERTED_TO_JOURNAL = auto()
     ISSUE_REMOVED_FROM_JOURNAL = auto()
+    AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL = auto()
+    AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL = auto()
 
 
 class CommandHandler:
@@ -353,6 +355,30 @@ class RemoveIssueFromJournal(CommandHandler):
         )
 
 
+class SetAheadOfPrintBundleToJournal(CommandHandler):
+    def __call__(self, id: str, aop: str) -> None:
+        session = self.Session()
+        _journal = session.journals.fetch(id)
+        _journal.ahead_of_print_bundle = aop
+        session.journals.update(_journal)
+        session.notify(
+            Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
+            {"journal": _journal, "id": id, "aop": aop},
+        )
+
+
+class RemoveAheadOfPrintBundleFromJournal(CommandHandler):
+    def __call__(self, id: str) -> None:
+        session = self.Session()
+        _journal = session.journals.fetch(id)
+        _journal.remove_ahead_of_print_bundle()
+        session.journals.update(_journal)
+        session.notify(
+            Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
+            {"journal": _journal, "id": id},
+        )
+
+
 class FetchChanges(CommandHandler):
     """Recupera lista de mudanças das entidades.
 
@@ -445,4 +471,10 @@ def get_handlers(
         "insert_issue_to_journal": InsertIssueToJournal(SessionWrapper),
         "remove_issue_from_journal": RemoveIssueFromJournal(SessionWrapper),
         "fetch_changes": FetchChanges(SessionWrapper),
+        "set_ahead_of_print_bundle_to_journal": SetAheadOfPrintBundleToJournal(
+            SessionWrapper
+        ),
+        "remove_ahead_of_print_bundle_from_journal": RemoveAheadOfPrintBundleFromJournal(
+            SessionWrapper
+        ),
     }
