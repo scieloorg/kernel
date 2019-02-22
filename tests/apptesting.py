@@ -128,7 +128,6 @@ class InMemoryChangesDataStore(interfaces.ChangesDataStore):
 
 
 class MongoDBCollectionStub:
-
     def __init__(self):
         self._mongo_store = OrderedDict()
 
@@ -155,7 +154,6 @@ class MongoDBCollectionStub:
 
 
 class SliceResultStub:
-
     def __init__(self, data):
         self._data = data
 
