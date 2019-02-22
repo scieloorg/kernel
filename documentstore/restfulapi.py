@@ -54,6 +54,10 @@ front = Service(
     description="Front-matter of the document in a normalized schema.",
 )
 
+changes = Service(
+    name="changes", path="/changes", description="Get changes from all entities"
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -96,9 +100,9 @@ def fetch_document_data(request):
 
 @documents.put(schema=RegisterDocumentSchema(), validators=(colander_body_validator,))
 def put_document(request):
-    """Adiciona ou atualiza registro de documento. A atualização do documento é 
+    """Adiciona ou atualiza registro de documento. A atualização do documento é
     idempotente.
-    
+
     A semântica desta view-function está definida conforme a especificação:
     https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
     """
@@ -159,9 +163,9 @@ def get_assets_list(request):
 
 @assets.put(schema=AssetSchema(), validators=(colander_body_validator,))
 def put_asset(request):
-    """Adiciona ou atualiza registro de ativo do documento. A atualização do 
+    """Adiciona ou atualiza registro de ativo do documento. A atualização do
     ativo é idempotente.
-    
+
     A semântica desta view-function está definida conforme a especificação:
     https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
     """
@@ -212,6 +216,43 @@ def diff_document_versions(request):
 def fetch_document_front(request):
     data = fetch_document_data(request)
     return request.services["sanitize_document_front"](data)
+
+
+@changes.get(accept="application/json", renderer="json")
+def fetch_changes(request):
+    """Obtém a lista de mudanças, recebe os argumentos `since` e `limit`.
+    """
+
+    entity_route_name_map = {"Document": "documents"}
+
+    def _format_change(c):
+        result = {
+            "id": request.route_path(
+                entity_route_name_map[c["entity"]], document_id=c["id"]
+            ),
+            "timestamp": c["timestamp"],
+        }
+
+        if "deleted" in c:
+            result["deleted"] = c["deleted"]
+
+        return result
+
+    since = request.GET.get("since", "")
+
+    try:
+        limit = int(request.GET.get("limit", 500))
+    except TypeError:
+        raise HTTPBadRequest("limit must be integer")
+
+    return {
+        "since": since,
+        "limit": limit,
+        "results": [
+            _format_change(c)
+            for c in request.services["fetch_changes"](since=since, limit=limit)
+        ],
+    }
 
 
 class XMLRenderer:
