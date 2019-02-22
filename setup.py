@@ -18,7 +18,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license="2-clause BSD",
     packages=setuptools.find_packages(
-        exclude=["*.tests", "*.tests.*", "tests.*", "tests"]
+        exclude=["*.tests", "*.tests.*", "tests.*", "tests", "docs"]
     ),
     include_package_data=False,
     python_requires=">=3.6",
