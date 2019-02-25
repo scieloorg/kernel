@@ -90,13 +90,11 @@ class ChangesStore(interfaces.ChangesDataStore):
             ) from None
 
     def filter(self, since: str = "", limit: int = 500):
-        changes = self._collection.find({"_id": {"$gte": since}}).limit(limit)
-
-        def _clean_result(c):
-            _ = c.pop("_id", None)
-            return c
-
-        return (_clean_result(c) for c in changes)
+        return self._collection.find(
+            {"_id": {"$gte": since}},
+            sort=[("_id", pymongo.ASCENDING)],
+            projection={"_id": False},
+        ).limit(limit)
 
 
 class DocumentStore(BaseStore):

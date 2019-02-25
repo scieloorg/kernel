@@ -139,7 +139,7 @@ class MongoDBCollectionStub:
         else:
             self._mongo_store[data["_id"]] = data
 
-    def find(self, query):
+    def find(self, query, sort=None, projection=None):
         since = query["_id"]["$gte"]
 
         first = 0
