@@ -1477,3 +1477,42 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             journal.remove_issue,
             "0034-8910-rsp-48-2",
         )
+
+    def test_get_issues(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        input_issues = [
+            "0034-8910-rsp-48-1",
+            "0034-8910-rsp-48-2",
+            "0034-8910-rsp-48-3",
+        ]
+
+        for issue in input_issues:
+            journal.insert_issue(0, issue)
+
+        self.assertEqual(
+            ["0034-8910-rsp-48-3", "0034-8910-rsp-48-2", "0034-8910-rsp-48-1"],
+            journal.issues,
+        )
+
+    def test_get_issues_should_be_empty(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        self.assertEqual([], journal.issues)
+
+    def test_provisional_is_empty_str(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        self.assertEqual(journal.provisional, "")
+
+    def test_set_provisional(self):
+        journal = domain.Journal(id="0034-8910-rsp-48-2")
+        journal.provisional = "0034-8910-rsp-48-3"
+        self.assertEqual(journal.provisional, "0034-8910-rsp-48-3")
+        self.assertEqual(journal.manifest["provisional"], "0034-8910-rsp-48-3")
+
+    def test_set_ahead_of_print_bundle(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        journal.ahead_of_print_bundle = "0034-8910-rsp-aop"
+        self.assertEqual("0034-8910-rsp-aop", journal.manifest["aop"])
+
+    def test_ahead_of_print_bundle_return_empty_str(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        self.assertEqual(journal.ahead_of_print_bundle, "")
