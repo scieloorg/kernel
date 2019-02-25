@@ -2,7 +2,7 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
-from typing import Union, Callable, Any, Tuple
+from typing import Union, Callable, Any, Tuple, List
 from datetime import datetime
 
 import requests
@@ -512,7 +512,7 @@ class DocumentsBundle:
 
     @property
     def documents(self):
-        return self._manifest["items"]
+        return self.manifest["items"]
 
 
 class Journal:
@@ -823,3 +823,25 @@ class Journal:
 
     def remove_issue(self, issue: str) -> None:
         self.manifest = BundleManifest.remove_item(self._manifest, issue)
+
+    @property
+    def issues(self) -> List[str]:
+        return self.manifest["items"]
+
+    @property
+    def provisional(self):
+        return BundleManifest.get_component(self.manifest, "provisional")
+
+    @provisional.setter
+    def provisional(self, provisional: str) -> None:
+        self.manifest = BundleManifest.set_component(
+            self._manifest, "provisional", str(provisional)
+        )
+
+    @property
+    def ahead_of_print_bundle(self) -> str:
+        return BundleManifest.get_component(self.manifest, "aop", "")
+
+    @ahead_of_print_bundle.setter
+    def ahead_of_print_bundle(self, value: str) -> None:
+        self.manifest = BundleManifest.set_component(self._manifest, "aop", str(value))

@@ -116,20 +116,11 @@ class InMemoryChangesDataStore(interfaces.ChangesDataStore):
 
     def filter(self, since: str = "", limit: int = 500):
 
-        first = 0
-        found = False
-        for i, change_key in enumerate(self._data_store):
-            if self._data_store[change_key]["timestamp"] < since:
-                continue
-            else:
-                first = i
-                found = True
-                break
-
-        if found is False and since != "":
-            return []
-        else:
-            return list(self._data_store.values())[first:first+limit]
+        return [
+            change
+            for timestamp, change in self._data_store.items()
+            if timestamp >= since
+        ][:limit]
 
 
 class MongoDBCollectionStub:
