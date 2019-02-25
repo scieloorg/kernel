@@ -365,10 +365,7 @@ class BundleManifest:
 
     @staticmethod
     def get_metadata_all(bundle: dict, name: str) -> Any:
-        try:
-            return bundle["metadata"].get(name, [])
-        except IndexError:
-            return default
+        return bundle["metadata"].get(name, [])
 
     @staticmethod
     def add_item(bundle: dict, item: str, now: Callable[[], str] = utcnow) -> dict:
