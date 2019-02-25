@@ -242,7 +242,7 @@ def fetch_changes(request):
 
     try:
         limit = int(request.GET.get("limit", 500))
-    except TypeError:
+    except ValueError:
         raise HTTPBadRequest("limit must be integer")
 
     return {

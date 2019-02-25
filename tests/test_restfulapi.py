@@ -2,7 +2,12 @@ import os
 import unittest
 from unittest.mock import patch
 from pyramid import testing
-from pyramid.httpexceptions import HTTPNotFound, HTTPCreated, HTTPNoContent
+from pyramid.httpexceptions import (
+    HTTPNotFound,
+    HTTPCreated,
+    HTTPNoContent,
+    HTTPBadRequest,
+)
 
 from documentstore import services, restfulapi
 from . import apptesting
@@ -92,3 +97,67 @@ class PutDocumentUnitTests(unittest.TestCase):
         request.validated = apptesting.document_registry_data_fixture()
         restfulapi.put_document(request)
         self.assertIsInstance(restfulapi.put_document(request), HTTPNoContent)
+
+
+class FetchChangeUnitTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("documents", pattern="/documents/{document_id}")
+
+    def make_documents(self, quant):
+        for i in range(quant):
+            self.request.matchdict = {"document_id": f"0000-0000-23-24-223{i}"}
+            self.request.validated = apptesting.document_registry_data_fixture()
+            restfulapi.put_document(self.request)
+
+    def test_fetch_changes(self):
+        self.assertEqual(
+            restfulapi.fetch_changes(self.request),
+            {"since": "", "limit": 500, "results": []},
+        )
+
+    def test_limit_must_be_int(self):
+        self.request.GET["limit"] = "foo"
+        self.assertRaises(HTTPBadRequest, restfulapi.fetch_changes, self.request)
+
+    def test_limit_return_correct_value(self):
+        self.request.GET["limit"] = 1000
+        self.assertEqual(restfulapi.fetch_changes(self.request)["limit"], 1000)
+
+    def test_since_return_correct_value(self):
+        self.request.GET["since"] = "2019-02-21T13:52:26.526904Z"
+        self.assertEqual(
+            restfulapi.fetch_changes(self.request)["since"],
+            "2019-02-21T13:52:26.526904Z",
+        )
+
+    def test_document_inserted_reflects_in_changes(self):
+        self.request.matchdict = {"document_id": "0000-0000-23-24-2231"}
+        self.request.validated = apptesting.document_registry_data_fixture()
+        restfulapi.put_document(self.request)
+        self.assertEqual(len(restfulapi.fetch_changes(self.request)["results"]), 1)
+
+    def test_since_filter_the_change_list(self):
+        self.make_documents(10)
+        since = restfulapi.fetch_changes(self.request)["results"][5]["timestamp"]
+        self.request.GET["since"] = since
+
+        self.assertEqual(len(restfulapi.fetch_changes(self.request)["results"]), 5)
+
+    def test_since_must_return_empty_result_list_with_unknown_value(self):
+        self.make_documents(5)
+        self.request.GET["since"] = "xxx"
+
+        self.assertEqual(len(restfulapi.fetch_changes(self.request)["results"]), 0)
+
+    def test_fetch_with_since_and_limit(self):
+        self.make_documents(20)
+        changes = restfulapi.fetch_changes(self.request)["results"]
+        since = changes[10]["timestamp"]
+
+        self.request.GET["since"] = since
+        self.request.GET["limit"] = 5
+
+        self.assertEqual(restfulapi.fetch_changes(self.request)["results"],
+                         changes[10:15])
