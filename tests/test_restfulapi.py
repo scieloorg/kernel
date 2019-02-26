@@ -212,6 +212,5 @@ class FetchChangeUnitTest(unittest.TestCase):
         self.request.GET["since"] = since
         self.request.GET["limit"] = 5
 
-        self.assertEqual(
-            restfulapi.fetch_changes(self.request)["results"], changes[10:15]
-        )
+        self.assertEqual(restfulapi.fetch_changes(self.request)["results"],
+                         changes[10:15])
