@@ -1,3 +1,13 @@
+"""Este módulo deve conter classes concretas que implementam as interfaces
+definidas no módulo `interfaces`, ou seja, adaptadores.
+
+Até o momento atual, há apenas implementações que visam o uso do MongoDB como
+banco de dados e não há qualquer perspectiva para que sejam suportados
+outros bancos de dados. Essa falta de perspectiva se reflete nos identificadores
+das classes `Session`, `BaseStore`, `DocumentStore`, `DocumentsBundleStore` e 
+`JournalStore` que carecem de um componente no nome que os diferencie de outras
+implementações.
+"""
 import pymongo
 
 from . import interfaces
@@ -6,6 +16,12 @@ from . import domain
 
 
 class MongoDB:
+    """Abstrai a configuração do MongoDB de maneira que nenhum outro objeto do 
+    código necessita conhecer detalhes de conexão, nome do banco de dados ou
+    das coleções que armazenam cada tipo de entidade. Caso seja necessário criar
+    índices, aqui é o lugar.
+    """
+
     def __init__(self, uri, dbname="document-store"):
         self._client = pymongo.MongoClient(uri)
         self._dbname = dbname
@@ -18,6 +34,10 @@ class MongoDB:
 
 
 class Session(interfaces.Session):
+    """Implementação de `interfaces.Session` para armazenamento em MongoDB.
+    Trata-se de uma classe concreta e não deve ser generalizada.
+    """
+
     def __init__(self, mongodb_client):
         self._mongodb_client = mongodb_client
 
@@ -41,6 +61,11 @@ class Session(interfaces.Session):
 
 
 class BaseStore(interfaces.DataStore):
+    """Implementação de `interfaces.DataStore` para armazenamento em MongoDB.
+    Trata-se de uma classe abstrata que deve ser estendida por outras que
+    implementam/definem o atributo `DomainClass`.
+    """
+
     def __init__(self, collection):
         self._collection = collection
 
@@ -76,6 +101,10 @@ class BaseStore(interfaces.DataStore):
 
 
 class ChangesStore(interfaces.ChangesDataStore):
+    """Implementação de `interfaces.ChangesDataStore` para armazenamento em 
+    MongoDB.
+    """
+
     def __init__(self, collection):
         self._collection = collection
 
