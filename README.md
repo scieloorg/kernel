@@ -30,6 +30,7 @@ por meio de uma abstração chamada *Documents bundle*;
 digitais;
 * Replicação por meio de log de mudanças e notificação em barramento de eventos.
 
+Para mais informação sobre a nova arquitetura de sistemas de informação da Metodologia SciELO consulte https://docs.google.com/document/d/14YBl7--4ouaWBQhxzUYWRuhmegwnSYrDgupsED6rhvM/edit?usp=sharing
 
 ## Requisitos
 
