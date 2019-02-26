@@ -183,8 +183,7 @@ class AppTestingSessionTests(SessionTestMixin, unittest.TestCase):
 
 
 class MongoClientStub:
-    def collection(self, colname):
-        return None
+    documents = documents_bundles = journals = changes = None
 
 
 class SessionTests(SessionTestMixin, unittest.TestCase):

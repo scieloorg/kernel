@@ -26,11 +26,27 @@ class MongoDB:
         self._client = pymongo.MongoClient(uri)
         self._dbname = dbname
 
-    def db(self):
+    def _db(self):
         return self._client[self._dbname]
 
-    def collection(self, colname):
-        return self.db()[colname]
+    def _collection(self, colname):
+        return self._db()[colname]
+
+    @property
+    def documents(self):
+        return self._collection("documents")
+
+    @property
+    def documents_bundles(self):
+        return self._collection("documents_bundles")
+
+    @property
+    def journals(self):
+        return self._collection("journals")
+
+    @property
+    def changes(self):
+        return self._collection("changes")
 
 
 class Session(interfaces.Session):
@@ -43,21 +59,19 @@ class Session(interfaces.Session):
 
     @property
     def documents(self):
-        return DocumentStore(self._mongodb_client.collection(colname="documents"))
+        return DocumentStore(self._mongodb_client.documents)
 
     @property
     def documents_bundles(self):
-        return DocumentsBundleStore(
-            self._mongodb_client.collection(colname="documents_bundles")
-        )
+        return DocumentsBundleStore(self._mongodb_client.documents_bundles)
 
     @property
     def journals(self):
-        return JournalStore(self._mongodb_client.collection(colname="journals"))
+        return JournalStore(self._mongodb_client.journals)
 
     @property
     def changes(self):
-        return ChangesStore(self._mongodb_client.collection(colname="changes"))
+        return ChangesStore(self._mongodb_client.changes)
 
 
 class BaseStore(interfaces.DataStore):
