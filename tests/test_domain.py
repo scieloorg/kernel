@@ -1516,3 +1516,18 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_ahead_of_print_bundle_return_empty_str(self):
         journal = domain.Journal(id="0034-8910-MR")
         self.assertEqual(journal.ahead_of_print_bundle, "")
+
+    def test_remove_ahead_of_print_bundle(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        journal.ahead_of_print_bundle = "0034-8910-MR"
+        self.assertIn("aop", journal.manifest.keys())
+        journal.remove_ahead_of_print_bundle()
+        self.assertNotIn("aop", journal.manifest.keys())
+
+    def test_remove_ahead_of_print_bundle_raises_exception_if_it_does_not_exist(self):
+        journal = domain.Journal(id="0034-8910-rsp")
+        self._assert_raises_with_message(
+            exceptions.DoesNotExist,
+            'cannot remove component "aop" from bundle: the component does not exist',
+            journal.remove_ahead_of_print_bundle
+        )

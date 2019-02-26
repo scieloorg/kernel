@@ -842,3 +842,6 @@ class Journal:
     @ahead_of_print_bundle.setter
     def ahead_of_print_bundle(self, value: str) -> None:
         self.manifest = BundleManifest.set_component(self._manifest, "aop", str(value))
+
+    def remove_ahead_of_print_bundle(self) -> None:
+        self.manifest = BundleManifest.remove_component(self._manifest, "aop")

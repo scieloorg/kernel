@@ -546,3 +546,120 @@ class RemoveIssueFromJournalTest(unittest.TestCase):
                         "issue": "0034-8910-rsp-48-2",
                     },
                 )
+
+
+class SetAheadOfPrintBundleToJournalTest(unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services.get("set_ahead_of_print_bundle_to_journal")
+        create_journal_command = self.services.get("create_journal")
+        create_journal_command(id="0034-8910-rsp")
+
+    def test_command_interface(self):
+        self.assertIsNotNone(self.command)
+        self.assertTrue(callable(self.command))
+
+    def test_command_raises_exception_if_journal_does_not_exist(self):
+        self.assertRaises(
+            exceptions.DoesNotExist,
+            self.command,
+            id="0101-8910-csp",
+            aop="0101-8910-csp-aop",
+        )
+
+    def test_command_calls_ahead_of_print_bundle(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.ahead_of_print_bundle = mock.Mock()
+            mock_fetch.return_value = JournalStub
+            self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop")
+            self.assertEqual(
+                JournalStub.ahead_of_print_bundle, "0034-8910-rsp-aop")
+
+    def test_command_update_journals(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.ahead_of_print_bundle = mock.Mock()
+            mock_fetch.return_value = JournalStub
+            with mock.patch.object(self.session.journals, "update") as mock_update:
+                self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop")
+                mock_update.assert_called_once_with(JournalStub)
+
+    def test_command_success(self):
+        self.assertIsNone(
+            self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop")
+        )
+
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.ahead_of_print_bundle = mock.Mock()
+            mock_fetch.return_value = JournalStub
+            with mock.patch.object(self.session, "notify") as mock_notify:
+                self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop")
+                mock_notify.assert_called_once_with(
+                    services.Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
+                    {
+                        "journal": JournalStub,
+                        "id": "0034-8910-rsp",
+                        "aop": "0034-8910-rsp-aop",
+                    },
+                )
+
+
+class RemoveAheadOfPrintBundleFromJournalTest(unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services.get("remove_ahead_of_print_bundle_from_journal")
+        create_journal_command = self.services.get("create_journal")
+        create_journal_command(id="0034-8910-rsp")
+
+    def test_command_interface(self):
+        self.assertIsNotNone(self.command)
+        self.assertTrue(callable(self.command))
+
+    def test_command_raises_exception_if_journal_does_not_exist(self):
+        self.assertRaises(
+            exceptions.DoesNotExist,
+            self.command,
+            id="0101-8910-csp",
+        )
+
+    def test_command_calls_remove_ahead_of_print(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.remove_ahead_of_print_bundle = mock.Mock()
+            mock_fetch.return_value = JournalStub
+            self.command(id="0034-8910-rsp")
+            JournalStub.remove_ahead_of_print_bundle.assert_called_once_with()
+
+    def test_command_update_journals(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.remove_ahead_of_print_bundle = mock.Mock()
+            mock_fetch.return_value = JournalStub
+            with mock.patch.object(self.session.journals, "update") as mock_update:
+                self.command(id="0034-8910-rsp")
+                mock_update.assert_called_once_with(JournalStub)
+
+    def test_command_raises_exception_if_ahead_of_print_does_not_exist(self):
+        self.assertRaises(
+            exceptions.DoesNotExist,
+            self.command,
+            id="0034-8910-rsp"
+        )
+
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.remove_ahead_of_print_bundle = mock.Mock()
+            mock_fetch.return_value = JournalStub
+            with mock.patch.object(self.session, "notify") as mock_notify:
+                self.command(id="0034-8910-rsp")
+                mock_notify.assert_called_once_with(
+                    services.Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
+                    {
+                        "journal": JournalStub,
+                        "id": "0034-8910-rsp",
+                    },
+                )
