@@ -55,6 +55,12 @@ front = Service(
     description="Front-matter of the document in a normalized schema.",
 )
 
+bundles = Service(
+    name="bundles",
+    path="/bundles/{bundle_id}",
+    description="Get documents bundle data.",
+)
+
 changes = Service(
     name="changes", path="/changes", description="Get changes from all entities"
 )
@@ -217,6 +223,18 @@ def diff_document_versions(request):
 def fetch_document_front(request):
     data = fetch_document_data(request)
     return request.services["sanitize_document_front"](data)
+
+
+@bundles.get(renderer="json")
+def fetch_documents_bundle(request):
+    try:
+        return request.services["fetch_documents_bundle"](
+            request.matchdict["bundle_id"]
+        )
+    except KeyError:
+        return HTTPBadRequest("bundle id is mandatory")
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
 
 
 @changes.get(accept="application/json", renderer="json")

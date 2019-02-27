@@ -1,6 +1,6 @@
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from pyramid import testing
 from pyramid.httpexceptions import (
     HTTPNotFound,
@@ -9,7 +9,7 @@ from pyramid.httpexceptions import (
     HTTPBadRequest,
 )
 
-from documentstore import services, restfulapi
+from documentstore import services, restfulapi, exceptions
 from . import apptesting
 
 _CWD = os.path.dirname(os.path.abspath(__file__))
@@ -147,6 +147,45 @@ class ParseSettingsFunctionTests(unittest.TestCase):
             os.environ.pop("APPTEST_FOO", None)
 
 
+class FetchDocumentsBundleTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("bundles", pattern="/bundles/{bundle_id}")
+
+    def test_fetch_documents_bundle_raises_bad_request_if_bundle_id_is_not_informed(
+        self
+    ):
+        response = restfulapi.fetch_documents_bundle(self.request)
+        self.assertIsInstance(response, HTTPBadRequest)
+        self.assertEqual(response.message, "bundle id is mandatory")
+
+    def test_fetch_documents_bundle_raises_not_found_if_bundle_does_not_exist(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        MockFetchDocumentsBundle = Mock(
+            side_effect=exceptions.DoesNotExist("Does Not Exist")
+        )
+        self.request.services["fetch_documents_bundle"] = MockFetchDocumentsBundle
+        response = restfulapi.fetch_documents_bundle(self.request)
+        self.assertIsInstance(response, HTTPNotFound)
+        self.assertEqual(response.message, "Does Not Exist")
+
+    def test_fetch_documents_bundle_calls_fetch_documents_bundle_service(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        MockFetchDocumentsBundle = Mock()
+        self.request.services["fetch_documents_bundle"] = MockFetchDocumentsBundle
+        restfulapi.fetch_documents_bundle(self.request)
+        MockFetchDocumentsBundle.assert_called_once_with("0034-8910-rsp-48-2")
+
+    def test_fetch_documents_bundle_returns_fetch_documents_bundle_service_return(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        MockFetchDocumentsBundle = Mock(return_value={id: "0034-8910-rsp-48-2"})
+        self.request.services["fetch_documents_bundle"] = MockFetchDocumentsBundle
+        self.assertEqual(
+            restfulapi.fetch_documents_bundle(self.request), {id: "0034-8910-rsp-48-2"}
+        )
+
+
 class FetchChangeUnitTest(unittest.TestCase):
     def setUp(self):
         self.request = make_request()
@@ -186,8 +225,7 @@ class FetchChangeUnitTest(unittest.TestCase):
         restfulapi.put_document(self.request)
         self.assertEqual(len(restfulapi.fetch_changes(self.request)["results"]), 1)
         changes_ids = [
-            change["id"]
-            for change in restfulapi.fetch_changes(self.request)["results"]
+            change["id"] for change in restfulapi.fetch_changes(self.request)["results"]
         ]
         self.assertIn("/documents/0000-0000-23-24-2231", changes_ids)
 
@@ -212,5 +250,6 @@ class FetchChangeUnitTest(unittest.TestCase):
         self.request.GET["since"] = since
         self.request.GET["limit"] = 5
 
-        self.assertEqual(restfulapi.fetch_changes(self.request)["results"],
-                         changes[10:15])
+        self.assertEqual(
+            restfulapi.fetch_changes(self.request)["results"], changes[10:15]
+        )
