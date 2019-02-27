@@ -1,5 +1,7 @@
+import json
 import unittest
 from unittest.mock import Mock
+from copy import deepcopy
 
 from documentstore import adapters, domain, exceptions, interfaces
 from . import apptesting
@@ -13,19 +15,24 @@ class StoreTestMixin:
         self.DBCollectionMock.replace_one = Mock()
 
     def test_add(self):
+        manifest = apptesting.manifest_data_fixture()
         store = self.Adapter(self.DBCollectionMock)
-        data = self.DomainClass(id="0034-8910-rsp-48-2")
+        data = self.DomainClass(manifest=manifest)
         store.add(data)
         expected = data.manifest
         expected["_id"] = "0034-8910-rsp-48-2"
-        self.DBCollectionMock.insert_one.assert_called_once_with(expected)
+        self.DBCollectionMock.insert_one.assert_called_once_with(
+            self.set_expected(expected)
+        )
 
     def test_add_data_with_divergent_ids(self):
         store = self.Adapter(self.DBCollectionMock)
         data = self.DomainClass(manifest={"_id": "1", "id": "0034-8910-rsp-48-2"})
         store.add(data)
         expected = data.manifest
-        self.DBCollectionMock.insert_one.assert_called_once_with(expected)
+        self.DBCollectionMock.insert_one.assert_called_once_with(
+            self.set_expected(expected)
+        )
 
     def test_add_raises_exception_if_already_exists(self):
         import pymongo
@@ -43,7 +50,8 @@ class StoreTestMixin:
         self.assertRaises(exceptions.DoesNotExist, store.fetch, "0034-8910-rsp-48-2")
 
     def test_fetch(self):
-        self.DBCollectionMock.find_one.return_value = {"_id": "0034-8910-rsp-48-2"}
+        manifest = apptesting.manifest_data_fixture()
+        self.DBCollectionMock.find_one.return_value = self.set_expected(manifest)
         store = self.Adapter(self.DBCollectionMock)
         store.fetch("0034-8910-rsp-48-2")
         self.DBCollectionMock.find_one.assert_called_once_with(
@@ -51,8 +59,8 @@ class StoreTestMixin:
         )
 
     def test_fetch_returns_domain_instance(self):
-        manifest = {"_id": "0034-8910-rsp-48-2", "id": "0034-8910-rsp-48-2"}
-        self.DBCollectionMock.find_one.return_value = manifest
+        manifest = apptesting.manifest_data_fixture()
+        self.DBCollectionMock.find_one.return_value = self.set_expected(manifest)
         store = self.Adapter(self.DBCollectionMock)
         data = store.fetch("0034-8910-rsp-48-2")
         # XXX: Teste incompleto, pois não testa o retorno de forma precisa
@@ -60,13 +68,14 @@ class StoreTestMixin:
         self.assertEqual(data.manifest, manifest)
 
     def test_update(self):
+        manifest = apptesting.manifest_data_fixture()
         store = self.Adapter(self.DBCollectionMock)
-        data = self.DomainClass(id="0034-8910-rsp-48-2")
+        data = self.DomainClass(manifest=manifest)
         store.update(data)
         expected = data.manifest
         expected["_id"] = "0034-8910-rsp-48-2"
         self.DBCollectionMock.replace_one.assert_called_once_with(
-            {"_id": "0034-8910-rsp-48-2"}, expected
+            {"_id": "0034-8910-rsp-48-2"}, self.set_expected(expected)
         )
 
     def test_update_raises_exception_if_does_not_exist(self):
@@ -80,8 +89,24 @@ class StoreTestMixin:
         data = self.DomainClass(manifest={"_id": "1", "id": "0034-8910-rsp-48-2"})
         store.update(data)
         self.DBCollectionMock.replace_one.assert_called_once_with(
-            {"_id": "1"}, data.manifest
+            {"_id": "1"}, self.set_expected(data.manifest)
         )
+
+
+class DocumentsStoreTest(StoreTestMixin, unittest.TestCase):
+    Adapter = adapters.DocumentStore
+    DomainClass = domain.Document
+
+    def set_expected(self, value):
+        """
+        Para Document, foi decidido armazenar em JSON por conta da presença de
+        caracteres restritos no nome de campos, principalmente de pontos ('.'), por
+        serem nomes de arquivos com extensão (Ex.: "0034-8910-rsp-48-2-0347-gf01.jpg").
+        Assim, garantimos a preservação do dado, sem perdas.
+        Mais infos sobre a restrição do MongoDB para nomes de campos:
+        https://docs.mongodb.com/manual/reference/limits/#Restrictions-on-Field-Names
+        """
+        return {"_id": value.get("_id"), "document": json.dumps(value)}
 
 
 class DocumentsBundleStoreTest(StoreTestMixin, unittest.TestCase):
@@ -89,17 +114,17 @@ class DocumentsBundleStoreTest(StoreTestMixin, unittest.TestCase):
     Adapter = adapters.DocumentsBundleStore
     DomainClass = domain.DocumentsBundle
 
-
-class DocumentsStoreTest(StoreTestMixin, unittest.TestCase):
-
-    Adapter = adapters.DocumentStore
-    DomainClass = domain.Document
+    def set_expected(self, value):
+        return value
 
 
 class JournalStoreTest(StoreTestMixin, unittest.TestCase):
 
     Adapter = adapters.JournalStore
     DomainClass = domain.Journal
+
+    def set_expected(self, value):
+        return value
 
 
 class SessionTestMixin:
