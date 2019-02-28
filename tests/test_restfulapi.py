@@ -253,3 +253,31 @@ class FetchChangeUnitTest(unittest.TestCase):
         self.assertEqual(
             restfulapi.fetch_changes(self.request)["results"], changes[10:15]
         )
+
+
+class CreateJournalUnitTests(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("journals", pattern="/journals/{journals_id}")
+
+    def test_should_return_created(self):
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        self.assertIsInstance(restfulapi.put_journal(self.request), HTTPCreated)
+
+    def test_should_return_no_concent_if_already_exists(self):
+        MockCreateJournal = Mock(side_effect=exceptions.AlreadyExists)
+        self.request.services["create_journal"] = MockCreateJournal
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        self.assertIsInstance(restfulapi.put_journal(self.request), HTTPNoContent)
+
+    def test_should_return_a_bad_request_if_domain_raise_an_exception(self):
+        MockCreateJournal = Mock(side_effect=ValueError)
+        self.request.services["create_journal"] = MockCreateJournal
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.validated = apptesting.journal_registry_fixture(
+            subject_areas=["invalid-subject-area"]
+        )
+        self.assertIsInstance(restfulapi.put_journal(self.request), HTTPBadRequest)
