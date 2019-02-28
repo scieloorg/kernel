@@ -328,3 +328,24 @@ class InMemoryChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
 class ChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
     def Store(self):
         return adapters.ChangesStore(apptesting.MongoDBCollectionStub())
+
+
+class MongoDBTests(unittest.TestCase):
+    def test_mongoclient_isnt_instantiated_during_init(self):
+        """É importante que a instância de `pymongo.MongoClient` não seja 
+        criada durante a inicialização de `adapters.MongoDB`, mas apenas quando
+        a conexão com o banco for necessária. Essa medida visa evitar problemas
+        em aplicações que operam no modelo *prefork* como é o caso do Gunicorn.
+
+        Para mais detalhes leia os links:
+
+          * http://api.mongodb.com/python/current/faq.html#is-pymongo-fork-safe
+          * https://docs.gunicorn.org/en/stable/design.html
+          * https://github.com/scieloorg/document-store/issues/104
+        """
+        mock_mongoclient = Mock()
+        mongodb = adapters.MongoDB(
+            "mongodb://test_db:27017", dbname="store", mongoclient=mock_mongoclient
+        )
+        mock_mongoclient.assert_not_called()
+
