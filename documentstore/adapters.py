@@ -8,11 +8,16 @@ das classes `Session`, `BaseStore`, `DocumentStore`, `DocumentsBundleStore` e
 `JournalStore` que carecem de um componente no nome que os diferencie de outras
 implementações.
 """
+import logging
+
 import pymongo
 
 from . import interfaces
 from . import exceptions
 from . import domain
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MongoDB:
@@ -22,9 +27,31 @@ class MongoDB:
     índices, aqui é o lugar.
     """
 
-    def __init__(self, uri, dbname="document-store"):
-        self._client = pymongo.MongoClient(uri)
+    def __init__(self, uri, dbname="document-store", mongoclient=pymongo.MongoClient):
         self._dbname = dbname
+        self._uri = uri
+        self._MongoClient = mongoclient
+        self._client_instance = None
+
+    @property
+    def _client(self):
+        """Posterga a instanciação de `pymongo.MongoClient` até o seu primeiro
+        uso.
+        """
+        if not self._client_instance:
+            self._client_instance = self._MongoClient(self._uri)
+            LOGGER.debug(
+                "new MongoDB client created: <%s at %s>",
+                repr(self._client_instance),
+                id(self._client_instance),
+            )
+
+        LOGGER.debug(
+            "using MongoDB client: <%s at %s>",
+            repr(self._client_instance),
+            id(self._client_instance),
+        )
+        return self._client_instance
 
     def _db(self):
         return self._client[self._dbname]
