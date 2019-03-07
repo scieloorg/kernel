@@ -663,3 +663,26 @@ class RemoveAheadOfPrintBundleFromJournalTest(unittest.TestCase):
                         "id": "0034-8910-rsp",
                     },
                 )
+
+
+class FetchJournalTest(unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services.get("fetch_journal")
+        create_journal_command = self.services.get("create_journal")
+        create_journal_command(id="1678-4596-cr-49-02")
+
+    def test_assert_command_interface_exists(self):
+        self.assertIsNotNone(self.command)
+        self.assertTrue(callable(self.command))
+
+    def test_should_raise_does_not_exists_exception(self):
+        self.assertRaises(
+            exceptions.DoesNotExist, self.command, id="1678-4596-cr-49-03"
+        )
+
+    def test_should_return_a_journal(self):
+        self.assertIsNotNone(self.command(id="1678-4596-cr-49-02"))
+
+    def test_should_require_an_id(self):
+        self.assertRaises(TypeError, self.command)

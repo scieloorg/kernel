@@ -319,6 +319,16 @@ class CreateJournal(CommandHandler):
         return result
 
 
+class FetchJournal(CommandHandler):
+    """Recupera o Journal a partir do seu identificador.
+
+    :param id: Identificador único do documento."""
+
+    def __call__(self, id: str) -> Journal:
+        session = self.Session()
+        return session.journals.fetch(id)
+
+
 class AddIssueToJournal(CommandHandler):
     def __call__(self, id: str, issue: str) -> None:
         session = self.Session()
@@ -467,6 +477,7 @@ def get_handlers(
             SessionWrapper
         ),
         "create_journal": CreateJournal(SessionWrapper),
+        "fetch_journal": FetchJournal(SessionWrapper),
         "add_issue_to_journal": AddIssueToJournal(SessionWrapper),
         "insert_issue_to_journal": InsertIssueToJournal(SessionWrapper),
         "remove_issue_from_journal": RemoveIssueFromJournal(SessionWrapper),
