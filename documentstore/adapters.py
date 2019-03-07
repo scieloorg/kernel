@@ -9,6 +9,7 @@ das classes `Session`, `BaseStore`, `DocumentStore`, `DocumentsBundleStore` e
 implementações.
 """
 import logging
+import json
 
 import pymongo
 
@@ -110,11 +111,20 @@ class BaseStore(interfaces.DataStore):
     def __init__(self, collection):
         self._collection = collection
 
-    def add(self, data) -> None:
+    def _pre_write(self, data) -> dict:
+        """Tratamento anterior ao armazenamento do dado no MongoDB."""
         _manifest = data.manifest
         if not _manifest.get("_id"):
             _manifest["_id"] = data.id()
+        return _manifest["_id"], _manifest
+
+    def _post_read(self, data: dict) -> dict:
+        """Tratamento posterior à leitura do dado no MongoDB."""
+        return data
+
+    def add(self, data) -> None:
         try:
+            _, _manifest = self._pre_write(data)
             self._collection.insert_one(_manifest)
         except pymongo.errors.DuplicateKeyError:
             raise exceptions.AlreadyExists(
@@ -122,10 +132,8 @@ class BaseStore(interfaces.DataStore):
             ) from None
 
     def update(self, data) -> None:
-        _manifest = data.manifest
-        if not _manifest.get("_id"):
-            _manifest["_id"] = data.id()
-        result = self._collection.replace_one({"_id": _manifest["_id"]}, _manifest)
+        _id, _manifest = self._pre_write(data)
+        result = self._collection.replace_one({"_id": _id}, _manifest)
         if result.matched_count == 0:
             raise exceptions.DoesNotExist(
                 "cannot update data with id " '"%s": data does not exist' % data.id()
@@ -134,7 +142,7 @@ class BaseStore(interfaces.DataStore):
     def fetch(self, id: str):
         manifest = self._collection.find_one({"_id": id})
         if manifest:
-            return self.DomainClass(manifest=manifest)
+            return self.DomainClass(manifest=self._post_read(manifest))
         else:
             raise exceptions.DoesNotExist(
                 "cannot fetch data with id " '"%s": data does not exist' % id
@@ -169,6 +177,22 @@ class ChangesStore(interfaces.ChangesDataStore):
 
 class DocumentStore(BaseStore):
     DomainClass = domain.Document
+
+    def _pre_write(self, data) -> dict:
+        """Tratamento anterior ao armazenamento do dado no MongoDB. Para Document, o
+        dado é armazenado em JSON por conta da presença de caracteres restritos no nome
+        de campos (Ex.: "0034-8910-rsp-48-2-0347-gf01.jpg", com a presença de '.').
+        Mais infos:
+        https://docs.mongodb.com/manual/reference/limits/#Restrictions-on-Field-Names"""
+        _id, _manifest = super()._pre_write(data)
+        return _id, {"_id": _id, "document": json.dumps(_manifest)}
+
+    def _post_read(self, data: dict) -> dict:
+        """Tratamento posterior à leitura do dado no MongoDB. Para Document, o
+        dado é armazenado em JSON e precisa ser convertido em dict.
+        Mais infos em 'DocumentStore._pre_write' e:
+        https://docs.mongodb.com/manual/reference/limits/#Restrictions-on-Field-Names"""
+        return json.loads(data["document"])
 
 
 class DocumentsBundleStore(BaseStore):

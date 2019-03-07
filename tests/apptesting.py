@@ -103,6 +103,56 @@ def document_registry_data_fixture(prefix=""):
     }
 
 
+def manifest_data_fixture():
+    return {
+        "id": "0034-8910-rsp-48-2",
+        "versions": [
+            {
+              "assets": {
+                "0034-8910-rsp-48-2-0347-gf01.jpg": [
+                  [
+                    "2018-08-05T23:03:44.971230Z",
+                    "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01.jpg"
+                  ]
+                ],
+                "0034-8910-rsp-48-2-0347-gf01-en.jpg": [
+                  [
+                    "2018-08-05T23:08:41.590174Z",
+                    "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01-en.jpg"
+                  ]
+                ],
+              },
+              "data": "https://ssm.scielo.br/tests/samples/0034-8910-rsp-48-2-0347.xml",
+              "timestamp": "2018-08-05T23:02:29.392990Z"
+            },
+            {
+              "assets": {
+                "0034-8910-rsp-48-2-0347-gf02.tiff": [
+                  [
+                    "2018-08-05T23:04:43.323527Z",
+                    "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02.tiff"
+                  ]
+                ],
+                "0034-8910-rsp-48-2-0347-gf02-en.tiff": [
+                  [
+                    "2018-08-05T23:08:50.331687Z",
+                    "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf02-en.tiff"
+                  ]
+                ],
+              },
+              "data": "https://ssm.scielo.br/tests/samples/0034-8910-rsp-48-2-0347.xml",
+              "timestamp": "2018-11-16T23:02:29.392990Z"
+            },
+        ],
+        "author": {
+            "last.name": "Smith",
+            "first.name": "Joshua",
+        },
+        "logo.gif": "logo.gif",
+        "namespace$": ["a", "b", "$"],
+    }
+
+
 class InMemoryChangesDataStore(interfaces.ChangesDataStore):
     def __init__(self):
         self._data_store = OrderedDict()
