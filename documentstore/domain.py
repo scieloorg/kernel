@@ -539,6 +539,17 @@ class Journal:
     def manifest(self, value: dict):
         self._manifest = value
 
+
+    def data(self):
+        """Retorna o manifesto completo de um Journal com os
+        metadados em sua última versão"""
+        _manifest = self.manifest
+
+        for key, value in _manifest["metadata"].items():
+            _manifest["metadata"][key] = value[-1][-1]
+
+        return _manifest
+
     @property
     def mission(self):
         return BundleManifest.get_metadata(self.manifest, "mission", {})

@@ -1531,3 +1531,20 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             'cannot remove component "aop" from bundle: the component does not exist',
             journal.remove_ahead_of_print_bundle
         )
+
+    def test_should_have_a_data_method(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        self.assertIsNotNone(journal.data())
+
+    def test_should_has_an_empty_metadata(self):
+        journal = domain.Journal(id="0034-8910-MR")
+        self.assertEqual(journal.data()["metadata"], {})
+
+    def test_should_return_latest_metadata_version(self):
+        journal = domain.Journal(id="0034-8910-MR")
+
+        journal.title = "Ciência Agrária 1"
+        self.assertEqual(journal.data()["metadata"]["title"], "Ciência Agrária 1")
+
+        journal.title = "Ciência Agrária 2"
+        self.assertEqual(journal.data()["metadata"]["title"], "Ciência Agrária 2")
