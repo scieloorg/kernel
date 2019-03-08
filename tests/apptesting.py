@@ -205,3 +205,31 @@ class SliceResultStub:
 
     def limit(self, val):
         return self._data[:val]
+
+
+def journal_registry_fixture(sufix="", subject_areas=["AGRICULTURAL SCIENCES"]):
+    return {
+            "title": f"Ciência Rural-{sufix}",
+            "mission": {
+                "pt": "Publicar artigos científicos, revisões bibliográficas e notas referentes à área de Ciências Agrárias.",
+                "en": "To publish original articles (full papers), short notes and reviews prepared by national and international experts which contribute to the scientific area of Agronomy, Animal Science, Veterinary Medicine and Forestry Science."
+            },
+            "title_iso": f"Ciênc. rural-{sufix}",
+            "short_title": f"Cienc. Rural-{sufix}",
+            "title_slug": f"ciencia-rural-{sufix}",
+            "acronym": "cr",
+            "scielo_issn": "0103-8478",
+            "print_issn": "0103-8478",
+            "electronic_issn": "1678-4596",
+            "status": {"status": "current"},
+            "subject_areas": subject_areas,
+            "sponsors": [{"name": "FAPERGS"}],
+            "metrics": {"total_h5_index" : 17},
+            "subject_categories": ["AGRONOMY"],
+            "institution_responsible_for": ["Universidade Federal de Santa Maria"],
+            "online_submission_url": "http://mc04.manuscriptcentral.com/cr-scielo",
+            "next_journal": {},
+            "logo_url": "https://homolog.scielo.org/media/assets/cr/glogo.gif",
+            "previous_journal": {"title": "Revista do Centro de Ciências Rurais"},
+            "contact": {"email": "cienciarural@mail.ufsm.br"},
+        }

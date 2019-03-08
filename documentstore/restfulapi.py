@@ -65,6 +65,12 @@ changes = Service(
     name="changes", path="/changes", description="Get changes from all entities"
 )
 
+journals = Service(
+    name="journals",
+    path="/journals/{journal_id}",
+    description="Register and retrieve journals' endpoint",
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -88,6 +94,34 @@ class AssetSchema(colander.MappingSchema):
     """
 
     asset_url = colander.SchemaNode(colander.String(), validator=colander.url)
+
+
+class RegisterJournalSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro de periódicos.
+    """
+
+    title = colander.SchemaNode(colander.String())
+    mission = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    title_iso = colander.SchemaNode(colander.String())
+    short_title = colander.SchemaNode(colander.String())
+    title_slug = colander.SchemaNode(colander.String())
+    acronym = colander.SchemaNode(colander.String())
+    scielo_issn = colander.SchemaNode(colander.String())
+    print_issn = colander.SchemaNode(colander.String())
+    electronic_issn = colander.SchemaNode(colander.String())
+    status = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    subject_areas = colander.SchemaNode(colander.List())
+    sponsors = colander.SchemaNode(colander.List())
+    metrics = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    subject_categories = colander.SchemaNode(colander.List())
+    institution_responsible_for = colander.SchemaNode(colander.List())
+    online_submission_url = colander.SchemaNode(
+        colander.String(), validator=colander.url
+    )
+    next_journal = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    logo_url = colander.SchemaNode(colander.String(), validator=colander.url)
+    previous_journal = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    contact = colander.SchemaNode(colander.Mapping(unknown="preserve"))
 
 
 @documents.get(accept="text/xml", renderer="xml")
@@ -272,6 +306,28 @@ def fetch_changes(request):
             for c in request.services["fetch_changes"](since=since, limit=limit)
         ],
     }
+
+
+@journals.put(
+    schema=RegisterJournalSchema(),
+    validators=(colander_body_validator,),
+    accept="application/json",
+    renderer="json",
+)
+def put_journal(request):
+    """Registra um periódico a partir de dados submetidos e
+    validados por meio do RegisterJournalSchema."""
+
+    try:
+        request.services["create_journal"](
+            id=request.matchdict["journal_id"], metadata=request.validated
+        )
+    except exceptions.AlreadyExists:
+        return HTTPNoContent("journal already exists")
+    except (TypeError, ValueError) as err:
+        return HTTPBadRequest(str(err))
+    else:
+        return HTTPCreated("journal created successfully")
 
 
 class XMLRenderer:
