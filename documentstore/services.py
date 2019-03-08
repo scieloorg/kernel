@@ -326,7 +326,7 @@ class FetchJournal(CommandHandler):
 
     def __call__(self, id: str) -> Journal:
         session = self.Session()
-        return session.journals.fetch(id)
+        return session.journals.fetch(id).data()
 
 
 class AddIssueToJournal(CommandHandler):
