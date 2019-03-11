@@ -573,8 +573,7 @@ class SetAheadOfPrintBundleToJournalTest(unittest.TestCase):
             JournalStub.ahead_of_print_bundle = mock.Mock()
             mock_fetch.return_value = JournalStub
             self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop")
-            self.assertEqual(
-                JournalStub.ahead_of_print_bundle, "0034-8910-rsp-aop")
+            self.assertEqual(JournalStub.ahead_of_print_bundle, "0034-8910-rsp-aop")
 
     def test_command_update_journals(self):
         with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
@@ -586,9 +585,7 @@ class SetAheadOfPrintBundleToJournalTest(unittest.TestCase):
                 mock_update.assert_called_once_with(JournalStub)
 
     def test_command_success(self):
-        self.assertIsNone(
-            self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop")
-        )
+        self.assertIsNone(self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop"))
 
     def test_command_notify_event(self):
         with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
@@ -619,11 +616,7 @@ class RemoveAheadOfPrintBundleFromJournalTest(unittest.TestCase):
         self.assertTrue(callable(self.command))
 
     def test_command_raises_exception_if_journal_does_not_exist(self):
-        self.assertRaises(
-            exceptions.DoesNotExist,
-            self.command,
-            id="0101-8910-csp",
-        )
+        self.assertRaises(exceptions.DoesNotExist, self.command, id="0101-8910-csp")
 
     def test_command_calls_remove_ahead_of_print(self):
         with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
@@ -643,11 +636,7 @@ class RemoveAheadOfPrintBundleFromJournalTest(unittest.TestCase):
                 mock_update.assert_called_once_with(JournalStub)
 
     def test_command_raises_exception_if_ahead_of_print_does_not_exist(self):
-        self.assertRaises(
-            exceptions.DoesNotExist,
-            self.command,
-            id="0034-8910-rsp"
-        )
+        self.assertRaises(exceptions.DoesNotExist, self.command, id="0034-8910-rsp")
 
     def test_command_notify_event(self):
         with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
@@ -658,10 +647,7 @@ class RemoveAheadOfPrintBundleFromJournalTest(unittest.TestCase):
                 self.command(id="0034-8910-rsp")
                 mock_notify.assert_called_once_with(
                     services.Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
-                    {
-                        "journal": JournalStub,
-                        "id": "0034-8910-rsp",
-                    },
+                    {"journal": JournalStub, "id": "0034-8910-rsp"},
                 )
 
 
