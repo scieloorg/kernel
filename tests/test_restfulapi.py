@@ -1,6 +1,9 @@
 import os
 import unittest
+from copy import deepcopy
 from unittest.mock import patch, Mock
+
+import colander
 from pyramid import testing
 from pyramid.httpexceptions import (
     HTTPNotFound,
@@ -184,6 +187,72 @@ class FetchDocumentsBundleTest(unittest.TestCase):
         self.assertEqual(
             restfulapi.fetch_documents_bundle(self.request), {id: "0034-8910-rsp-48-2"}
         )
+
+
+class DocumentsBundleSchemaTest(unittest.TestCase):
+    def test_none_of_fields_required(self):
+        data = apptesting.documents_bundle_registry_data_fixture()
+        for field_name in data.keys():
+            data_2 = deepcopy(data)
+            with self.subTest(field_name=field_name):
+                del data_2[field_name]
+                deserialized = restfulapi.DocumentsBundleSchema().deserialize(data_2)
+                self.assertIsNone(deserialized.get(field_name))
+
+    def test_check_titles_if_title_is_present(self):
+        data = {}
+        titles = (
+            ["Invalid Title"],
+            [{"a": 1, "b": 2}],
+            [{"language": "en"}],
+            [{"title": "Title"}],
+        )
+        for title in titles:
+            with self.subTest(title=title):
+                data["titles"] = title
+                self.assertRaises(
+                    colander.Invalid,
+                    restfulapi.DocumentsBundleSchema().deserialize,
+                    data,
+                )
+
+    def test_valid(self):
+        data = apptesting.documents_bundle_registry_data_fixture()
+        restfulapi.DocumentsBundleSchema().deserialize(data)
+
+
+class PutDocumentsBundleTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("bundles", pattern="/bundles/{bundle_id}")
+
+    def test_put_documents_bundle_calls_create_documents_bundle(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        MockCreateDocumentsBundle = Mock()
+        self.request.services["create_documents_bundle"] = MockCreateDocumentsBundle
+        restfulapi.put_documents_bundle(self.request)
+        MockCreateDocumentsBundle.assert_called_once_with(
+            "0034-8910-rsp-48-2", metadata=self.request.validated
+        )
+
+    def test_put_documents_bundle_returns_204_if_already_exists(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        MockCreateDocumentsBundle = Mock(
+            side_effect=exceptions.AlreadyExists("Already Exists")
+        )
+        self.request.services["create_documents_bundle"] = MockCreateDocumentsBundle
+        response = restfulapi.put_documents_bundle(self.request)
+        self.assertIsInstance(response, HTTPNoContent)
+
+    def test_put_documents_bundle_returns_201_if_created(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        self.request.services["create_documents_bundle"] = Mock()
+        response = restfulapi.put_documents_bundle(self.request)
+        self.assertIsInstance(response, HTTPCreated)
 
 
 class FetchChangeUnitTest(unittest.TestCase):

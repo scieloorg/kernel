@@ -124,6 +124,25 @@ class RegisterJournalSchema(colander.MappingSchema):
     contact = colander.SchemaNode(colander.Mapping(unknown="preserve"))
 
 
+class DocumentsBundleSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro de Documents Bundle."""
+
+    pid = colander.SchemaNode(colander.String(), missing=colander.drop)
+    year = colander.SchemaNode(colander.Int(), missing=colander.drop)
+    label = colander.SchemaNode(colander.String(), missing=colander.drop)
+    volume = colander.SchemaNode(colander.String(), missing=colander.drop)
+    number = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+    @colander.instantiate(missing=colander.drop)
+    class titles(colander.SequenceSchema):
+        @colander.instantiate()
+        class title(colander.MappingSchema):
+            language = colander.SchemaNode(
+                colander.String(), validator=colander.Length(2, 2)
+            )
+            title = colander.SchemaNode(colander.String(), validator=colander.Length(1))
+
+
 @documents.get(accept="text/xml", renderer="xml")
 def fetch_document_data(request):
     when = request.GET.get("when", None)
@@ -269,6 +288,23 @@ def fetch_documents_bundle(request):
         return HTTPBadRequest("bundle id is mandatory")
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))
+
+
+@bundles.put(
+    schema=DocumentsBundleSchema(),
+    validators=(colander_body_validator,),
+    accept="application/json",
+    renderer="json",
+)
+def put_documents_bundle(request):
+    try:
+        request.services["create_documents_bundle"](
+            request.matchdict["bundle_id"], metadata=request.validated
+        )
+    except exceptions.AlreadyExists:
+        return HTTPNoContent("bundle updated successfully")
+    else:
+        return HTTPCreated("bundle created successfully")
 
 
 @changes.get(accept="application/json", renderer="json")
