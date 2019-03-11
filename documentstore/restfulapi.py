@@ -531,6 +531,19 @@ def put_journal(request):
         return HTTPCreated("journal created successfully")
 
 
+@journals.get(accept="application/json", renderer="json")
+def get_journal(request):
+    """Recupera um periódico por meio de seu identificador
+    """
+
+    try:
+        return request.services["fetch_journal"](id=request.matchdict["journal_id"])
+    except exceptions.DoesNotExist:
+        return HTTPNotFound(
+            'cannot fetch journal with id "%s"' % request.matchdict["journal_id"]
+        )
+
+
 @swagger.get()
 def openAPI_spec(request):
     doc = CorniceSwagger(get_services())
