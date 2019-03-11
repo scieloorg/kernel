@@ -6,6 +6,7 @@ from unittest.mock import patch, Mock
 import colander
 from pyramid import testing
 from pyramid.httpexceptions import (
+    HTTPOk,
     HTTPNotFound,
     HTTPCreated,
     HTTPNoContent,
@@ -253,6 +254,44 @@ class PutDocumentsBundleTest(unittest.TestCase):
         self.request.services["create_documents_bundle"] = Mock()
         response = restfulapi.put_documents_bundle(self.request)
         self.assertIsInstance(response, HTTPCreated)
+
+
+class PatchDocumentsBundleTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("bundles", pattern="/bundles/{bundle_id}")
+
+    def test_patch_documents_bundle_return_404_if_no_bundle_found(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        MockUpdateDocumentsBundle = Mock(
+            side_effect=exceptions.DoesNotExist("Does Not Exist")
+        )
+        self.request.services[
+            "update_documents_bundle_metadata"
+        ] = MockUpdateDocumentsBundle
+        response = restfulapi.patch_documents_bundle(self.request)
+        self.assertIsInstance(response, HTTPNotFound)
+
+    def test_patch_documents_bundle_calls_update_documents_bundle(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        MockUpdateDocumentsBundle = Mock()
+        self.request.services[
+            "update_documents_bundle_metadata"
+        ] = MockUpdateDocumentsBundle
+        restfulapi.patch_documents_bundle(self.request)
+        MockUpdateDocumentsBundle.assert_called_once_with(
+            "0034-8910-rsp-48-2", metadata=self.request.validated
+        )
+
+    def test_put_documents_bundle_returns_200_if_updated(self):
+        self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
+        self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        self.request.services["update_documents_bundle_metadata"] = Mock()
+        response = restfulapi.patch_documents_bundle(self.request)
+        self.assertIsInstance(response, HTTPOk)
 
 
 class FetchChangeUnitTest(unittest.TestCase):
