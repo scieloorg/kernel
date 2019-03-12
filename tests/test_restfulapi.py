@@ -389,3 +389,27 @@ class CreateJournalUnitTests(unittest.TestCase):
             subject_areas=["invalid-subject-area"]
         )
         self.assertIsInstance(restfulapi.put_journal(self.request), HTTPBadRequest)
+
+
+class FetchJournalUnitTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("journals", pattern="/journals/{journal_id}")
+
+        # register a journal
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        restfulapi.put_journal(self.request)
+
+    def test_should_return_does_not_exists(self):
+        MockFetchJournal = Mock(side_effect=exceptions.DoesNotExist)
+        self.request.services["fetch_journal"] = MockFetchJournal
+        self.request.matchdict = {"journal_id": "some-random-id-001"}
+        self.assertIsInstance(restfulapi.get_journal(self.request), HTTPNotFound)
+
+    def test_should_fetch_journal(self):
+        self.request.services["fetch_journal"](id="1678-4596-cr-49-02")
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        journal_data = restfulapi.get_journal(self.request)
+        self.assertIsInstance(journal_data, dict)
