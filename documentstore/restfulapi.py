@@ -3,6 +3,7 @@ import os
 
 from pyramid.config import Configurator
 from pyramid.httpexceptions import (
+    HTTPOk,
     HTTPNotFound,
     HTTPNoContent,
     HTTPCreated,
@@ -149,9 +150,8 @@ class RegisterJournalSchema(colander.MappingSchema):
 class DocumentsBundleSchema(colander.MappingSchema):
     """Representa o schema de dados para registro de Documents Bundle."""
 
-    pid = colander.SchemaNode(colander.String(), missing=colander.drop)
-    year = colander.SchemaNode(colander.Int(), missing=colander.drop)
-    label = colander.SchemaNode(colander.String(), missing=colander.drop)
+    publication_year = colander.SchemaNode(colander.Int(), missing=colander.drop)
+    supplement = colander.SchemaNode(colander.String(), missing=colander.drop)
     volume = colander.SchemaNode(colander.String(), missing=colander.drop)
     number = colander.SchemaNode(colander.String(), missing=colander.drop)
 
@@ -459,6 +459,23 @@ def put_documents_bundle(request):
         return HTTPNoContent("bundle updated successfully")
     else:
         return HTTPCreated("bundle created successfully")
+
+
+@bundles.patch(
+    schema=DocumentsBundleSchema(),
+    validators=(colander_body_validator,),
+    accept="application/json",
+    renderer="json",
+)
+def patch_documents_bundle(request):
+    try:
+        request.services["update_documents_bundle_metadata"](
+            request.matchdict["bundle_id"], metadata=request.validated
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
+    else:
+        return HTTPOk("bundle updated successfully")
 
 
 @changes.get(accept="application/json", renderer="json")

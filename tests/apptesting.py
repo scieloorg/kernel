@@ -152,9 +152,8 @@ def manifest_data_fixture():
 
 def documents_bundle_registry_data_fixture():
     return {
-        "pid": "0034-891020190001",
-        "year": 2019,
-        "label": "v1n1",
+        "publication_year": 2019,
+        "supplement": "1",
         "volume": "1",
         "number": "1",
         "titles": [
