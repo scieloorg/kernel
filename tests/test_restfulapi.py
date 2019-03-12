@@ -176,18 +176,22 @@ class FetchDocumentsBundleTest(unittest.TestCase):
 
     def test_fetch_documents_bundle_calls_fetch_documents_bundle_service(self):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
-        MockFetchDocumentsBundle = Mock()
+        MockFetchDocumentsBundle = Mock(return_value={"id": "0034-8910-rsp-48-2"})
         self.request.services["fetch_documents_bundle"] = MockFetchDocumentsBundle
         restfulapi.fetch_documents_bundle(self.request)
         MockFetchDocumentsBundle.assert_called_once_with("0034-8910-rsp-48-2")
 
     def test_fetch_documents_bundle_returns_fetch_documents_bundle_service_return(self):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
-        MockFetchDocumentsBundle = Mock(return_value={id: "0034-8910-rsp-48-2"})
+        expected = apptesting.documents_bundle_registry_data_fixture()
+        data = deepcopy(expected)
+        # Titles no domínio é um dict "language: title"
+        data["titles"] = {
+            title["language"]: title["title"] for title in expected["titles"]
+        }
+        MockFetchDocumentsBundle = Mock(return_value=data)
         self.request.services["fetch_documents_bundle"] = MockFetchDocumentsBundle
-        self.assertEqual(
-            restfulapi.fetch_documents_bundle(self.request), {id: "0034-8910-rsp-48-2"}
-        )
+        self.assertEqual(restfulapi.fetch_documents_bundle(self.request), expected)
 
 
 class DocumentsBundleSchemaTest(unittest.TestCase):
@@ -231,11 +235,16 @@ class PutDocumentsBundleTest(unittest.TestCase):
     def test_put_documents_bundle_calls_create_documents_bundle(self):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
         self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        expected = deepcopy(self.request.validated)
+        expected["titles"] = {
+            title["language"]: title["title"]
+            for title in self.request.validated["titles"]
+        }
         MockCreateDocumentsBundle = Mock()
         self.request.services["create_documents_bundle"] = MockCreateDocumentsBundle
         restfulapi.put_documents_bundle(self.request)
         MockCreateDocumentsBundle.assert_called_once_with(
-            "0034-8910-rsp-48-2", metadata=self.request.validated
+            "0034-8910-rsp-48-2", metadata=expected
         )
 
     def test_put_documents_bundle_returns_204_if_already_exists(self):
@@ -277,13 +286,18 @@ class PatchDocumentsBundleTest(unittest.TestCase):
     def test_patch_documents_bundle_calls_update_documents_bundle(self):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
         self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        expected = deepcopy(self.request.validated)
+        expected["titles"] = {
+            title["language"]: title["title"]
+            for title in self.request.validated["titles"]
+        }
         MockUpdateDocumentsBundle = Mock()
         self.request.services[
             "update_documents_bundle_metadata"
         ] = MockUpdateDocumentsBundle
         restfulapi.patch_documents_bundle(self.request)
         MockUpdateDocumentsBundle.assert_called_once_with(
-            "0034-8910-rsp-48-2", metadata=self.request.validated
+            "0034-8910-rsp-48-2", metadata=expected
         )
 
     def test_put_documents_bundle_returns_200_if_updated(self):

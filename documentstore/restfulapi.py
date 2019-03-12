@@ -344,7 +344,9 @@ def get_assets_list(request):
     schema=AssetSchema(),
     validators=(colander_body_validator,),
     response_schemas={
-        "204": AssetSchema(description="Adicionado ou atualizado o ativo digital com sucesso"),
+        "204": AssetSchema(
+            description="Adicionado ou atualizado o ativo digital com sucesso"
+        ),
         "404": AssetSchema(description="Ativo não encontrado"),
     },
 )
@@ -413,7 +415,9 @@ def diff_document_versions(request):
 @front.get(
     schema=FrontDocumentSchema(),
     response_schemas={
-        "200": FrontDocumentSchema(description="Retorna o Front do documento (todo os dados do documento exceto o body)"),
+        "200": FrontDocumentSchema(
+            description="Retorna o Front do documento (todo os dados do documento exceto o body)"
+        ),
         "404": FrontDocumentSchema(description="Front do documento não encontrado"),
     },
     renderer="json",
@@ -425,7 +429,9 @@ def fetch_document_front(request):
 
 @bundles.get(
     response_schemas={
-        "200": DocumentsBundleSchema(description="Retorna os dados do bundle  solicitado"),
+        "200": DocumentsBundleSchema(
+            description="Retorna os dados do bundle  solicitado"
+        ),
         "404": DocumentsBundleSchema(description="Recurso não encontrado"),
         "400": DocumentsBundleSchema(
             description="Erro ao processar a requisição. Verifique o parâmetro `bundle_id`"
@@ -435,25 +441,44 @@ def fetch_document_front(request):
 )
 def fetch_documents_bundle(request):
     try:
-        return request.services["fetch_documents_bundle"](
+        _bundle = request.services["fetch_documents_bundle"](
             request.matchdict["bundle_id"]
         )
     except KeyError:
         return HTTPBadRequest("bundle id is mandatory")
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))
+    else:
+        if _bundle.get("titles"):
+            _bundle["titles"] = [
+                {"language": language, "title": title}
+                for language, title in _bundle["titles"].items()
+            ]
+        return _bundle
 
 
 @bundles.put(
     schema=DocumentsBundleSchema(),
+    response_schemas={
+        "201": DocumentsBundleSchema(
+            description="Documents Bundle criado com sucesso."
+        ),
+        "204": DocumentsBundleSchema(
+            description="Documents Bundle atualizado com sucesso."
+        ),
+    },
     validators=(colander_body_validator,),
     accept="application/json",
     renderer="json",
 )
 def put_documents_bundle(request):
+    _metadata = request.validated
+    _metadata["titles"] = {
+        title["language"]: title["title"] for title in request.validated["titles"] or []
+    }
     try:
         request.services["create_documents_bundle"](
-            request.matchdict["bundle_id"], metadata=request.validated
+            request.matchdict["bundle_id"], metadata=_metadata
         )
     except exceptions.AlreadyExists:
         return HTTPNoContent("bundle updated successfully")
@@ -463,14 +488,24 @@ def put_documents_bundle(request):
 
 @bundles.patch(
     schema=DocumentsBundleSchema(),
+    response_schemas={
+        "200": DocumentsBundleSchema(
+            description="Documents Bundle atualizado com sucesso."
+        ),
+        "404": DocumentsBundleSchema(description="Documents Bundle não encontrado."),
+    },
     validators=(colander_body_validator,),
     accept="application/json",
     renderer="json",
 )
 def patch_documents_bundle(request):
+    _metadata = request.validated
+    _metadata["titles"] = {
+        title["language"]: title["title"] for title in request.validated["titles"] or []
+    }
     try:
         request.services["update_documents_bundle_metadata"](
-            request.matchdict["bundle_id"], metadata=request.validated
+            request.matchdict["bundle_id"], metadata=_metadata
         )
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))

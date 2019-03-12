@@ -498,6 +498,20 @@ class DocumentsBundle:
             self._manifest, "supplement", _value
         )
 
+    @property
+    def titles(self):
+        return BundleManifest.get_metadata(self.manifest, "titles", {})
+
+    @titles.setter
+    def titles(self, value: dict):
+        try:
+            _value = dict(value)
+        except (TypeError, ValueError):
+            raise TypeError(
+                "cannot set titles with value " '"%s": value must be dict' % value
+            ) from None
+        self.manifest = BundleManifest.set_metadata(self._manifest, "titles", _value)
+
     def add_document(self, document: str):
         self.manifest = BundleManifest.add_item(self._manifest, document)
 
@@ -538,7 +552,6 @@ class Journal:
     @manifest.setter
     def manifest(self, value: dict):
         self._manifest = value
-
 
     def data(self):
         """Retorna o manifesto completo de um Journal com os
