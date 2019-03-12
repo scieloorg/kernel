@@ -751,6 +751,27 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
             "/documents/0034-8910-rsp-48-2-0275",
         )
 
+    def test_data_is_not_none(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self.assertIsNotNone(documents_bundle.data())
+
+    def test_data_metadata_returns_a_dict(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self.assertEqual(documents_bundle.data()["metadata"], {})
+
+    def test_data_returns_latest_metadata_version(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.titles = {"en": "Title", "pt": "Título"}
+        self.assertEqual(
+            documents_bundle.data()["metadata"]["titles"],
+            {"en": "Title", "pt": "Título"},
+        )
+        documents_bundle.titles = {"en": "Title", "pt": "Título", "es": "Título"}
+        self.assertEqual(
+            documents_bundle.data()["metadata"]["titles"],
+            {"en": "Title", "pt": "Título", "es": "Título"},
+        )
+
 
 class JournalTest(UnittestMixin, unittest.TestCase):
     def setUp(self):

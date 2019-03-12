@@ -91,11 +91,7 @@ class FetchDocumentsBundleTest(unittest.TestCase):
         )
         result = self.command(id="xpto")
         self.assertEqual(
-            result["metadata"],
-            {
-                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
-                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
-            },
+            result["metadata"], {"publication_year": "2018", "volume": "2"}
         )
 
     def test_command_with_unexpected_metadata(self):
@@ -105,11 +101,7 @@ class FetchDocumentsBundleTest(unittest.TestCase):
         )
         result = self.command(id="xpto")
         self.assertEqual(
-            result["metadata"],
-            {
-                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
-                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
-            },
+            result["metadata"], {"publication_year": "2018", "volume": "2"}
         )
 
 
@@ -141,14 +133,7 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         self.command(id="xpto", metadata={"publication_year": "2019"})
         result = self.services["fetch_documents_bundle"](id="xpto")
         self.assertEqual(
-            result["metadata"],
-            {
-                "publication_year": [
-                    ("2018-08-05T22:33:49.795151Z", "2018"),
-                    ("2018-08-05T22:33:49.795151Z", "2019"),
-                ],
-                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
-            },
+            result["metadata"], {"publication_year": "2019", "volume": "2"}
         )
 
     def test_command_with_unexpected_metadata(self):
@@ -158,11 +143,7 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         self.command(id="xpto", metadata={"unknown": "0"})
         result = self.services["fetch_documents_bundle"](id="xpto")
         self.assertEqual(
-            result["metadata"],
-            {
-                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
-                "volume": [("2018-08-05T22:33:49.795151Z", "2")],
-            },
+            result["metadata"], {"publication_year": "2018", "volume": "2"}
         )
 
     def test_command_remove_metadata(self):
@@ -176,16 +157,7 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         )
         self.command(id="xpto", metadata={"volume": ""})
         result = self.services["fetch_documents_bundle"](id="xpto")
-        self.assertEqual(
-            result["metadata"],
-            {
-                "publication_year": [("2018-08-05T22:33:49.795151Z", "2018")],
-                "volume": [
-                    ("2018-08-05T22:33:49.795151Z", "2"),
-                    ("2018-08-05T22:33:49.795151Z", ""),
-                ],
-            },
-        )
+        self.assertEqual(result["metadata"], {"publication_year": "2018", "volume": ""})
 
     def test_command_notify_event(self):
         self.services["create_documents_bundle"](

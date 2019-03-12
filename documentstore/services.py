@@ -265,7 +265,7 @@ class CreateDocumentsBundle(CommandHandler):
 class FetchDocumentsBundle(CommandHandler):
     def __call__(self, id: str) -> dict:
         session = self.Session()
-        return session.documents_bundles.fetch(id).manifest
+        return session.documents_bundles.fetch(id).data()
 
 
 class UpdateDocumentsBundleMetadata(CommandHandler):
