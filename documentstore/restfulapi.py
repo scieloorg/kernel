@@ -276,13 +276,16 @@ def fetch_changes(request):
     """Obtém a lista de mudanças, recebe os argumentos `since` e `limit`.
     """
 
-    entity_route_name_map = {"Document": "documents"}
+    entity_route_map = {
+        "Document": {"route": "documents", "marker": "document_id"},
+        "Journal": {"route": "journals", "marker": "journal_id"},
+        "DocumentsBundle": {"route": "bundles", "marker": "bundle_id"},
+    }
 
     def _format_change(c):
+        entity = entity_route_map[c["entity"]]
         result = {
-            "id": request.route_path(
-                entity_route_name_map[c["entity"]], document_id=c["id"]
-            ),
+            "id": request.route_path(entity["route"], **{entity["marker"]: c["id"]}),
             "timestamp": c["timestamp"],
         }
 
