@@ -165,7 +165,6 @@ class DocumentsBundleSchema(colander.MappingSchema):
             title = colander.SchemaNode(colander.String(), validator=colander.Length(1))
 
 
-@documents.get(accept="text/xml", renderer="xml")
 class QueryChangeSchema(colander.MappingSchema):
     """Representa os parâmetros de querystring do schema change.
     """
@@ -478,7 +477,6 @@ def patch_documents_bundle(request):
         return HTTPOk("bundle updated successfully")
 
 
-@changes.get(accept="application/json", renderer="json")
 @changes.get(
     schema=ChangeSchema(),
     response_schemas={
