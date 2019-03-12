@@ -644,6 +644,31 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.supplement = 3
         self.assertEqual(documents_bundle.supplement, "3")
 
+    def test_set_titles(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.titles = {"pt": "Título", "es": "Título", "en": "Title"}
+        self.assertEqual(
+            documents_bundle.titles, {"pt": "Título", "es": "Título", "en": "Title"}
+        )
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["titles"][-1],
+            (
+                "2018-08-05T22:33:49.795151Z",
+                {"pt": "Título", "es": "Título", "en": "Title"},
+            ),
+        )
+
+    def test_set_titles_content_is_not_validated(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            TypeError,
+            "cannot set titles with value " '"invalid-titles": value must be dict',
+            setattr,
+            documents_bundle,
+            "titles",
+            "invalid-titles",
+        )
+
     def test_add_document(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.add_document("/documents/0034-8910-rsp-48-2-0275")
