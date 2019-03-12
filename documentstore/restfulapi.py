@@ -133,11 +133,25 @@ class JournalSchema(colander.MappingSchema):
     print_issn = colander.SchemaNode(colander.String())
     electronic_issn = colander.SchemaNode(colander.String())
     status = colander.SchemaNode(colander.Mapping(unknown="preserve"))
-    subject_areas = colander.SchemaNode(colander.List())
-    sponsors = colander.SchemaNode(colander.List())
+
+    @colander.instantiate()
+    class subject_areas(colander.SequenceSchema):
+        name = colander.SchemaNode(colander.String())
+
+    @colander.instantiate()
+    class sponsors(colander.SequenceSchema):
+        sponsor = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+
     metrics = colander.SchemaNode(colander.Mapping(unknown="preserve"))
-    subject_categories = colander.SchemaNode(colander.List())
-    institution_responsible_for = colander.SchemaNode(colander.List())
+
+    @colander.instantiate()
+    class subject_categories(colander.SequenceSchema):
+        name = colander.SchemaNode(colander.String())
+
+    @colander.instantiate()
+    class institution_responsible_for(colander.SequenceSchema):
+        name = colander.SchemaNode(colander.String())
+
     online_submission_url = colander.SchemaNode(
         colander.String(), validator=colander.url
     )
