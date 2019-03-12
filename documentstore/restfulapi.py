@@ -119,7 +119,7 @@ class AssetSchema(colander.MappingSchema):
     asset_url = colander.SchemaNode(colander.String(), validator=colander.url)
 
 
-class RegisterJournalSchema(colander.MappingSchema):
+class JournalSchema(colander.MappingSchema):
     """Representa o schema de dados para registro de periódicos.
     """
 
@@ -133,11 +133,25 @@ class RegisterJournalSchema(colander.MappingSchema):
     print_issn = colander.SchemaNode(colander.String())
     electronic_issn = colander.SchemaNode(colander.String())
     status = colander.SchemaNode(colander.Mapping(unknown="preserve"))
-    subject_areas = colander.SchemaNode(colander.List())
-    sponsors = colander.SchemaNode(colander.List())
+
+    @colander.instantiate()
+    class subject_areas(colander.SequenceSchema):
+        name = colander.SchemaNode(colander.String())
+
+    @colander.instantiate()
+    class sponsors(colander.SequenceSchema):
+        sponsor = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+
     metrics = colander.SchemaNode(colander.Mapping(unknown="preserve"))
-    subject_categories = colander.SchemaNode(colander.List())
-    institution_responsible_for = colander.SchemaNode(colander.List())
+
+    @colander.instantiate()
+    class subject_categories(colander.SequenceSchema):
+        name = colander.SchemaNode(colander.String())
+
+    @colander.instantiate()
+    class institution_responsible_for(colander.SequenceSchema):
+        name = colander.SchemaNode(colander.String())
+
     online_submission_url = colander.SchemaNode(
         colander.String(), validator=colander.url
     )
@@ -562,14 +576,14 @@ def fetch_changes(request):
 
 
 @journals.put(
-    schema=RegisterJournalSchema(),
+    schema=JournalSchema(),
     validators=(colander_body_validator,),
     accept="application/json",
     renderer="json",
 )
 def put_journal(request):
     """Registra um periódico a partir de dados submetidos e
-    validados por meio do RegisterJournalSchema."""
+    validados por meio do JournalSchema."""
 
     try:
         request.services["create_journal"](
@@ -584,10 +598,10 @@ def put_journal(request):
 
 
 @journals.get(
-    schema=RegisterJournalSchema(),
+    schema=JournalSchema(),
     response_schemas={
-        "200": RegisterJournalSchema(description="Retorna um periódico"),
-        "404": RegisterJournalSchema(
+        "200": JournalSchema(description="Retorna um periódico"),
+        "404": JournalSchema(
             description="Periódico não encontrado"
         ),
     },
