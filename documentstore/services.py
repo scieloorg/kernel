@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Any
+from typing import Callable, Dict, Any
 import difflib
 import functools
 from io import BytesIO
@@ -24,6 +24,7 @@ class Events(Enum):
     DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE = auto()
     DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE = auto()
     JOURNAL_CREATED = auto()
+    JOURNAL_METATADA_UPDATED = auto()
     ISSUE_ADDED_TO_JOURNAL = auto()
     ISSUE_INSERTED_TO_JOURNAL = auto()
     ISSUE_REMOVED_FROM_JOURNAL = auto()
@@ -329,6 +330,19 @@ class FetchJournal(CommandHandler):
         return session.journals.fetch(id).data()
 
 
+class UpdateJournalMetadata(CommandHandler):
+    def __call__(self, id: str, metadata: Dict[str, Any] = None) -> None:
+        session = self.Session()
+        _journal = session.journals.fetch(id)
+        for name, value in metadata.items():
+            setattr(_journal, name, value)
+        session.journals.update(_journal)
+        session.notify(
+            Events.JOURNAL_METATADA_UPDATED,
+            {"id": id, "metadata": metadata, "journal": _journal},
+        )
+
+
 class AddIssueToJournal(CommandHandler):
     def __call__(self, id: str, issue: str) -> None:
         session = self.Session()
@@ -478,6 +492,7 @@ def get_handlers(
         ),
         "create_journal": CreateJournal(SessionWrapper),
         "fetch_journal": FetchJournal(SessionWrapper),
+        "update_journal_metadata": UpdateJournalMetadata(SessionWrapper),
         "add_issue_to_journal": AddIssueToJournal(SessionWrapper),
         "insert_issue_to_journal": InsertIssueToJournal(SessionWrapper),
         "remove_issue_from_journal": RemoveIssueFromJournal(SessionWrapper),
