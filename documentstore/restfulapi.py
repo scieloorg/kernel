@@ -531,7 +531,17 @@ def put_journal(request):
         return HTTPCreated("journal created successfully")
 
 
-@journals.get(accept="application/json", renderer="json")
+@journals.get(
+    schema=RegisterJournalSchema(),
+    response_schemas={
+        "200": RegisterJournalSchema(description="Retorna um periódico"),
+        "404": RegisterJournalSchema(
+            description="Periódico não encontrado"
+        ),
+    },
+    accept="application/json",
+    renderer="json",
+)
 def get_journal(request):
     """Recupera um periódico por meio de seu identificador
     """
