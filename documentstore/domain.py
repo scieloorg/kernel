@@ -445,6 +445,13 @@ class DocumentsBundle:
     def id(self):
         return self.manifest.get("id", "")
 
+    def data(self):
+        _manifest = self.manifest
+        _manifest["metadata"] = {
+            attr: value[-1][-1] for attr, value in _manifest["metadata"].items()
+        }
+        return _manifest
+
     @property
     def manifest(self):
         return deepcopy(self._manifest)
