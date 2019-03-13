@@ -644,3 +644,102 @@ class FetchJournalTest(unittest.TestCase):
 
     def test_should_require_an_id(self):
         self.assertRaises(TypeError, self.command)
+
+
+class UpdateJornalMetadataTest(unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services.get("update_journal_metadata")
+        self.services["create_journal"](
+            id="1678-4596-cr",
+            metadata={
+                "title": "Journal Title",
+                "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+            },
+        )
+
+    def test_command_interface(self):
+        self.assertIsNotNone(self.command)
+        self.assertTrue(callable(self.command))
+
+    def test_command_raises_exception_if_does_not_exist(self):
+        self.session.journals.fetch = mock.Mock(side_effect=exceptions.DoesNotExist)
+        self.assertRaises(
+            exceptions.DoesNotExist, self.command, id="1678-4596-cr", metadata={}
+        )
+
+    def test_command_success(self):
+        self.command(
+            id="1678-4596-cr",
+            metadata={
+                "title": "Journal New Title",
+                "mission": {
+                    "pt": "Missão do Periódico",
+                    "en": "Journal Mission",
+                    "es": "Misión de la Revista",
+                },
+            },
+        )
+        result = self.services["fetch_journal"](id="1678-4596-cr")
+        self.assertEqual(
+            result["metadata"],
+            {
+                "title": "Journal New Title",
+                "mission": {
+                    "pt": "Missão do Periódico",
+                    "en": "Journal Mission",
+                    "es": "Misión de la Revista",
+                },
+            },
+        )
+
+    def test_command_with_unexpected_metadata(self):
+        self.command(
+            id="1678-4596-cr",
+            metadata={
+                "unknown": "0",
+                "title": "Journal New Title",
+                "title_iso": "Title ISO",
+            },
+        )
+        result = self.services["fetch_journal"](id="1678-4596-cr")
+        self.assertEqual(
+            result["metadata"],
+            {
+                "title": "Journal New Title",
+                "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+                "title_iso": "Title ISO",
+            },
+        )
+
+    def test_command_remove_metadata(self):
+        """
+        Por ora, a maneira de remover um metadado é através da atribuição de uma
+        string vazia para o mesmo. Note que este procedimento não removerá o metadado
+        do manifesto.
+        """
+        self.command(id="1678-4596-cr", metadata={"title": ""})
+        result = self.services["fetch_journal"](id="1678-4596-cr")
+        self.assertEqual(
+            result["metadata"],
+            {
+                "title": "",
+                "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+            },
+        )
+
+    def test_command_notify_event(self):
+        metadata = {
+            "title": "Journal New Title",
+            "mission": {
+                "pt": "Missão do Periódico",
+                "en": "Journal Mission",
+                "es": "Misión de la Revista",
+            },
+        }
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(id="1678-4596-cr", metadata=metadata)
+            mock_notify.assert_called_once_with(
+                services.Events.JOURNAL_METATADA_UPDATED,
+                {"id": "1678-4596-cr", "metadata": metadata, "journal": mock.ANY},
+            )
