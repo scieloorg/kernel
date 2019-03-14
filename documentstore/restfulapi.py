@@ -616,9 +616,7 @@ def put_journal(request):
     schema=JournalSchema(),
     response_schemas={
         "200": JournalSchema(description="Retorna um periódico"),
-        "404": JournalSchema(
-            description="Periódico não encontrado"
-        ),
+        "404": JournalSchema(description="Periódico não encontrado"),
     },
     accept="application/json",
     renderer="json",
@@ -633,6 +631,38 @@ def get_journal(request):
         return HTTPNotFound(
             'cannot fetch journal with id "%s"' % request.matchdict["journal_id"]
         )
+
+
+@journals.patch(
+    schema=JournalSchema,
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": JournalSchema(description="Periódico atualizado com sucesso"),
+        "400": JournalSchema(
+            description="Erro ao tentar processar a requisição, verifique os dados submetidos"
+        ),
+        "404": JournalSchema(description="Periódico não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def patch_journal(request):
+    """Atualiza um periódico a partir dos dados fornecidos e
+    validados por meio do JournalSchema.
+    """
+
+    try:
+        request.services["update_journal_metadata"](
+            id=request.matchdict["journal_id"], metadata=request.validated
+        )
+    except (TypeError, ValueError) as exc:
+        return HTTPBadRequest(str(exc))
+    except exceptions.DoesNotExist:
+        return HTTPNotFound(
+            'cannot fetch journal with id "%s"' % request.matchdict["journal_id"]
+        )
+
+    return HTTPNoContent("journal updated successfully")
 
 
 @swagger.get()
