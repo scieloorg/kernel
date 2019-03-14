@@ -12,14 +12,22 @@ def make_services():
     return services.get_handlers(lambda: session), session
 
 
-class CreateDocumentsBundleTest(unittest.TestCase):
-    def setUp(self):
-        self.services, self.session = make_services()
-        self.command = self.services.get("create_documents_bundle")
+class CommandTestMixin:
+    SUBSCRIBERS_EVENTS = [subscriber[0] for subscriber in services.DEFAULT_SUBSCRIBERS]
 
     def test_command_interface(self):
         self.assertIsNotNone(self.command)
         self.assertTrue(callable(self.command))
+
+
+class CreateDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services.get("create_documents_bundle")
+        self.event = services.Events.DOCUMENTSBUNDLE_CREATED
+
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_success(self):
         self.assertIsNone(self.command(id="xpto"))
@@ -42,7 +50,7 @@ class CreateDocumentsBundleTest(unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="xpto", docs=["/document/1"])
             mock_notify.assert_called_once_with(
-                services.Events.DOCUMENTSBUNDLE_CREATED,
+                self.event,
                 {
                     "id": "xpto",
                     "docs": ["/document/1"],
@@ -52,7 +60,7 @@ class CreateDocumentsBundleTest(unittest.TestCase):
             )
 
 
-class FetchDocumentsBundleTest(unittest.TestCase):
+class FetchDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("fetch_documents_bundle")
@@ -65,10 +73,6 @@ class FetchDocumentsBundleTest(unittest.TestCase):
             2018, 8, 5, 22, 33, 49, 795151
         )
         self.addCleanup(datetime_patcher.stop)
-
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
 
     def test_command_raises_exception_if_does_not_exist(self):
         self.assertRaises(exceptions.DoesNotExist, self.command, id="xpto")
@@ -105,10 +109,11 @@ class FetchDocumentsBundleTest(unittest.TestCase):
         )
 
 
-class UpdateDocumentsBundleTest(unittest.TestCase):
+class UpdateDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("update_documents_bundle_metadata")
+        self.event = services.Events.DOCUMENTSBUNDLE_METATADA_UPDATED
 
         datetime_patcher = mock.patch.object(
             domain, "datetime", mock.Mock(wraps=datetime.datetime)
@@ -119,9 +124,8 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         )
         self.addCleanup(datetime_patcher.stop)
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_does_not_exist(self):
         self.assertRaises(exceptions.DoesNotExist, self.command, id="xpto", metadata={})
@@ -166,7 +170,7 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="xpto", metadata={"publication_year": "2019"})
             mock_notify.assert_called_once_with(
-                services.Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
+                self.event,
                 {
                     "id": "xpto",
                     "metadata": {"publication_year": "2019"},
@@ -175,14 +179,14 @@ class UpdateDocumentsBundleTest(unittest.TestCase):
             )
 
 
-class AddDocumentToDocumentsBundleTest(unittest.TestCase):
+class AddDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("add_document_to_documents_bundle")
+        self.event = services.Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_does_not_exist(self):
         self.assertRaises(
@@ -209,19 +213,18 @@ class AddDocumentToDocumentsBundleTest(unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="xpto", doc="/document/1")
             mock_notify.assert_called_once_with(
-                services.Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
-                {"id": "xpto", "doc": "/document/1", "bundle": mock.ANY},
+                self.event, {"id": "xpto", "doc": "/document/1", "bundle": mock.ANY}
             )
 
 
-class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
+class InsertDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("insert_document_to_documents_bundle")
+        self.event = services.Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_does_not_exist(self):
         self.assertRaises(
@@ -264,19 +267,19 @@ class InsertDocumentToDocumentsBundleTest(unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="xpto", index=10, doc="/document/3")
             mock_notify.assert_called_once_with(
-                services.Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
+                self.event,
                 {"id": "xpto", "doc": "/document/3", "index": 10, "bundle": mock.ANY},
             )
 
 
-class CreateJournalTest(unittest.TestCase):
+class CreateJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("create_journal")
+        self.event = services.Events.JOURNAL_CREATED
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_success(self):
         self.assertIsNone(self.command(id="xpto"))
@@ -300,21 +303,20 @@ class CreateJournalTest(unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="jxpto")
             mock_notify.assert_called_once_with(
-                services.Events.JOURNAL_CREATED,
-                {"id": "jxpto", "journal": mock.ANY, "metadata": None},
+                self.event, {"id": "jxpto", "journal": mock.ANY, "metadata": None}
             )
 
 
-class AddIssueToJournalTest(unittest.TestCase):
+class AddIssueToJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("add_issue_to_journal")
+        self.event = services.Events.ISSUE_ADDED_TO_JOURNAL
         create_journal_command = self.services.get("create_journal")
         create_journal_command(id="0034-8910-rsp")
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_calls_add_issue(self):
         with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
@@ -361,7 +363,7 @@ class AddIssueToJournalTest(unittest.TestCase):
             with mock.patch.object(self.session, "notify") as mock_notify:
                 self.command(id="0034-8910-rsp", issue="0034-8910-rsp-48-2")
                 mock_notify.assert_called_once_with(
-                    services.Events.ISSUE_ADDED_TO_JOURNAL,
+                    self.event,
                     {
                         "journal": JournalStub,
                         "id": "0034-8910-rsp",
@@ -370,16 +372,16 @@ class AddIssueToJournalTest(unittest.TestCase):
                 )
 
 
-class InsertIssueToJournalTest(unittest.TestCase):
+class InsertIssueToJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("insert_issue_to_journal")
+        self.event = services.Events.ISSUE_INSERTED_TO_JOURNAL
         create_journal_command = self.services.get("create_journal")
         create_journal_command(id="0034-8910-rsp")
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_journal_does_not_exist(self):
         self.assertRaises(
@@ -443,7 +445,7 @@ class InsertIssueToJournalTest(unittest.TestCase):
             with mock.patch.object(self.session, "notify") as mock_notify:
                 self.command(id="0034-8910-rsp", index=0, issue="0034-8910-rsp-48-2")
                 mock_notify.assert_called_once_with(
-                    services.Events.ISSUE_INSERTED_TO_JOURNAL,
+                    self.event,
                     {
                         "journal": JournalStub,
                         "id": "0034-8910-rsp",
@@ -453,16 +455,16 @@ class InsertIssueToJournalTest(unittest.TestCase):
                 )
 
 
-class RemoveIssueFromJournalTest(unittest.TestCase):
+class RemoveIssueFromJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("remove_issue_from_journal")
+        self.event = services.Events.ISSUE_REMOVED_FROM_JOURNAL
         create_journal_command = self.services.get("create_journal")
         create_journal_command(id="0034-8910-rsp")
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_journal_does_not_exist(self):
         self.assertRaises(
@@ -511,7 +513,7 @@ class RemoveIssueFromJournalTest(unittest.TestCase):
             with mock.patch.object(self.session, "notify") as mock_notify:
                 self.command(id="0034-8910-rsp", issue="0034-8910-rsp-48-2")
                 mock_notify.assert_called_once_with(
-                    services.Events.ISSUE_REMOVED_FROM_JOURNAL,
+                    self.event,
                     {
                         "journal": JournalStub,
                         "id": "0034-8910-rsp",
@@ -520,16 +522,16 @@ class RemoveIssueFromJournalTest(unittest.TestCase):
                 )
 
 
-class SetAheadOfPrintBundleToJournalTest(unittest.TestCase):
+class SetAheadOfPrintBundleToJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("set_ahead_of_print_bundle_to_journal")
+        self.event = services.Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL
         create_journal_command = self.services.get("create_journal")
         create_journal_command(id="0034-8910-rsp")
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_journal_does_not_exist(self):
         self.assertRaises(
@@ -567,7 +569,7 @@ class SetAheadOfPrintBundleToJournalTest(unittest.TestCase):
             with mock.patch.object(self.session, "notify") as mock_notify:
                 self.command(id="0034-8910-rsp", aop="0034-8910-rsp-aop")
                 mock_notify.assert_called_once_with(
-                    services.Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
+                    self.event,
                     {
                         "journal": JournalStub,
                         "id": "0034-8910-rsp",
@@ -576,16 +578,16 @@ class SetAheadOfPrintBundleToJournalTest(unittest.TestCase):
                 )
 
 
-class RemoveAheadOfPrintBundleFromJournalTest(unittest.TestCase):
+class RemoveAheadOfPrintBundleFromJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("remove_ahead_of_print_bundle_from_journal")
+        self.event = services.Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL
         create_journal_command = self.services.get("create_journal")
         create_journal_command(id="0034-8910-rsp")
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_journal_does_not_exist(self):
         self.assertRaises(exceptions.DoesNotExist, self.command, id="0101-8910-csp")
@@ -618,21 +620,16 @@ class RemoveAheadOfPrintBundleFromJournalTest(unittest.TestCase):
             with mock.patch.object(self.session, "notify") as mock_notify:
                 self.command(id="0034-8910-rsp")
                 mock_notify.assert_called_once_with(
-                    services.Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
-                    {"journal": JournalStub, "id": "0034-8910-rsp"},
+                    self.event, {"journal": JournalStub, "id": "0034-8910-rsp"}
                 )
 
 
-class FetchJournalTest(unittest.TestCase):
+class FetchJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("fetch_journal")
         create_journal_command = self.services.get("create_journal")
         create_journal_command(id="1678-4596-cr-49-02")
-
-    def test_assert_command_interface_exists(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
 
     def test_should_raise_does_not_exists_exception(self):
         self.assertRaises(
@@ -646,10 +643,11 @@ class FetchJournalTest(unittest.TestCase):
         self.assertRaises(TypeError, self.command)
 
 
-class UpdateJornalMetadataTest(unittest.TestCase):
+class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
         self.command = self.services.get("update_journal_metadata")
+        self.event = services.Events.JOURNAL_METATADA_UPDATED
         self.services["create_journal"](
             id="1678-4596-cr",
             metadata={
@@ -658,9 +656,8 @@ class UpdateJornalMetadataTest(unittest.TestCase):
             },
         )
 
-    def test_command_interface(self):
-        self.assertIsNotNone(self.command)
-        self.assertTrue(callable(self.command))
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
 
     def test_command_raises_exception_if_does_not_exist(self):
         self.session.journals.fetch = mock.Mock(side_effect=exceptions.DoesNotExist)
@@ -740,6 +737,6 @@ class UpdateJornalMetadataTest(unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="1678-4596-cr", metadata=metadata)
             mock_notify.assert_called_once_with(
-                services.Events.JOURNAL_METATADA_UPDATED,
+                self.event,
                 {"id": "1678-4596-cr", "metadata": metadata, "journal": mock.ANY},
             )

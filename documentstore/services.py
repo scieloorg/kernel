@@ -449,6 +449,21 @@ DEFAULT_SUBSCRIBERS = [
         functools.partial(log_change, entity="DocumentsBundle"),
     ),
     (Events.JOURNAL_CREATED, functools.partial(log_change, entity="Journal")),
+    (Events.JOURNAL_METATADA_UPDATED, functools.partial(log_change, entity="Journal")),
+    (Events.ISSUE_ADDED_TO_JOURNAL, functools.partial(log_change, entity="Journal")),
+    (Events.ISSUE_INSERTED_TO_JOURNAL, functools.partial(log_change, entity="Journal")),
+    (
+        Events.ISSUE_REMOVED_FROM_JOURNAL,
+        functools.partial(log_change, entity="Journal"),
+    ),
+    (
+        Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
+        functools.partial(log_change, entity="Journal"),
+    ),
+    (
+        Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
+        functools.partial(log_change, entity="Journal"),
+    ),
 ]
 
 
