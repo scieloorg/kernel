@@ -123,42 +123,56 @@ class JournalSchema(colander.MappingSchema):
     """Representa o schema de dados para registro de periódicos.
     """
 
-    title = colander.SchemaNode(colander.String())
-    mission = colander.SchemaNode(colander.Mapping(unknown="preserve"))
-    title_iso = colander.SchemaNode(colander.String())
-    short_title = colander.SchemaNode(colander.String())
-    title_slug = colander.SchemaNode(colander.String())
-    acronym = colander.SchemaNode(colander.String())
-    scielo_issn = colander.SchemaNode(colander.String())
-    print_issn = colander.SchemaNode(colander.String())
-    electronic_issn = colander.SchemaNode(colander.String())
-    status = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    title = colander.SchemaNode(colander.String(), missing=colander.drop)
+    mission = colander.SchemaNode(
+        colander.Mapping(unknown="preserve"), missing=colander.drop
+    )
+    title_iso = colander.SchemaNode(colander.String(), missing=colander.drop)
+    short_title = colander.SchemaNode(colander.String(), missing=colander.drop)
+    title_slug = colander.SchemaNode(colander.String(), missing=colander.drop)
+    acronym = colander.SchemaNode(colander.String(), missing=colander.drop)
+    scielo_issn = colander.SchemaNode(colander.String(), missing=colander.drop)
+    print_issn = colander.SchemaNode(colander.String(), missing=colander.drop)
+    electronic_issn = colander.SchemaNode(colander.String(), missing=colander.drop)
+    status = colander.SchemaNode(
+        colander.Mapping(unknown="preserve"), missing=colander.drop
+    )
 
-    @colander.instantiate()
+    @colander.instantiate(missing=colander.drop)
     class subject_areas(colander.SequenceSchema):
         name = colander.SchemaNode(colander.String())
 
-    @colander.instantiate()
+    @colander.instantiate(missing=colander.drop)
     class sponsors(colander.SequenceSchema):
         sponsor = colander.SchemaNode(colander.Mapping(unknown="preserve"))
 
-    metrics = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    metrics = colander.SchemaNode(
+        colander.Mapping(unknown="preserve"), missing=colander.drop
+    )
 
-    @colander.instantiate()
+    @colander.instantiate(missing=colander.drop)
     class subject_categories(colander.SequenceSchema):
         name = colander.SchemaNode(colander.String())
 
-    @colander.instantiate()
+    @colander.instantiate(missing=colander.drop)
     class institution_responsible_for(colander.SequenceSchema):
         name = colander.SchemaNode(colander.String())
 
     online_submission_url = colander.SchemaNode(
-        colander.String(), validator=colander.url
+        colander.String(), validator=colander.url, missing=colander.drop
     )
-    next_journal = colander.SchemaNode(colander.Mapping(unknown="preserve"))
-    logo_url = colander.SchemaNode(colander.String(), validator=colander.url)
-    previous_journal = colander.SchemaNode(colander.Mapping(unknown="preserve"))
-    contact = colander.SchemaNode(colander.Mapping(unknown="preserve"))
+    next_journal = colander.SchemaNode(
+        colander.Mapping(unknown="preserve"), missing=colander.drop
+    )
+    logo_url = colander.SchemaNode(
+        colander.String(), validator=colander.url, missing=colander.drop
+    )
+    previous_journal = colander.SchemaNode(
+        colander.Mapping(unknown="preserve"), missing=colander.drop
+    )
+    contact = colander.SchemaNode(
+        colander.Mapping(unknown="preserve"), missing=colander.drop
+    )
 
 
 class DocumentsBundleSchema(colander.MappingSchema):
@@ -602,9 +616,7 @@ def put_journal(request):
     schema=JournalSchema(),
     response_schemas={
         "200": JournalSchema(description="Retorna um periódico"),
-        "404": JournalSchema(
-            description="Periódico não encontrado"
-        ),
+        "404": JournalSchema(description="Periódico não encontrado"),
     },
     accept="application/json",
     renderer="json",
@@ -619,6 +631,38 @@ def get_journal(request):
         return HTTPNotFound(
             'cannot fetch journal with id "%s"' % request.matchdict["journal_id"]
         )
+
+
+@journals.patch(
+    schema=JournalSchema,
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": JournalSchema(description="Periódico atualizado com sucesso"),
+        "400": JournalSchema(
+            description="Erro ao tentar processar a requisição, verifique os dados submetidos"
+        ),
+        "404": JournalSchema(description="Periódico não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def patch_journal(request):
+    """Atualiza um periódico a partir dos dados fornecidos e
+    validados por meio do JournalSchema.
+    """
+
+    try:
+        request.services["update_journal_metadata"](
+            id=request.matchdict["journal_id"], metadata=request.validated
+        )
+    except (TypeError, ValueError) as exc:
+        return HTTPBadRequest(str(exc))
+    except exceptions.DoesNotExist:
+        return HTTPNotFound(
+            'cannot fetch journal with id "%s"' % request.matchdict["journal_id"]
+        )
+
+    return HTTPNoContent("journal updated successfully")
 
 
 @swagger.get()

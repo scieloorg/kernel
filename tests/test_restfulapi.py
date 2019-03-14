@@ -427,3 +427,32 @@ class FetchJournalUnitTest(unittest.TestCase):
         self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
         journal_data = restfulapi.get_journal(self.request)
         self.assertIsInstance(journal_data, dict)
+
+
+class PatchJournalUnitTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("journals", pattern="/journals/{journal_id}")
+
+        # register a journal
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        restfulapi.put_journal(self.request)
+
+    def test_should_raise_exception_if_journal_does_not_exists(self):
+        self.request.matchdict = {"journal_id": "some-random-id-001"}
+        self.assertIsInstance(restfulapi.patch_journal(self.request), HTTPNotFound)
+
+    def test_should_update_a_journal(self):
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.validated = {"title": "Ciência Rural-2"}
+        self.assertIsInstance(restfulapi.patch_journal(self.request), HTTPNoContent)
+
+    def test_should_raise_value_error_exception(self):
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.services["update_journal_metadata"] = Mock(side_effect=ValueError)
+        self.assertIsInstance(restfulapi.patch_journal(self.request), HTTPBadRequest)
+
+        self.request.services["update_journal_metadata"] = Mock(side_effect=TypeError)
+        self.assertIsInstance(restfulapi.patch_journal(self.request), HTTPBadRequest)
