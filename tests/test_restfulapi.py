@@ -456,3 +456,115 @@ class PatchJournalUnitTest(unittest.TestCase):
 
         self.request.services["update_journal_metadata"] = Mock(side_effect=TypeError)
         self.assertIsInstance(restfulapi.patch_journal(self.request), HTTPBadRequest)
+
+
+class JournalIssuesSchemaTest(unittest.TestCase):
+    def test_index_field_is_optional(self):
+        data = {"issue": "1678-4596-cr-25-3"}
+        restfulapi.JournalIssuesSchema().deserialize(data)
+
+    def test_issue_field_is_required(self):
+        self.assertRaises(
+            colander.Invalid,
+            restfulapi.JournalIssuesSchema().deserialize,
+            {"index": 0},
+        )
+
+    def test_check_fields_type(self):
+        invalid_data = (
+            {"issue": 1678, "index": ""},
+            {"issue": 1678},
+        )
+        for data in invalid_data:
+            with self.subTest(data=data):
+                self.assertRaises(
+                    colander.Invalid,
+                    restfulapi.JournalIssuesSchema().deserialize,
+                    data,
+                )
+
+    def test_valid(self):
+        data = {"issue": "1678-4596-cr-25-3", "index": 10}
+        restfulapi.JournalIssuesSchema().deserialize(data)
+
+
+class PatchJournalIssuesTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("journals", pattern="/journals/{journal_id}")
+        self.config.add_route("journals", pattern="/journals/{journals_id}/issues")
+
+        # register a journal
+        self.request.matchdict = {"journal_id": "1678-4596-cr"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        restfulapi.put_journal(self.request)
+
+    def test_patch_journal_issues_calls_add_issue_to_journal(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        self.request.validated = {"issue": "1678-4596-cr-25-3"}
+        MockAddIssueToJournal = Mock()
+        self.request.services["add_issue_to_journal"] = MockAddIssueToJournal
+        restfulapi.patch_journal_issues(self.request)
+        MockAddIssueToJournal.assert_called_once_with(
+            id="1678-4596-cr", issue="1678-4596-cr-25-3"
+        )
+
+    def test_patch_journal_issues_calls_insert_issue_to_journal_if_index_informed(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        self.request.validated = {"issue": "1678-4596-cr-25-3", "index": 0}
+        MockAddIssueToJournal = Mock()
+        MockInsertIssueToJournal = Mock()
+        self.request.services["add_issue_to_journal"] = MockAddIssueToJournal
+        self.request.services["insert_issue_to_journal"] = MockInsertIssueToJournal
+        restfulapi.patch_journal_issues(self.request)
+        MockInsertIssueToJournal.assert_called_once_with(
+            id="1678-4596-cr", index=0, issue="1678-4596-cr-25-3"
+        )
+        MockAddIssueToJournal.assert_not_called()
+
+    def test_patch_journal_issues_returns_404_if_no_journal_found(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        commands_data = (
+            ("add_issue_to_journal", {"issue": "1678-4596-cr-25-3"}),
+            ("insert_issue_to_journal", {"issue": "1678-4596-cr-25-3", "index": 2}),
+        )
+        for command, data in commands_data:
+            with self.subTest(command=command, data=data):
+                self.request.validated = data
+                MockPatchJournal = Mock(
+                    side_effect=exceptions.DoesNotExist("Does Not Exist")
+                )
+                self.request.services[command] = MockPatchJournal
+                response = restfulapi.patch_journal_issues(self.request)
+                self.assertIsInstance(response, HTTPNotFound)
+
+    def test_patch_journal_issues_returns_204_if_issue_already_exists(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        commands_data = (
+            ("add_issue_to_journal", {"issue": "1678-4596-cr-25-3"}),
+            ("insert_issue_to_journal", {"issue": "1678-4596-cr-25-3", "index": 2}),
+        )
+        for command, data in commands_data:
+            with self.subTest(command=command, data=data):
+                self.request.validated = data
+                MockPatchJournal = Mock(
+                    side_effect=exceptions.AlreadyExists("Already Exists")
+                )
+                self.request.services[command] = MockPatchJournal
+                response = restfulapi.patch_journal_issues(self.request)
+                self.assertIsInstance(response, HTTPNoContent)
+
+    def test_patch_journal_issues_returns_204_if_ok(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        commands_data = (
+            ("add_issue_to_journal", {"issue": "1678-4596-cr-25-3"}),
+            ("insert_issue_to_journal", {"issue": "1678-4596-cr-25-3", "index": 2}),
+        )
+        for command, data in commands_data:
+            with self.subTest(command=command, data=data):
+                self.request.validated = data
+                MockPatchJournal = Mock()
+                self.request.services[command] = MockPatchJournal
+                response = restfulapi.patch_journal_issues(self.request)
+                self.assertIsInstance(response, HTTPNoContent)

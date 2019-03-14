@@ -78,6 +78,12 @@ journals = Service(
     description="Register and retrieve journals' endpoint",
 )
 
+journal_issues = Service(
+    name="journal_issues",
+    path="/journals/{journal_id}/issues",
+    description="Issue addition and insertion to journal.",
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -239,6 +245,13 @@ class FrontDocumentSchema(colander.MappingSchema):
     """
 
     data = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
+class JournalIssuesSchema(colander.MappingSchema):
+    """Representa o schema de dados de atualização de fascículos de periódico.
+    """
+    issue = colander.SchemaNode(colander.String())
+    index = colander.SchemaNode(colander.Int(), missing=colander.drop)
 
 
 @documents.get(
@@ -672,6 +685,36 @@ def patch_journal(request):
         )
 
     return HTTPNoContent("journal updated successfully")
+
+
+@journal_issues.patch(
+    schema=JournalIssuesSchema(),
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": JournalIssuesSchema(description="Fascículo adicionado ou inserido em periódico com sucesso"),
+        "404": JournalIssuesSchema(description="Periódico não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def patch_journal_issues(request):
+    try:
+        if request.validated.get("index") is not None:
+            request.services["insert_issue_to_journal"](
+                id=request.matchdict["journal_id"],
+                index=request.validated["index"],
+                issue=request.validated["issue"],
+            )
+        else:
+            request.services["add_issue_to_journal"](
+                id=request.matchdict["journal_id"], issue=request.validated["issue"]
+            )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
+    except exceptions.AlreadyExists as exc:
+        return HTTPNoContent("issue added to journal successfully.")
+    else:
+        return HTTPNoContent("issue added to journal successfully.")
 
 
 @swagger.get()
