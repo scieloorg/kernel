@@ -593,6 +593,15 @@ def fetch_changes(request):
 @journals.put(
     schema=JournalSchema(),
     validators=(colander_body_validator,),
+    response_schemas={
+        "201": JournalSchema(description="Periódico criado com sucesso"),
+        "204": JournalSchema(
+            description="Não foi realizada alteração para o periódico informado"
+        ),
+        "400": JournalSchema(
+            description="Erro ao processar a requisição, por favor verifique os dados informados"
+        ),
+    },
     accept="application/json",
     renderer="json",
 )
