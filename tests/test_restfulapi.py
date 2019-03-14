@@ -465,22 +465,15 @@ class JournalIssuesSchemaTest(unittest.TestCase):
 
     def test_issue_field_is_required(self):
         self.assertRaises(
-            colander.Invalid,
-            restfulapi.JournalIssuesSchema().deserialize,
-            {"index": 0},
+            colander.Invalid, restfulapi.JournalIssuesSchema().deserialize, {"index": 0}
         )
 
     def test_check_fields_type(self):
-        invalid_data = (
-            {"issue": 1678, "index": ""},
-            {"issue": 1678},
-        )
+        invalid_data = ({"issue": 1678, "index": ""}, {"issue": 1678})
         for data in invalid_data:
             with self.subTest(data=data):
                 self.assertRaises(
-                    colander.Invalid,
-                    restfulapi.JournalIssuesSchema().deserialize,
-                    data,
+                    colander.Invalid, restfulapi.JournalIssuesSchema().deserialize, data
                 )
 
     def test_valid(self):
@@ -568,3 +561,62 @@ class PatchJournalIssuesTest(unittest.TestCase):
                 self.request.services[command] = MockPatchJournal
                 response = restfulapi.patch_journal_issues(self.request)
                 self.assertIsInstance(response, HTTPNoContent)
+
+
+class DeleteJournalIssuesSchemaTest(unittest.TestCase):
+    def test_issue_field_is_required(self):
+        self.assertRaises(
+            colander.Invalid, restfulapi.DeleteJournalIssuesSchema().deserialize, {}
+        )
+
+    def test_check_fields_type(self):
+        self.assertRaises(
+            colander.Invalid,
+            restfulapi.DeleteJournalIssuesSchema().deserialize,
+            {"issue": 1678},
+        )
+
+    def test_valid(self):
+        data = {"issue": "1678-4596-cr-25-3"}
+        restfulapi.DeleteJournalIssuesSchema().deserialize(data)
+
+
+class DeleteJournalIssuesTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("journals", pattern="/journals/{journal_id}")
+        self.config.add_route("journals", pattern="/journals/{journals_id}/issues")
+
+        # register a journal
+        self.request.matchdict = {"journal_id": "1678-4596-cr"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        restfulapi.put_journal(self.request)
+
+    def test_delete_journal_issues_calls_remove_issue_from_journal(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        self.request.validated = {"issue": "1678-4596-cr-25-3"}
+        MockRemoveIssueFromJournal = Mock()
+        self.request.services["remove_issue_from_journal"] = MockRemoveIssueFromJournal
+        restfulapi.delete_journal_issues(self.request)
+        MockRemoveIssueFromJournal.assert_called_once_with(
+            id="1678-4596-cr", issue="1678-4596-cr-25-3"
+        )
+
+    def test_delete_journal_issues_returns_404_if_no_journal_nor_issue_found(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        self.request.validated = {"issue": "1678-4596-cr-25-3"}
+        MockRemoveIssueFromJournal = Mock(
+            side_effect=exceptions.DoesNotExist("Does Not Exist")
+        )
+        self.request.services["remove_issue_from_journal"] = MockRemoveIssueFromJournal
+        response = restfulapi.delete_journal_issues(self.request)
+        self.assertIsInstance(response, HTTPNotFound)
+
+    def test_delete_journal_issues_returns_204_if_ok(self):
+        self.request.matchdict["journal_id"] = "1678-4596-cr"
+        self.request.validated = {"issue": "1678-4596-cr-25-3"}
+        MockRemoveIssueFromJournal = Mock()
+        self.request.services["remove_issue_from_journal"] = MockRemoveIssueFromJournal
+        response = restfulapi.delete_journal_issues(self.request)
+        self.assertIsInstance(response, HTTPNoContent)
