@@ -655,3 +655,38 @@ class PatchAOPJournalUnitTest(unittest.TestCase):
         self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
         self.request.validated = {"aop": "001"}
         self.assertIsInstance(restfulapi.patch_journal_aop(self.request), HTTPNoContent)
+
+
+class DeleteJournalAopTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("journals", pattern="/journals/{journal_id}/aop")
+
+        # register a journal
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        restfulapi.put_journal(self.request)
+
+    def test_should_raise_exception_if_journal_does_not_exists(self):
+        self.request.matchdict = {"journal_id": "random-journal-id"}
+        self.request.services["set_ahead_of_print_bundle_to_journal"] = Mock(
+            side_effect=exceptions.DoesNotExist()
+        )
+        self.assertIsInstance(restfulapi.delete_journal_aop(self.request), HTTPNotFound)
+
+    def test_should_raise_exception_if_journal_does_not_has_aop(self):
+        self.request.matchdict = {"journal_id": "1678-4596-cr-49-02"}
+        self.request.services["set_ahead_of_print_bundle_to_journal"] = Mock(
+            side_effect=exceptions.DoesNotExist()
+        )
+        self.assertIsInstance(restfulapi.delete_journal_aop(self.request), HTTPNotFound)
+
+    def test_should_remove_aop_from_journal(self):
+        # add aop to journal
+        self.request.validated = {"aop": "001"}
+        restfulapi.patch_journal_aop(self.request)
+
+        self.assertIsInstance(
+            restfulapi.delete_journal_aop(self.request), HTTPNoContent
+        )
