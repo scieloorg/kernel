@@ -91,6 +91,10 @@ journals_aop = Service(
 )
 
 
+class ResponseSchema(colander.MappingSchema):
+    body = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
     asset_url = colander.SchemaNode(colander.String(), validator=colander.url)
@@ -763,6 +767,27 @@ def patch_journal_aop(request):
         )
 
     return HTTPNoContent("aop added to journal successfully")
+
+
+@journals_aop.delete(
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": ResponseSchema(
+            description="Ahead of Print removido do periódico com sucesso"
+        ),
+        "404": ResponseSchema(description="Periódico não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def delete_journal_aop(request):
+    try:
+        request.services["remove_ahead_of_print_bundle_from_journal"](
+            id=request.matchdict["journal_id"]
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
+    return HTTPNoContent()
 
 
 @journal_issues.delete(
