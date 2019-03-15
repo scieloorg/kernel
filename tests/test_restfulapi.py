@@ -300,12 +300,12 @@ class PatchDocumentsBundleTest(unittest.TestCase):
             "0034-8910-rsp-48-2", metadata=expected
         )
 
-    def test_put_documents_bundle_returns_200_if_updated(self):
+    def test_put_documents_bundle_returns_204_if_updated(self):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
         self.request.validated = apptesting.documents_bundle_registry_data_fixture()
         self.request.services["update_documents_bundle_metadata"] = Mock()
         response = restfulapi.patch_documents_bundle(self.request)
-        self.assertIsInstance(response, HTTPOk)
+        self.assertIsInstance(response, HTTPNoContent)
 
 
 class FetchChangeUnitTest(unittest.TestCase):

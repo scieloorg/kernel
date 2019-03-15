@@ -537,7 +537,7 @@ def put_documents_bundle(request):
 @bundles.patch(
     schema=DocumentsBundleSchema(),
     response_schemas={
-        "200": DocumentsBundleSchema(
+        "204": DocumentsBundleSchema(
             description="Documents Bundle atualizado com sucesso."
         ),
         "404": DocumentsBundleSchema(description="Documents Bundle não encontrado."),
@@ -558,7 +558,7 @@ def patch_documents_bundle(request):
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))
     else:
-        return HTTPOk("bundle updated successfully")
+        return HTTPNoContent("bundle updated successfully")
 
 
 @changes.get(
