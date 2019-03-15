@@ -250,8 +250,16 @@ class FrontDocumentSchema(colander.MappingSchema):
 class JournalIssuesSchema(colander.MappingSchema):
     """Representa o schema de dados de atualização de fascículos de periódico.
     """
+
     issue = colander.SchemaNode(colander.String())
     index = colander.SchemaNode(colander.Int(), missing=colander.drop)
+
+
+class DeleteJournalIssuesSchema(colander.MappingSchema):
+    """Representa o schema de dados de deleção de fascículos de periódico.
+    """
+
+    issue = colander.SchemaNode(colander.String())
 
 
 @documents.get(
@@ -691,7 +699,9 @@ def patch_journal(request):
     schema=JournalIssuesSchema(),
     validators=(colander_body_validator,),
     response_schemas={
-        "204": JournalIssuesSchema(description="Fascículo adicionado ou inserido em periódico com sucesso"),
+        "204": JournalIssuesSchema(
+            description="Fascículo adicionado ou inserido em periódico com sucesso"
+        ),
         "404": JournalIssuesSchema(description="Periódico não encontrado"),
     },
     accept="application/json",
@@ -715,6 +725,31 @@ def patch_journal_issues(request):
         return HTTPNoContent("issue added to journal successfully.")
     else:
         return HTTPNoContent("issue added to journal successfully.")
+
+
+@journal_issues.delete(
+    schema=DeleteJournalIssuesSchema(),
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": DeleteJournalIssuesSchema(
+            description="Fascículo removido em periódico com sucesso"
+        ),
+        "404": DeleteJournalIssuesSchema(
+            description="Periódico ou fascículo não encontrado"
+        ),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def delete_journal_issues(request):
+    try:
+        request.services["remove_issue_from_journal"](
+            id=request.matchdict["journal_id"], issue=request.validated["issue"]
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
+    else:
+        return HTTPNoContent("issue removed from journal successfully.")
 
 
 @swagger.get()
