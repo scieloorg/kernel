@@ -84,6 +84,12 @@ journal_issues = Service(
     description="Issue addition and insertion to journal.",
 )
 
+journals_aop = Service(
+    name="journals_aop",
+    path="/journals/{journal_id}/aop",
+    description="Manipulate ahead of print in journal",
+)
+
 
 class Asset(colander.MappingSchema):
     asset_id = colander.SchemaNode(colander.String())
@@ -179,6 +185,13 @@ class JournalSchema(colander.MappingSchema):
     contact = colander.SchemaNode(
         colander.Mapping(unknown="preserve"), missing=colander.drop
     )
+
+
+class JournalAOPSchema(colander.MappingSchema):
+    """Representa o schema de dados para a atualização de AOP em periódico
+    """
+
+    aop = colander.SchemaNode(colander.String())
 
 
 class DocumentsBundleSchema(colander.MappingSchema):
@@ -725,6 +738,31 @@ def patch_journal_issues(request):
         return HTTPNoContent("issue added to journal successfully.")
     else:
         return HTTPNoContent("issue added to journal successfully.")
+
+
+@journals_aop.patch(
+    schema=JournalAOPSchema,
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": JournalAOPSchema(
+            description="Ahead of Print adicionado ao periódico com sucesso ao periódico"
+        ),
+        "404": JournalAOPSchema(description="Periódico não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def patch_journal_aop(request):
+    try:
+        request.services["set_ahead_of_print_bundle_to_journal"](
+            id=request.matchdict["journal_id"], aop=request.validated["aop"]
+        )
+    except exceptions.DoesNotExist:
+        return HTTPNotFound(
+            'cannot find journal with id "%s"' % request.matchdict["journal_id"]
+        )
+
+    return HTTPNoContent("aop added to journal successfully")
 
 
 @journal_issues.delete(
