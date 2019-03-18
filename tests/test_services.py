@@ -290,7 +290,10 @@ class CreateJournalTest(CommandTestMixin, unittest.TestCase):
                 id="xpto",
                 metadata={
                     "title": "Journal Title",
-                    "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+                    "mission": [
+                        {"language": "pt", "value": "Missão do Periódico"},
+                        {"language": "en", "value": "Journal Mission"},
+                    ],
                 },
             )
         )
@@ -652,7 +655,10 @@ class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
             id="1678-4596-cr",
             metadata={
                 "title": "Journal Title",
-                "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+                "mission": [
+                    {"language": "pt", "value": "Missão do Periódico"},
+                    {"language": "en", "value": "Journal Mission"},
+                ],
             },
         )
 
@@ -670,11 +676,11 @@ class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
             id="1678-4596-cr",
             metadata={
                 "title": "Journal New Title",
-                "mission": {
-                    "pt": "Missão do Periódico",
-                    "en": "Journal Mission",
-                    "es": "Misión de la Revista",
-                },
+                "mission": [
+                    {"language": "pt", "value": "Missão do Periódico"},
+                    {"language": "en", "value": "Journal Mission"},
+                    {"language": "es", "value": "Misión de la Revista"},
+                ],
             },
         )
         result = self.services["fetch_journal"](id="1678-4596-cr")
@@ -682,11 +688,11 @@ class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
             result["metadata"],
             {
                 "title": "Journal New Title",
-                "mission": {
-                    "pt": "Missão do Periódico",
-                    "en": "Journal Mission",
-                    "es": "Misión de la Revista",
-                },
+                "mission": [
+                    {"language": "pt", "value": "Missão do Periódico"},
+                    {"language": "en", "value": "Journal Mission"},
+                    {"language": "es", "value": "Misión de la Revista"},
+                ],
             },
         )
 
@@ -704,7 +710,10 @@ class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
             result["metadata"],
             {
                 "title": "Journal New Title",
-                "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+                "mission": [
+                    {"language": "pt", "value": "Missão do Periódico"},
+                    {"language": "en", "value": "Journal Mission"},
+                ],
                 "title_iso": "Title ISO",
             },
         )
@@ -721,18 +730,21 @@ class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
             result["metadata"],
             {
                 "title": "",
-                "mission": {"pt": "Missão do Periódico", "en": "Journal Mission"},
+                "mission": [
+                    {"language": "pt", "value": "Missão do Periódico"},
+                    {"language": "en", "value": "Journal Mission"},
+                ],
             },
         )
 
     def test_command_notify_event(self):
         metadata = {
             "title": "Journal New Title",
-            "mission": {
-                "pt": "Missão do Periódico",
-                "en": "Journal Mission",
-                "es": "Misión de la Revista",
-            },
+            "mission": [
+                {"language": "pt", "value": "Missão do Periódico"},
+                {"language": "en", "value": "Journal Mission"},
+                {"language": "es", "value": "Misión de la Revista"},
+            ],
         }
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="1678-4596-cr", metadata=metadata)

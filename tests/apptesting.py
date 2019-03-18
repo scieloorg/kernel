@@ -230,10 +230,16 @@ class SliceResultStub:
 def journal_registry_fixture(sufix="", subject_areas=["AGRICULTURAL SCIENCES"]):
     return {
         "title": f"Ciência Rural-{sufix}",
-        "mission": {
-            "pt": "Publicar artigos científicos, revisões bibliográficas e notas referentes à área de Ciências Agrárias.",
-            "en": "To publish original articles (full papers), short notes and reviews prepared by national and international experts which contribute to the scientific area of Agronomy, Animal Science, Veterinary Medicine and Forestry Science.",
-        },
+        "mission": [
+            {
+                "language": "pt",
+                "value": "Publicar artigos científicos, revisões bibliográficas e notas referentes à área de Ciências Agrárias.",
+            },
+            {
+                "language": "en",
+                "value": "To publish original articles (full papers), short notes and reviews prepared by national and international experts which contribute to the scientific area of Agronomy, Animal Science, Veterinary Medicine and Forestry Science.",
+            },
+        ],
         "title_iso": f"Ciênc. rural-{sufix}",
         "short_title": f"Cienc. Rural-{sufix}",
         "title_slug": f"ciencia-rural-{sufix}",

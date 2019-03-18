@@ -572,15 +572,16 @@ class Journal:
 
     @property
     def mission(self):
-        return BundleManifest.get_metadata(self.manifest, "mission", {})
+        return BundleManifest.get_metadata(self.manifest, "mission", [])
 
     @mission.setter
-    def mission(self, value: dict):
+    def mission(self, value: List[dict]):
         try:
-            value = dict(value)
+            value = list([dict(mission) for mission in value])
         except (TypeError, ValueError):
             raise TypeError(
-                "cannot set mission with value " '"%s": value must be dict' % value
+                "cannot set mission with value "
+                '"%s": value must be list of dict' % value
             ) from None
         self.manifest = BundleManifest.set_metadata(self._manifest, "mission", value)
 
