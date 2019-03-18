@@ -140,9 +140,14 @@ class JournalSchema(colander.MappingSchema):
     """
 
     title = colander.SchemaNode(colander.String(), missing=colander.drop)
-    mission = colander.SchemaNode(
-        colander.Mapping(unknown="preserve"), missing=colander.drop
-    )
+
+    @colander.instantiate(missing=colander.drop)
+    class mission(colander.SequenceSchema):
+        @colander.instantiate()
+        class mission(colander.MappingSchema):
+            language = colander.SchemaNode(colander.String())
+            value = colander.SchemaNode(colander.String())
+
     title_iso = colander.SchemaNode(colander.String(), missing=colander.drop)
     short_title = colander.SchemaNode(colander.String(), missing=colander.drop)
     title_slug = colander.SchemaNode(colander.String(), missing=colander.drop)
@@ -646,7 +651,6 @@ def fetch_changes(request):
 def put_journal(request):
     """Registra um periódico a partir de dados submetidos e
     validados por meio do JournalSchema."""
-
     try:
         request.services["create_journal"](
             id=request.matchdict["journal_id"], metadata=request.validated
