@@ -507,15 +507,16 @@ class DocumentsBundle:
 
     @property
     def titles(self):
-        return BundleManifest.get_metadata(self.manifest, "titles", {})
+        return BundleManifest.get_metadata(self.manifest, "titles", [])
 
     @titles.setter
     def titles(self, value: dict):
         try:
-            _value = dict(value)
+            _value = list([dict(title) for title in value])
         except (TypeError, ValueError):
             raise TypeError(
-                "cannot set titles with value " '"%s": value must be dict' % value
+                "cannot set titles with value "
+                '"%s": value must be list of dict' % value
             ) from None
         self.manifest = BundleManifest.set_metadata(self._manifest, "titles", _value)
 
