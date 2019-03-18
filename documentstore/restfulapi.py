@@ -213,7 +213,7 @@ class DocumentsBundleSchema(colander.MappingSchema):
             language = colander.SchemaNode(
                 colander.String(), validator=colander.Length(2, 2)
             )
-            title = colander.SchemaNode(colander.String(), validator=colander.Length(1))
+            value = colander.SchemaNode(colander.String(), validator=colander.Length(1))
 
 
 class QueryChangeSchema(colander.MappingSchema):
@@ -506,20 +506,13 @@ def fetch_document_front(request):
 )
 def fetch_documents_bundle(request):
     try:
-        _bundle = request.services["fetch_documents_bundle"](
+        return request.services["fetch_documents_bundle"](
             request.matchdict["bundle_id"]
         )
     except KeyError:
         return HTTPBadRequest("bundle id is mandatory")
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))
-    else:
-        if _bundle.get("titles"):
-            _bundle["titles"] = [
-                {"language": language, "title": title}
-                for language, title in _bundle["titles"].items()
-            ]
-        return _bundle
 
 
 @bundles.put(
@@ -537,13 +530,9 @@ def fetch_documents_bundle(request):
     renderer="json",
 )
 def put_documents_bundle(request):
-    _metadata = request.validated
-    _metadata["titles"] = {
-        title["language"]: title["title"] for title in request.validated["titles"] or []
-    }
     try:
         request.services["create_documents_bundle"](
-            request.matchdict["bundle_id"], metadata=_metadata
+            request.matchdict["bundle_id"], metadata=request.validated
         )
     except exceptions.AlreadyExists:
         return HTTPNoContent("bundle updated successfully")
@@ -564,13 +553,9 @@ def put_documents_bundle(request):
     renderer="json",
 )
 def patch_documents_bundle(request):
-    _metadata = request.validated
-    _metadata["titles"] = {
-        title["language"]: title["title"] for title in request.validated["titles"] or []
-    }
     try:
         request.services["update_documents_bundle_metadata"](
-            request.matchdict["bundle_id"], metadata=_metadata
+            request.matchdict["bundle_id"], metadata=request.validated
         )
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))

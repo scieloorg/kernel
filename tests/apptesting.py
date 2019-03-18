@@ -159,15 +159,15 @@ def documents_bundle_registry_data_fixture():
         "titles": [
             {
                 "language": "es",
-                "title": "La convergencia cuidado-educación: dobles desafios a la práctica de la enfermería y salud",
+                "value": "La convergencia cuidado-educación: dobles desafios a la práctica de la enfermería y salud",
             },
             {
                 "language": "pt",
-                "title": "A convergência cuidado-educação: duplos desafios à prática da enfermagem e saúde",
+                "value": "A convergência cuidado-educação: duplos desafios à prática da enfermagem e saúde",
             },
             {
                 "language": "en",
-                "title": "Convergence, educational care: double challenges for the practice of nursing and health care",
+                "value": "Convergence, educational care: double challenges for the practice of nursing and health care",
             },
         ],
     }

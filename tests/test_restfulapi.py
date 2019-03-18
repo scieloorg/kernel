@@ -185,10 +185,6 @@ class FetchDocumentsBundleTest(unittest.TestCase):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
         expected = apptesting.documents_bundle_registry_data_fixture()
         data = deepcopy(expected)
-        # Titles no domínio é um dict "language: title"
-        data["titles"] = {
-            title["language"]: title["title"] for title in expected["titles"]
-        }
         MockFetchDocumentsBundle = Mock(return_value=data)
         self.request.services["fetch_documents_bundle"] = MockFetchDocumentsBundle
         self.assertEqual(restfulapi.fetch_documents_bundle(self.request), expected)
@@ -236,10 +232,6 @@ class PutDocumentsBundleTest(unittest.TestCase):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
         self.request.validated = apptesting.documents_bundle_registry_data_fixture()
         expected = deepcopy(self.request.validated)
-        expected["titles"] = {
-            title["language"]: title["title"]
-            for title in self.request.validated["titles"]
-        }
         MockCreateDocumentsBundle = Mock()
         self.request.services["create_documents_bundle"] = MockCreateDocumentsBundle
         restfulapi.put_documents_bundle(self.request)
@@ -287,10 +279,6 @@ class PatchDocumentsBundleTest(unittest.TestCase):
         self.request.matchdict["bundle_id"] = "0034-8910-rsp-48-2"
         self.request.validated = apptesting.documents_bundle_registry_data_fixture()
         expected = deepcopy(self.request.validated)
-        expected["titles"] = {
-            title["language"]: title["title"]
-            for title in self.request.validated["titles"]
-        }
         MockUpdateDocumentsBundle = Mock()
         self.request.services[
             "update_documents_bundle_metadata"
