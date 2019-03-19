@@ -804,28 +804,57 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_set_mission(self):
         documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
-        documents_bundle.mission = {
-            "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
-            "es": "Publicar trabajos científicos originales sobre Amazonia.",
-            "en": "To publish original scientific papers about Amazonia.",
-        }
+
+        documents_bundle.mission = [
+            {
+                "language": "pt",
+                "value": "Publicar trabalhos científicos originais sobre a Amazonia.",
+            },
+            {
+                "language": "es",
+                "value": "Publicar trabajos científicos originales sobre Amazonia.",
+            },
+            {
+                "language": "en",
+                "value": "To publish original scientific papers about Amazonia.",
+            },
+        ]
+
         self.assertEqual(
             documents_bundle.mission,
-            {
-                "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
-                "es": "Publicar trabajos científicos originales sobre Amazonia.",
-                "en": "To publish original scientific papers about Amazonia.",
-            },
+            [
+                {
+                    "language": "pt",
+                    "value": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                },
+                {
+                    "language": "es",
+                    "value": "Publicar trabajos científicos originales sobre Amazonia.",
+                },
+                {
+                    "language": "en",
+                    "value": "To publish original scientific papers about Amazonia.",
+                },
+            ],
         )
         self.assertEqual(
             documents_bundle.manifest["metadata"]["mission"][-1],
             (
                 "2018-08-05T22:33:49.795151Z",
-                {
-                    "pt": "Publicar trabalhos científicos originais sobre a Amazonia.",
-                    "es": "Publicar trabajos científicos originales sobre Amazonia.",
-                    "en": "To publish original scientific papers about Amazonia.",
-                },
+                [
+                    {
+                        "language": "pt",
+                        "value": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                    },
+                    {
+                        "language": "es",
+                        "value": "Publicar trabajos científicos originales sobre Amazonia.",
+                    },
+                    {
+                        "language": "en",
+                        "value": "To publish original scientific papers about Amazonia.",
+                    },
+                ],
             ),
         )
 
@@ -833,7 +862,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.Journal(id="0034-8910-rsp-48-2")
         self._assert_raises_with_message(
             TypeError,
-            "cannot set mission with value " '"mission-invalid": value must be dict',
+            "cannot set mission with value "
+            '"mission-invalid": value must be list of dict',
             setattr,
             documents_bundle,
             "mission",
