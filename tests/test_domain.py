@@ -646,15 +646,25 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_set_titles(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.titles = {"pt": "Título", "es": "Título", "en": "Title"}
+        documents_bundle.titles = [
+            {"language": "en", "value": "Title"},
+            {"language": "pt", "value": "Título"},
+        ]
         self.assertEqual(
-            documents_bundle.titles, {"pt": "Título", "es": "Título", "en": "Title"}
+            documents_bundle.titles,
+            [
+                {"language": "en", "value": "Title"},
+                {"language": "pt", "value": "Título"},
+            ],
         )
         self.assertEqual(
             documents_bundle.manifest["metadata"]["titles"][-1],
             (
                 "2018-08-05T22:33:49.795151Z",
-                {"pt": "Título", "es": "Título", "en": "Title"},
+                [
+                    {"language": "en", "value": "Title"},
+                    {"language": "pt", "value": "Título"},
+                ],
             ),
         )
 
@@ -662,7 +672,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         self._assert_raises_with_message(
             TypeError,
-            "cannot set titles with value " '"invalid-titles": value must be dict',
+            "cannot set titles with value "
+            '"invalid-titles": value must be list of dict',
             setattr,
             documents_bundle,
             "titles",
@@ -761,15 +772,29 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_data_returns_latest_metadata_version(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.titles = {"en": "Title", "pt": "Título"}
+        documents_bundle.titles = [
+            {"language": "en", "value": "Title"},
+            {"language": "pt", "value": "Título"},
+        ]
         self.assertEqual(
             documents_bundle.data()["metadata"]["titles"],
-            {"en": "Title", "pt": "Título"},
+            [
+                {"language": "en", "value": "Title"},
+                {"language": "pt", "value": "Título"},
+            ],
         )
-        documents_bundle.titles = {"en": "Title", "pt": "Título", "es": "Título"}
+        documents_bundle.titles = [
+            {"language": "en", "value": "Title"},
+            {"language": "pt", "value": "Título"},
+            {"language": "es", "value": "Título"},
+        ]
         self.assertEqual(
             documents_bundle.data()["metadata"]["titles"],
-            {"en": "Title", "pt": "Título", "es": "Título"},
+            [
+                {"language": "en", "value": "Title"},
+                {"language": "pt", "value": "Título"},
+                {"language": "es", "value": "Título"},
+            ],
         )
 
 
