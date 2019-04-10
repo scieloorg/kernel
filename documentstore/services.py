@@ -218,33 +218,10 @@ class SanitizeDocumentFront(CommandHandler):
 
     def __call__(self, xml_data: bytes) -> dict:
         clea_article = clea_core.Article(BytesIO(xml_data))
-        front_data = {
-            tag_name: [branch.data for branch in clea_article.get(tag_name)]
-            for tag_name in ["journal-meta", "article-meta"]
+        return {
+            **clea_article.data_full,
+            "aff_contrib_full": clea_join.aff_contrib_full(clea_article),
         }
-        front_data["contrib"] = clea_join.aff_contrib_inner_join(clea_article)
-        return self._rearrange(front_data)
-
-    def _rearrange(self, data):
-        def _first(iterable, default=""):
-            try:
-                return next(iter(iterable))
-            except StopIteration:
-                return default
-
-        _data = {
-            "journal-meta": _first(data["journal-meta"], {}),
-            "article-meta": _first(data["article-meta"], {}),
-        }
-        _data["contrib"] = [
-            {
-                k: v
-                for k, v in contrib.items()
-                if k not in _data["journal-meta"] and k not in _data["article-meta"]
-            }
-            for contrib in data["contrib"]
-        ]
-        return _data
 
 
 class CreateDocumentsBundle(CommandHandler):

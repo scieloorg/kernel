@@ -31,7 +31,7 @@ setuptools.setup(
         "cornice_swagger",
         "colander",
         "python-slugify",
-        "scielo-clea",
+        "scielo-clea>=0.2.0",
     ],
     test_suite="tests",
     classifiers=(
