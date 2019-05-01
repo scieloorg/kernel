@@ -33,6 +33,7 @@ setuptools.setup(
         "python-slugify",
         "scielo-clea>=0.3.0",
         "waitress",
+        "prometheus_client",
     ],
     test_suite="tests",
     classifiers=(

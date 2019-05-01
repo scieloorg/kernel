@@ -43,9 +43,11 @@ Para mais informação sobre a nova arquitetura de sistemas de informação da M
 Configurando a aplicação:
 
 
-diretiva no arquivo .ini | variável de ambiente   | valor padrão
--------------------------|------------------------|--------------------
-kernel.app.mongodb.dsn   | KERNEL_APP_MONGODB_DSN | mongodb://db:27017
+diretiva no arquivo .ini      | variável de ambiente          | valor padrão
+------------------------------|-------------------------------|--------------------
+kernel.app.mongodb.dsn        | KERNEL_APP_MONGODB_DSN        | mongodb://db:27017
+kernel.app.prometheus.enabled | KERNEL_APP_PROMETHEUS_ENABLED | True
+kernel.app.prometheus.port    | KERNEL_APP_PROMETHEUS_PORT    | 8087
 
 
 Configurações avançadas:

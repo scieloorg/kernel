@@ -11,6 +11,7 @@ import logging
 
 import requests
 from lxml import etree
+from prometheus_client import Counter, Summary
 
 from . import exceptions
 
@@ -39,6 +40,12 @@ SUBJECT_AREAS = (
 
 MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))
 BACKOFF_FACTOR = float(os.environ.get("KERNEL_LIB_BACKOFF_FACTOR", "1.2"))
+OBJECTSTORE_RESPONSE_TIME_SECONDS = Summary(
+    "kernel_objectstore_response_time_seconds",
+    "Elapsed time between the request for an XML and the response")
+OBJECTSTORE_REQUEST_FAILURES_TOTAL = Counter(
+    "kernel_objectstore_request_failures_total",
+    "Total number of exceptions raised when requesting for an XML from the object-store")
 
 
 def utcnow():
@@ -212,6 +219,8 @@ class retry_gracefully:
 
 
 @retry_gracefully()
+@OBJECTSTORE_REQUEST_FAILURES_TOTAL.count_exceptions()
+@OBJECTSTORE_RESPONSE_TIME_SECONDS.time()
 def fetch_data(url: str, timeout: float = 2) -> bytes:
     try:
         response = requests.get(url, timeout=timeout)

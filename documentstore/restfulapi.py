@@ -1,6 +1,7 @@
 import logging
 import os
 
+from pyramid.settings import asbool
 from pyramid.config import Configurator
 from pyramid.httpexceptions import (
     HTTPOk,
@@ -938,7 +939,9 @@ class PlainTextRenderer:
 
 
 DEFAULT_SETTINGS = [
-    ("kernel.app.mongodb.dsn", "KERNEL_APP_MONGODB_DSN", str, "mongodb://db:27017/")
+    ("kernel.app.mongodb.dsn", "KERNEL_APP_MONGODB_DSN", str, "mongodb://db:27017/"),
+    ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True), 
+    ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087), 
 ]
 
 
@@ -971,6 +974,7 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.include("cornice")
     config.include("cornice_swagger")
+    config.include("documentstore.pyramid_prometheus")
     config.scan()
     config.add_renderer("xml", XMLRenderer)
     config.add_renderer("text", PlainTextRenderer)
