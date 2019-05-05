@@ -4,6 +4,10 @@ from io import BytesIO
 import re
 from typing import Union, Callable, Any, Tuple, List
 from datetime import datetime
+import time
+import os
+import functools
+import logging
 
 import requests
 from lxml import etree
@@ -11,6 +15,8 @@ from lxml import etree
 from . import exceptions
 
 __all__ = ["Document"]
+
+LOGGER = logging.getLogger(__name__)
 
 DEFAULT_XMLPARSER = etree.XMLParser(
     remove_blank_text=False,
@@ -30,6 +36,9 @@ SUBJECT_AREAS = (
     "HUMAN SCIENCES",
     "LINGUISTIC, LITERATURE AND ARTS",
 )
+
+MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))
+BACKOFF_FACTOR = float(os.environ.get("KERNEL_LIB_BACKOFF_FACTOR", "1.2"))
 
 
 def utcnow():
@@ -114,6 +123,55 @@ def get_static_assets(xml_et):
     ]
 
 
+class retry_gracefully:
+    """Produz decorador que torna o objeto decorado resiliente às exceções dos
+    tipos informados em `exc_list`. Tenta no máximo `max_retries` vezes com
+    intervalo exponencial entre as tentativas.
+    """
+
+    def __init__(
+        self,
+        max_retries=MAX_RETRIES,
+        backoff_factor=BACKOFF_FACTOR,
+        exc_list=(exceptions.RetryableError,),
+    ):
+        self.max_retries = int(max_retries)
+        self.backoff_factor = float(backoff_factor)
+        self.exc_list = tuple(exc_list)
+
+    def _sleep(self, seconds):
+        time.sleep(seconds)
+
+    def __call__(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            retry = 1
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except self.exc_list as exc:
+                    if retry <= self.max_retries:
+                        wait_seconds = self.backoff_factor ** retry
+                        LOGGER.info(
+                            'could not get the result for "%s" with *args "%s" '
+                            'and **kwargs "%s". retrying in %s seconds '
+                            "(retry #%s): %s",
+                            func.__qualname__,
+                            args,
+                            kwargs,
+                            str(wait_seconds),
+                            retry,
+                            exc,
+                        )
+                        self._sleep(wait_seconds)
+                        retry += 1
+                    else:
+                        raise
+
+        return wrapper
+
+
+@retry_gracefully()
 def fetch_data(url: str, timeout: float = 2) -> bytes:
     try:
         response = requests.get(url, timeout=timeout)

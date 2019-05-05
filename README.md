@@ -48,6 +48,14 @@ diretiva no arquivo .ini | variável de ambiente   | valor padrão
 kernel.app.mongodb.dsn   | KERNEL_APP_MONGODB_DSN | mongodb://db:27017
 
 
+Configurações avançadas:
+
+
+variável de ambiente      | valor padrão
+--------------------------|-------------
+KERNEL_LIB_MAX_RETRIES    | 4
+KERNEL_LIB_BACKOFF_FACTOR | 1.2
+
 
 Executando a aplicação:
 

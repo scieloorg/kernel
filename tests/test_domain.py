@@ -1649,3 +1649,53 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         journal.title = "Ciência Agrária 2"
         self.assertEqual(journal.data()["metadata"]["title"], "Ciência Agrária 2")
+
+
+class RetryGracefullyDecoratorTests(unittest.TestCase):
+    def test_max_retries(self):
+        retry_gracefully = domain.retry_gracefully(max_retries=2, backoff_factor=0.001)
+
+        failing_obj = mock.Mock(
+            side_effect=[exceptions.RetryableError(), exceptions.RetryableError(), True]
+        )
+        failing_obj.__qualname__ = "failing_function"
+        decorated_obj = retry_gracefully(failing_obj)
+        self.assertEqual(decorated_obj(), True)
+        self.assertEqual(failing_obj.call_count, 3)
+
+    def test_user_defined_exceptions(self):
+        retry_gracefully = domain.retry_gracefully(
+            max_retries=2,
+            backoff_factor=0.001,
+            exc_list=(exceptions.RetryableError, TypeError),
+        )
+
+        failing_obj = mock.Mock(
+            side_effect=[TypeError(), exceptions.RetryableError(), True]
+        )
+        failing_obj.__qualname__ = "failing_function"
+        decorated_obj = retry_gracefully(failing_obj)
+        self.assertEqual(decorated_obj(), True)
+        self.assertEqual(failing_obj.call_count, 3)
+
+    def test_max_retries_default_value(self):
+        retry_gracefully = domain.retry_gracefully()
+        self.assertEqual(retry_gracefully.max_retries, 4)
+
+    def test_backoff_factor_default_value(self):
+        retry_gracefully = domain.retry_gracefully()
+        self.assertEqual(retry_gracefully.backoff_factor, 1.2)
+
+    def test_sleep_increases_exponentially(self):
+        retry_gracefully = domain.retry_gracefully(max_retries=2, backoff_factor=1.2)
+        retry_gracefully._sleep = mock.MagicMock(return_value=None)
+
+        failing_obj = mock.Mock(
+            side_effect=[exceptions.RetryableError(), exceptions.RetryableError(), True]
+        )
+        failing_obj.__qualname__ = "failing_function"
+        decorated_obj = retry_gracefully(failing_obj)
+        self.assertEqual(decorated_obj(), True)
+
+        calls = [mock.call(1.2 ** i) for i in range(1, 3)]
+        retry_gracefully._sleep.assert_has_calls(calls)
