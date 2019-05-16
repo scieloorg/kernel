@@ -24,6 +24,7 @@ SAMPLE_MANIFEST = {
                 ]
             },
             "timestamp": "2018-08-05T23:02:29.392990Z",
+            "renditions": [],
         },
         {
             "data": "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
@@ -36,6 +37,84 @@ SAMPLE_MANIFEST = {
                 ]
             },
             "timestamp": "2018-08-05T23:30:29.392990Z",
+            "renditions": [],
+        },
+    ],
+}
+SAMPLE_MANIFEST_WITH_RENDITIONS = {
+    "id": "0034-8910-rsp-48-2-0275",
+    "versions": [
+        {
+            "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+            "assets": {
+                "0034-8910-rsp-48-2-0275-gf01.gif": [
+                    (
+                        "2018-08-05T23:03:44.971230Z",
+                        "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                    ),
+                    (
+                        "2018-08-05T23:08:41.590174Z",
+                        "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                    ),
+                ]
+            },
+            "timestamp": "2018-08-05T23:02:29.392990Z",
+            "renditions": [
+                {
+                    "filename": "0034-8910-rsp-48-2-0275-pt.pdf",
+                    "mimetype": "application/pdf",
+                    "lang": "pt",
+                    "data": [
+                        {
+                            "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-pt.pdf",
+                            "size_bytes": 123456,
+                        }
+                    ],
+                }
+            ],
+        },
+        {
+            "data": "/rawfiles/2d3ad9c6bc656/0034-8910-rsp-48-2-0275.xml",
+            "assets": {
+                "0034-8910-rsp-48-2-0275-gf01.gif": [
+                    (
+                        "2018-08-05T23:30:29.392995Z",
+                        "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                    )
+                ]
+            },
+            "timestamp": "2018-08-05T23:30:29.392990Z",
+            "renditions": [
+                {
+                    "filename": "0034-8910-rsp-48-2-0275-v2-pt.pdf",
+                    "mimetype": "application/pdf",
+                    "lang": "pt",
+                    "data": [
+                        {
+                            "timestamp": "2018-08-05T23:30:43.491793Z",
+                            "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2-pt.pdf",
+                            "size_bytes": 123456,
+                        }
+                    ],
+                },
+                {
+                    "filename": "0034-8910-rsp-48-2-0275-v2-en.pdf",
+                    "mimetype": "application/pdf",
+                    "lang": "en",
+                    "data": [
+                        {
+                            "timestamp": "2018-08-05T23:30:50.271593Z",
+                            "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2-en.pdf",
+                            "size_bytes": 123456,
+                        },
+                        {
+                            "timestamp": "2018-08-06T09:30:23.431397Z",
+                            "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2-2-en.pdf",
+                            "size_bytes": 123456,
+                        },
+                    ],
+                },
+            ],
         },
     ],
 }
@@ -123,6 +202,7 @@ class DocumentTests(unittest.TestCase):
                 "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"
             },
             "timestamp": "2018-08-05T23:02:29.392990Z",
+            "renditions": [],
         }
         self.assertEqual(oldest, expected)
 
@@ -144,6 +224,7 @@ class DocumentTests(unittest.TestCase):
                             ),
                         ]
                     },
+                    "renditions": [],
                 }
             ],
         }
@@ -176,6 +257,7 @@ class DocumentTests(unittest.TestCase):
                 "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif"
             },
             "timestamp": "2018-08-05T23:30:29.392990Z",
+            "renditions": [],
         }
         self.assertEqual(target, expected)
 
@@ -188,6 +270,7 @@ class DocumentTests(unittest.TestCase):
                 "0034-8910-rsp-48-2-0275-gf01.gif": "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif"
             },
             "timestamp": "2018-08-05T23:02:29.392990Z",
+            "renditions": [],
         }
         self.assertEqual(target, expected)
 
@@ -198,6 +281,7 @@ class DocumentTests(unittest.TestCase):
             "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
             "assets": {"0034-8910-rsp-48-2-0275-gf01.gif": ""},
             "timestamp": "2018-08-05T23:02:29.392990Z",
+            "renditions": [],
         }
         self.assertEqual(target, expected)
 
@@ -209,6 +293,129 @@ class DocumentTests(unittest.TestCase):
         document = self.make_one()
         self.assertRaises(
             ValueError, lambda: document.version_at("2018-08-05 23:03:44")
+        )
+
+    def test_add_new_rendition(self):
+        document = self.make_one()
+        self.assertEqual(len(document.version()["renditions"]), 0)
+
+        document.new_rendition_version(
+            "0034-8910-rsp-48-2-0275-en.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-en.pdf",
+            "application/pdf",
+            "en",
+            798765,
+        )
+        self.assertEqual(len(document.version()["renditions"]), 1)
+        self.assertEqual(
+            document.version()["renditions"][0]["filename"],
+            "0034-8910-rsp-48-2-0275-en.pdf",
+        )
+
+    def test_add_second_rendition_version(self):
+        document = self.make_one()
+        self.assertEqual(len(document.version()["renditions"]), 0)
+
+        document.new_rendition_version(
+            "0034-8910-rsp-48-2-0275-en.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-en.pdf",
+            "application/pdf",
+            "en",
+            798765,
+        )
+        document.new_rendition_version(
+            "0034-8910-rsp-48-2-0275-en.pdf",
+            "/rawfiles/5cb5f9b2691cd/0034-8910-rsp-48-2-0275-en.pdf",
+            "application/pdf",
+            "en",
+            788523,
+        )
+        self.assertEqual(len(document.version()["renditions"]), 1)
+        self.assertEqual(
+            document.version()["renditions"][0]["filename"],
+            "0034-8910-rsp-48-2-0275-en.pdf",
+        )
+        self.assertEqual(document.version()["renditions"][0]["size_bytes"], 788523)
+        self.assertEqual(
+            document.version()["renditions"][0]["url"],
+            "/rawfiles/5cb5f9b2691cd/0034-8910-rsp-48-2-0275-en.pdf",
+        )
+
+    def test_add_new_rendition_raises_if_already_set(self):
+        document = self.make_one()
+        self.assertEqual(len(document.version()["renditions"]), 0)
+
+        document.new_rendition_version(
+            "0034-8910-rsp-48-2-0275-en.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-en.pdf",
+            "application/pdf",
+            "en",
+            798765,
+        )
+        self.assertEqual(len(document.version()["renditions"]), 1)
+        self.assertRaises(
+            exceptions.VersionAlreadySet,
+            document.new_rendition_version,
+            "0034-8910-rsp-48-2-0275-en.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-en.pdf",
+            "application/pdf",
+            "en",
+            798765,
+        )
+
+    def test_get_latest_renditions_of_latest_version(self):
+        expected = [
+            {
+                "filename": "0034-8910-rsp-48-2-0275-v2-pt.pdf",
+                "mimetype": "application/pdf",
+                "lang": "pt",
+                "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2-pt.pdf",
+                "size_bytes": 123456,
+            },
+            {
+                "filename": "0034-8910-rsp-48-2-0275-v2-en.pdf",
+                "mimetype": "application/pdf",
+                "lang": "en",
+                "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2-2-en.pdf",
+                "size_bytes": 123456,
+            },
+        ]
+        document = domain.Document(manifest=SAMPLE_MANIFEST_WITH_RENDITIONS)
+        self.assertEqual(document.version()["renditions"], expected)
+
+    def test_get_renditions_of_a_given_version(self):
+        expected = [
+            {
+                "filename": "0034-8910-rsp-48-2-0275-pt.pdf",
+                "mimetype": "application/pdf",
+                "lang": "pt",
+                "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-pt.pdf",
+                "size_bytes": 123456,
+            }
+        ]
+        document = domain.Document(manifest=SAMPLE_MANIFEST_WITH_RENDITIONS)
+        self.assertEqual(document.version(index=0)["renditions"], expected)
+
+    def test_get_renditions_of_a_given_version_by_timestamp(self):
+        expected = [
+            {
+                "filename": "0034-8910-rsp-48-2-0275-v2-pt.pdf",
+                "mimetype": "application/pdf",
+                "lang": "pt",
+                "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2-pt.pdf",
+                "size_bytes": 123456,
+            },
+            {
+                "filename": "0034-8910-rsp-48-2-0275-v2-en.pdf",
+                "mimetype": "application/pdf",
+                "lang": "en",
+                "url": "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2-en.pdf",
+                "size_bytes": 123456,
+            },
+        ]
+        document = domain.Document(manifest=SAMPLE_MANIFEST_WITH_RENDITIONS)
+        self.assertEqual(
+            document.version_at("2018-08-05T23:40:00Z")["renditions"], expected
         )
 
 

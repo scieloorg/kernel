@@ -373,4 +373,3 @@ class MongoDBTests(unittest.TestCase):
             "mongodb://test_db:27017", dbname="store", mongoclient=mock_mongoclient
         )
         mock_mongoclient.assert_not_called()
-
