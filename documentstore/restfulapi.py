@@ -90,6 +90,12 @@ journals_aop = Service(
     description="Manipulate ahead of print in journal",
 )
 
+renditions = Service(
+    name="renditions",
+    path="/documents/{document_id}/renditions",
+    description="All renditions related to the document",
+)
+
 
 class ResponseSchema(colander.MappingSchema):
     body = colander.SchemaNode(colander.String(), missing=colander.drop)
@@ -282,6 +288,25 @@ class DeleteJournalIssuesSchema(colander.MappingSchema):
     """
 
     issue = colander.SchemaNode(colander.String())
+
+
+class DocumentRenditionsSchema(colander.MappingSchema):
+    """Representa o schema de dados da manifestação do documento.
+    """
+
+    data = colander.SchemaNode(colander.String(), missing=colander.drop)
+    querystring = QueryDocumentSchema()
+
+
+class RegisterDocumentRenditionSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro de manifestações do documento.
+    """
+
+    filename = colander.SchemaNode(colander.String())
+    data_url = colander.SchemaNode(colander.String(), validator=colander.url)
+    mimetype = colander.SchemaNode(colander.String())
+    lang = colander.SchemaNode(colander.String())
+    size_bytes = colander.SchemaNode(colander.Int())
 
 
 @documents.get(
@@ -585,6 +610,7 @@ def fetch_changes(request):
 
     entity_route_map = {
         "Document": {"route": "documents", "marker": "document_id"},
+        "DocumentRendition": {"route": "renditions", "marker": "document_id"},
         "Journal": {"route": "journals", "marker": "journal_id"},
         "DocumentsBundle": {"route": "bundles", "marker": "bundle_id"},
     }
@@ -802,6 +828,70 @@ def delete_journal_issues(request):
         return HTTPNotFound(str(exc))
     else:
         return HTTPNoContent("issue removed from journal successfully.")
+
+
+@renditions.get(
+    schema=DocumentRenditionsSchema(),
+    response_schemas={
+        "200": DocumentRenditionsSchema(
+            description="Obtém a lista das manifestações do documento"
+        ),
+        "404": DocumentRenditionsSchema(description="Documento não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def fetch_document_renditions(request):
+    """Obtém uma lista das manifestações associadas à versão do documento.
+    Produzirá uma resposta com o código HTTP 404 caso o documento solicitado 
+    não exista.
+    """
+    when = request.GET.get("when", None)
+    if when:
+        version = {"version_at": when}
+    else:
+        version = {}
+    try:
+        return request.services["fetch_document_renditions"](
+            id=request.matchdict["document_id"], **version
+        )
+    except (exceptions.DoesNotExist, ValueError) as exc:
+        raise HTTPNotFound(exc)
+
+
+@renditions.patch(
+    schema=RegisterDocumentRenditionSchema(),
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": RegisterDocumentRenditionSchema(
+            description="Manifestação registrada com sucesso"
+        ),
+        "404": RegisterDocumentRenditionSchema(description="Documento não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def register_rendition_version(request):
+    try:
+        request.services["register_rendition_version"](
+            request.matchdict["document_id"],
+            request.validated["filename"],
+            request.validated["data_url"],
+            request.validated["mimetype"],
+            request.validated["lang"],
+            request.validated["size_bytes"],
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(exc)
+    except exceptions.VersionAlreadySet as exc:
+        LOGGER.info(
+            'skipping request to add new version of rendition "%s" to "%s": %s',
+            request.validated["filename"],
+            request.matchdict["document_id"],
+            exc,
+        )
+
+    return HTTPNoContent("journal updated successfully")
 
 
 @swagger.get()

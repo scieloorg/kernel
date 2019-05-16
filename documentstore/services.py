@@ -30,6 +30,7 @@ class Events(Enum):
     ISSUE_REMOVED_FROM_JOURNAL = auto()
     AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL = auto()
     AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL = auto()
+    RENDITION_VERSION_REGISTERED = auto()
 
 
 class CommandHandler:
@@ -393,6 +394,76 @@ class FetchChanges(CommandHandler):
         return session.changes.filter(since=since, limit=limit)
 
 
+class RegisterRenditionVersion(CommandHandler):
+    """Registra uma nova versão de uma manifestação do documento já registrado.
+
+    Levanta a exceção `documentstore.exceptions.VersionAlreadySet` caso a versão
+    seja a mesma da última registrada.
+
+    :param id: Identificador alfanumérico para o documento.
+    :param filename: Nome do arquivo que corresponde à manifestação.
+    :param data_url: URL válida e publicamente acessível para o arquivo.
+    :param mimetype: Media type conforme consta na lista da IANA
+    https://www.iana.org/assignments/media-types/media-types.xhtml.
+    :param lang: Idioma da manifestação conforme a norma ISO 639-1.
+    :param size_bytes: Tamanho do arquivo em bytes.
+    """
+
+    def __call__(
+        self,
+        id: str,
+        filename: str,
+        data_url: str,
+        mimetype: str,
+        lang: str,
+        size_bytes: int,
+    ) -> None:
+        int_size_bytes = int(size_bytes)
+        session = self.Session()
+        document = session.documents.fetch(id)
+        document.new_rendition_version(
+            filename, data_url, mimetype, lang, int_size_bytes
+        )
+        result = session.documents.update(document)
+        session.notify(
+            Events.RENDITION_VERSION_REGISTERED,
+            {
+                "document": document,
+                "id": id,
+                "filename": filename,
+                "data_url": data_url,
+                "mimetype": mimetype,
+                "lang": lang,
+                "size_bytes": int_size_bytes,
+            },
+        )
+        return result
+
+
+class FetchDocumentRenditions(CommandHandler):
+    """Recupera a lista de manifestações associadas ao documento em XML.
+
+    :param id: Identificador único do documento.
+    :param version_index: (opcional) Número inteiro correspondente a versão do
+    documento. Por padrão retorna a versão mais recente.
+    :param version_at: (opcional) string de texto de um timestamp UTC
+    referente a versão do documento no determinado momento. O uso do argumento
+    `version_at` faz com que qualquer valor de `version_index` seja ignorado.
+    """
+
+    def __call__(
+        self, id: str, version_index: int = -1, version_at: str = None
+    ) -> bytes:
+        session = self.Session()
+        document = session.documents.fetch(id)
+        version = (
+            document.version_at(version_at)
+            if version_at
+            else document.version(version_index)
+        )
+        return version.get("renditions", [])
+
+
 def log_change(data, session, now=utcnow, entity="", deleted=False):
     change = {"timestamp": now(), "entity": entity, "id": data["id"]}
 
@@ -440,6 +511,10 @@ DEFAULT_SUBSCRIBERS = [
     (
         Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
         functools.partial(log_change, entity="Journal"),
+    ),
+    (
+        Events.RENDITION_VERSION_REGISTERED,
+        functools.partial(log_change, entity="DocumentRendition"),
     ),
 ]
 
@@ -495,4 +570,6 @@ def get_handlers(
         "remove_ahead_of_print_bundle_from_journal": RemoveAheadOfPrintBundleFromJournal(
             SessionWrapper
         ),
+        "register_rendition_version": RegisterRenditionVersion(SessionWrapper),
+        "fetch_document_renditions": FetchDocumentRenditions(SessionWrapper),
     }

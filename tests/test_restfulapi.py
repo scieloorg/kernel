@@ -678,3 +678,120 @@ class DeleteJournalAopTest(unittest.TestCase):
         self.assertIsInstance(
             restfulapi.delete_journal_aop(self.request), HTTPNoContent
         )
+
+
+@patch("documentstore.domain.fetch_data", new=fetch_data_stub)
+class FetchDocumentRenditionsUnitTests(unittest.TestCase):
+    def test_when_doesnt_exist_returns_http_404(self):
+        request = make_request()
+        request.matchdict = {"document_id": "unknown"}
+        self.assertRaises(HTTPNotFound, restfulapi.fetch_document_renditions, request)
+
+    def test_latest_version_returns_list_of_dicts(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.services["register_document"](
+            id="my-testing-doc",
+            data_url="https://raw.githubusercontent.com/scieloorg/packtools/master/tests/samples/0034-8910-rsp-48-2-0347.xml",
+            assets={},
+        )
+
+        renditions = restfulapi.fetch_document_renditions(request)
+        self.assertIsInstance(renditions, list)
+        expected_fields = set(["filename", "lang", "mimetype", "data", "size_bytes"])
+        for rendition in renditions:
+            for field in rendition.keys():
+                self.assertTrue(field in expected_fields)
+
+    def test_versions_prior_to_creation_returns_http_404(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.GET = {"when": "1900-01-01"}
+        request.services["register_document"](
+            id="my-testing-doc",
+            data_url="https://raw.githubusercontent.com/scieloorg/packtools/master/tests/samples/0034-8910-rsp-48-2-0347.xml",
+            assets={},
+        )
+        self.assertRaises(HTTPNotFound, restfulapi.fetch_document_renditions, request)
+
+    def test_versions_in_distant_future_returns_list(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.GET = {"when": "2100-01-01"}
+        request.services["register_document"](
+            id="my-testing-doc",
+            data_url="https://raw.githubusercontent.com/scieloorg/packtools/master/tests/samples/0034-8910-rsp-48-2-0347.xml",
+            assets={},
+        )
+
+        document_data = restfulapi.fetch_document_renditions(request)
+        self.assertIsInstance(document_data, list)
+
+
+class RegisterDocumentVersionUnitTests(unittest.TestCase):
+    def test_input_arguments(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.validated = {
+            "filename": "0034-8910-rsp-48-2-0347.xml",
+            "data_url": "https://files.scielo.br/aksjhdf/0034-8910-rsp-48-2-0347.pdf",
+            "mimetype": "application/pdf",
+            "lang": "pt",
+            "size_bytes": 23456,
+        }
+        request.services["register_rendition_version"] = Mock()
+        restfulapi.register_rendition_version(request)
+        request.services["register_rendition_version"].assert_called_once_with(
+            "my-testing-doc",
+            "0034-8910-rsp-48-2-0347.xml",
+            "https://files.scielo.br/aksjhdf/0034-8910-rsp-48-2-0347.pdf",
+            "application/pdf",
+            "pt",
+            23456,
+        )
+
+    def test_returns_HTTPNoContent_on_success(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.validated = {
+            "filename": "0034-8910-rsp-48-2-0347.xml",
+            "data_url": "https://files.scielo.br/aksjhdf/0034-8910-rsp-48-2-0347.pdf",
+            "mimetype": "application/pdf",
+            "lang": "pt",
+            "size_bytes": 23456,
+        }
+        request.services["register_rendition_version"] = Mock()
+        response = restfulapi.register_rendition_version(request)
+        self.assertIsInstance(response, HTTPNoContent)
+
+    def test_returns_HTTPNotFound_when_document_doesnt_exist(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.validated = {
+            "filename": "0034-8910-rsp-48-2-0347.xml",
+            "data_url": "https://files.scielo.br/aksjhdf/0034-8910-rsp-48-2-0347.pdf",
+            "mimetype": "application/pdf",
+            "lang": "pt",
+            "size_bytes": 23456,
+        }
+        request.services["register_rendition_version"] = Mock(
+            side_effect=exceptions.DoesNotExist()
+        )
+        response = restfulapi.register_rendition_version(request)
+        self.assertIsInstance(response, HTTPNotFound)
+
+    def test_returns_HTTPNoContent_when_already_exists(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.validated = {
+            "filename": "0034-8910-rsp-48-2-0347.xml",
+            "data_url": "https://files.scielo.br/aksjhdf/0034-8910-rsp-48-2-0347.pdf",
+            "mimetype": "application/pdf",
+            "lang": "pt",
+            "size_bytes": 23456,
+        }
+        request.services["register_rendition_version"] = Mock(
+            side_effect=exceptions.VersionAlreadySet()
+        )
+        response = restfulapi.register_rendition_version(request)
+        self.assertIsInstance(response, HTTPNoContent)

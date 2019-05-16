@@ -57,13 +57,19 @@ class DocumentManifest:
         data_uri: str, assets: Union[dict, list], now: Callable[[], str]
     ) -> dict:
         _assets = {str(aid): [] for aid in assets}
-        return {"data": data_uri, "assets": _assets, "timestamp": now()}
+        return {
+            "data": data_uri,
+            "assets": _assets,
+            "timestamp": now(),
+            "renditions": [],
+        }
 
     @staticmethod
     def add_version(
         manifest: dict,
         data_uri: str,
         assets: Union[dict, list],
+        renditions: Union[dict, list] = None,
         now: Callable[[], str] = utcnow,
     ) -> dict:
         _manifest = deepcopy(manifest)
@@ -95,6 +101,40 @@ class DocumentManifest:
         _manifest = deepcopy(manifest)
         _manifest["versions"][-1] = DocumentManifest._new_asset_version(
             _manifest["versions"][-1], asset_id, asset_uri, now=now
+        )
+        return _manifest
+
+    @staticmethod
+    def add_rendition_version(
+        manifest: dict,
+        filename: str,
+        data_uri: str,
+        mimetype: str,
+        lang: str,
+        size_bytes: int,
+        now: Callable[[], str] = utcnow,
+    ) -> dict:
+        _manifest = deepcopy(manifest)
+        latest_renditions = _manifest["versions"][-1]["renditions"]
+        try:
+            selected_rendition = [
+                r
+                for r in latest_renditions
+                if r["filename"] == filename
+                and r["lang"] == lang
+                and r["mimetype"] == mimetype
+            ][0]
+        except IndexError:
+            selected_rendition = {
+                "filename": filename,
+                "data": [],
+                "mimetype": mimetype,
+                "lang": lang,
+            }
+            latest_renditions.append(selected_rendition)
+
+        selected_rendition["data"].append(
+            {"timestamp": now(), "url": data_uri, "size_bytes": size_bytes}
         )
         return _manifest
 
@@ -277,8 +317,25 @@ class Document:
             except IndexError:
                 return ""
 
+        def _safe_eval(expr, default=""):
+            try:
+                return expr()
+            except (KeyError, IndexError):
+                return default
+
+        def _latest_renditions(r):
+            return {
+                "filename": _safe_eval(lambda: r["filename"]),
+                "url": _safe_eval(lambda: r["data"][-1]["url"]),
+                "mimetype": _safe_eval(lambda: r["mimetype"]),
+                "lang": _safe_eval(lambda: r["lang"]),
+                "size_bytes": _safe_eval(lambda: r["data"][-1]["size_bytes"]),
+            }
+
         assets = {a: _latest(u) for a, u in version["assets"].items()}
         version["assets"] = assets
+        renditions = [_latest_renditions(r) for r in version["renditions"]]
+        version["renditions"] = renditions
         return version
 
     def version_at(self, timestamp: str) -> dict:
@@ -322,8 +379,31 @@ class Document:
                 return ""
             return target[1]
 
+        def _rendition_at_time(r):
+            try:
+                target_data = max(
+                    itertools.takewhile(
+                        lambda r_data: r_data["timestamp"] <= timestamp, r["data"]
+                    ),
+                    key=lambda r_data: r_data["timestamp"],
+                )
+            except ValueError:
+                return {}
+            rendition = {
+                "filename": r["filename"],
+                "mimetype": r["mimetype"],
+                "lang": r["lang"],
+                "url": target_data["url"],
+                "size_bytes": target_data["size_bytes"],
+            }
+            return rendition
+
         target_assets = {a: _at_time(u) for a, u in target_version["assets"].items()}
         target_version["assets"] = target_assets
+        target_renditions = [
+            _rendition_at_time(r) for r in target_version["renditions"]
+        ]
+        target_version["renditions"] = target_renditions
         return target_version
 
     def data(
@@ -383,6 +463,37 @@ class Document:
             raise ValueError(
                 'cannot add version for "%s": unknown asset_id' % asset_id
             ) from None
+
+    def new_rendition_version(
+        self, filename, data_url, mimetype, lang, size_bytes
+    ) -> None:
+        """Adiciona `data_url` como uma nova versão da manifestação identificada
+        por `filename`, `mimetype` e `lang`, vinculada a versão mais recente do 
+        documento. É importante notar que nenhuma validação será executada em 
+        `data_url`, `mimetype` ou `size_bytes`.
+        """
+        try:
+            latest_version = self.version()
+        except ValueError:
+            latest_version = {"renditions": []}
+
+        selected_rendition = [
+            r
+            for r in latest_version.get("renditions", [])
+            if r["filename"] == filename
+            and r["url"] == data_url
+            and r["mimetype"] == mimetype
+            and r["lang"] == lang
+            and r["size_bytes"] == size_bytes
+        ]
+        if len(selected_rendition):
+            raise exceptions.VersionAlreadySet(
+                "could not add version: the version is equal to the latest one"
+            )
+
+        self.manifest = DocumentManifest.add_rendition_version(
+            self._manifest, filename, data_url, mimetype, lang, size_bytes
+        )
 
 
 class BundleManifest:

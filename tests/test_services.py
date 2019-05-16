@@ -752,3 +752,175 @@ class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
                 self.event,
                 {"id": "1678-4596-cr", "metadata": metadata, "journal": mock.ANY},
             )
+
+
+class RegisterRenditionVersionTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services["register_rendition_version"]
+        self.event = services.Events.RENDITION_VERSION_REGISTERED
+        self.document = domain.Document(manifest=apptesting.manifest_data_fixture())
+        self.session.documents.add(self.document)
+
+    def test_register_rendition_version_returns_none(self):
+        self.assertIsNone(
+            self.command(
+                self.document.id(),
+                "0034-8910-rsp-48-2-0275-pt.pdf",
+                "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+                "application/pdf",
+                "pt",
+                23456,
+            )
+        )
+
+    def test_register_duplicated_rendition_version_raises_error(self):
+        self.command(
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            23456,
+        )
+        self.assertRaises(
+            exceptions.VersionAlreadySet,
+            self.command,
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            23456,
+        )
+
+    def test_register_new_rendition_version(self):
+        """Qualquer diferença em qualquer campo é suficiente para que seja
+        considerada uma nova versão válida.
+        """
+        self.command(
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            23456,
+        )
+        self.assertIsNone(
+            self.command(
+                self.document.id(),
+                "0034-8910-rsp-48-2-0275-pt.pdf",
+                "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt-v2.pdf",
+                "application/pdf",
+                "pt",
+                23456,
+            )
+        )
+
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(
+                self.document.id(),
+                "0034-8910-rsp-48-2-0275-pt.pdf",
+                "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+                "application/pdf",
+                "pt",
+                23456,
+            )
+            mock_notify.assert_called_once_with(
+                self.event,
+                {
+                    "document": mock.ANY,
+                    "id": self.document.id(),
+                    "filename": "0034-8910-rsp-48-2-0275-pt.pdf",
+                    "data_url": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+                    "mimetype": "application/pdf",
+                    "lang": "pt",
+                    "size_bytes": 23456,
+                },
+            )
+
+
+class FetchDocumentRenditionsTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services["fetch_document_renditions"]
+        self.document = domain.Document(manifest=apptesting.manifest_data_fixture())
+        self.session.documents.add(self.document)
+
+    def test_fetch_rendition(self):
+        self.services["register_rendition_version"](
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            23456,
+        )
+        renditions = self.command(self.document.id())
+        self.assertEqual(len(renditions), 1)
+        self.assertEqual(
+            renditions[0]["url"],
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+        )
+
+    def test_fetch_latest_version(self):
+        self.services["register_rendition_version"](
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            23456,
+        )
+        self.services["register_rendition_version"](
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/8ca9f9c1397cc/0035-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            234567,
+        )
+        renditions = self.command(self.document.id())
+        self.assertEqual(len(renditions), 1)
+        self.assertEqual(
+            renditions[0]["url"],
+            "/rawfiles/8ca9f9c1397cc/0035-8910-rsp-48-2-0275-pt.pdf",
+        )
+
+    def test_fetch_version_at(self):
+        self.services["register_rendition_version"](
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            23456,
+        )
+
+        now = services.utcnow()[:-8] + "Z"  # em segundos
+
+        datetime_patcher = mock.patch.object(
+            domain, "datetime", mock.Mock(wraps=datetime.datetime)
+        )
+        mocked_datetime = datetime_patcher.start()
+        # faz com que o timestamp da próxima versão seja do próximo ano
+        mocked_datetime.utcnow.return_value = datetime.datetime(
+            datetime.date.today().year + 1, 8, 5, 22, 34, 49, 795151
+        )
+        self.addCleanup(datetime_patcher.stop)
+
+        self.services["register_rendition_version"](
+            self.document.id(),
+            "0034-8910-rsp-48-2-0275-pt.pdf",
+            "/rawfiles/8ca9f9c1397cc/0035-8910-rsp-48-2-0275-pt.pdf",
+            "application/pdf",
+            "pt",
+            234567,
+        )
+        renditions = self.command(self.document.id(), version_at=now)
+        self.assertEqual(len(renditions), 1)
+        self.assertEqual(
+            renditions[0]["url"],
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
+        )

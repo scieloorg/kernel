@@ -124,6 +124,7 @@ def manifest_data_fixture():
                 },
                 "data": "https://ssm.scielo.br/tests/samples/0034-8910-rsp-48-2-0347.xml",
                 "timestamp": "2018-08-05T23:02:29.392990Z",
+                "renditions": [],
             },
             {
                 "assets": {
@@ -142,6 +143,7 @@ def manifest_data_fixture():
                 },
                 "data": "https://ssm.scielo.br/tests/samples/0034-8910-rsp-48-2-0347.xml",
                 "timestamp": "2018-11-16T23:02:29.392990Z",
+                "renditions": [],
             },
         ],
         "author": {"last.name": "Smith", "first.name": "Joshua"},
