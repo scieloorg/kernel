@@ -153,7 +153,7 @@ class FetchAssetsList(CommandHandler):
         return document.version(index=version_index)
 
 
-class RegisterAssetVersion(BaseRegisterDocument):
+class RegisterAssetVersion(CommandHandler):
     """Registra uma nova versão do ativo digital de documento já registrado.
 
     :param id: Identificador alfanumérico para o documento.
