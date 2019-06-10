@@ -17,7 +17,6 @@ RUN apk add --no-cache --virtual .build-deps \
         make gcc libxml2-dev libxslt-dev musl-dev g++ \
     && apk add libxml2 libxslt \
     && pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir gunicorn \
     && pip install --no-cache-dir raven \
     && pip install --no-cache-dir -r requirements.txt \
     && pip install --no-index --find-links=file:///deps -U scielo-documentstore \
