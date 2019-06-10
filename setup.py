@@ -32,6 +32,7 @@ setuptools.setup(
         "colander",
         "python-slugify",
         "scielo-clea>=0.3.0",
+        "waitress",
     ],
     test_suite="tests",
     classifiers=(
