@@ -344,7 +344,7 @@ class FetchChangeUnitTest(unittest.TestCase):
         since = restfulapi.fetch_changes(self.request)["results"][5]["timestamp"]
         self.request.GET["since"] = since
 
-        self.assertEqual(len(restfulapi.fetch_changes(self.request)["results"]), 5)
+        self.assertEqual(len(restfulapi.fetch_changes(self.request)["results"]), 4)
 
     def test_since_must_return_empty_result_list_with_unknown_value(self):
         self.make_documents(5)
@@ -361,7 +361,7 @@ class FetchChangeUnitTest(unittest.TestCase):
         self.request.GET["limit"] = 5
 
         self.assertEqual(
-            restfulapi.fetch_changes(self.request)["results"], changes[10:15]
+            restfulapi.fetch_changes(self.request)["results"], changes[11:16]
         )
 
 

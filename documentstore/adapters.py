@@ -169,7 +169,7 @@ class ChangesStore(interfaces.ChangesDataStore):
 
     def filter(self, since: str = "", limit: int = 500):
         return self._collection.find(
-            {"_id": {"$gte": since}},
+            {"_id": {"$gt": since}},
             sort=[("_id", pymongo.ASCENDING)],
             projection={"_id": False},
         ).limit(limit)
