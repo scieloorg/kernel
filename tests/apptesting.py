@@ -191,7 +191,7 @@ class InMemoryChangesDataStore(interfaces.ChangesDataStore):
         return [
             change
             for timestamp, change in self._data_store.items()
-            if timestamp >= since
+            if timestamp > since
         ][:limit]
 
 
@@ -208,11 +208,11 @@ class MongoDBCollectionStub:
             self._mongo_store[data["_id"]] = data
 
     def find(self, query, sort=None, projection=None):
-        since = query["_id"]["$gte"]
+        since = query["_id"]["$gt"]
 
         first = 0
         for i, change_key in enumerate(self._mongo_store):
-            if self._mongo_store[change_key]["_id"] < since:
+            if self._mongo_store[change_key]["_id"] <= since:
                 continue
             else:
                 first = i
