@@ -31,7 +31,7 @@ documentos.
 Durante a migração dos dados da coleção para uma instância do Kernel, todos
 os documentos deverão receber o novo PID, que no XML do documento será
 representado no elemento
-`/article/front/article-meta/article-id[@pub-id-type = "publisher-id" and @specific-use="scielo-id"]`.
+`/article/front/article-meta/article-id[@pub-id-type = "publisher-id" and @specific-use="scielo"]`.
 
 De maneira resumida, o novo PID do SciELO é o resultado da função
 `uuid.uuid4()`, como implementada na linguagem Python, representado em base 48.
