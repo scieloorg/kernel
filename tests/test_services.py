@@ -924,3 +924,27 @@ class FetchDocumentRenditionsTest(CommandTestMixin, unittest.TestCase):
             renditions[0]["url"],
             "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
         )
+
+
+class DeleteDocumentTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services["delete_document"]
+        self.document = domain.Document(manifest=apptesting.manifest_data_fixture())
+        self.session.documents.add(self.document)
+        self.event = services.Events.DOCUMENT_DELETED
+
+    def test_delete_document_returns_none(self):
+        self.assertIsNone(self.command(self.document.id()))
+
+    def test_raises_when_document_does_not_exist(self):
+        self.assertRaises(
+            exceptions.DoesNotExist, self.command, "inexistent-document-id"
+        )
+
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session, "notify") as mock_notify:
+            self.command(self.document.id())
+            mock_notify.assert_called_once_with(
+                self.event, {"document": mock.ANY, "id": self.document.id()}
+            )

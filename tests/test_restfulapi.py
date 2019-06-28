@@ -795,3 +795,25 @@ class RegisterDocumentVersionUnitTests(unittest.TestCase):
         )
         response = restfulapi.register_rendition_version(request)
         self.assertIsInstance(response, HTTPNoContent)
+
+
+class DeleteDocumentUnitTests(unittest.TestCase):
+    def test_when_doesnt_exist_returns_http_404(self):
+        request = make_request()
+        request.matchdict = {"document_id": "unknown"}
+        request.services["delete_document"] = Mock(side_effect=exceptions.DoesNotExist)
+        self.assertRaises(HTTPNotFound, restfulapi.delete_document, request)
+
+    def test_when_already_deleted_returns_HTTPNoContent(self):
+        request = make_request()
+        request.matchdict = {"document_id": "unknown"}
+        request.services["delete_document"] = Mock(
+            side_effect=exceptions.VersionAlreadySet
+        )
+        self.assertRaises(HTTPNoContent, restfulapi.delete_document, request)
+
+    def test_returns_HTTPNoContent_on_success(self):
+        request = make_request()
+        request.matchdict = {"document_id": "unknown"}
+        request.services["delete_document"] = Mock()
+        self.assertRaises(HTTPNoContent, restfulapi.delete_document, request)

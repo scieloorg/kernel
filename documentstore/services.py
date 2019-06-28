@@ -31,6 +31,7 @@ class Events(Enum):
     AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL = auto()
     AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL = auto()
     RENDITION_VERSION_REGISTERED = auto()
+    DOCUMENT_DELETED = auto()
 
 
 class CommandHandler:
@@ -111,6 +112,9 @@ class RegisterDocumentVersion(BaseRegisterDocument):
 class FetchDocumentData(CommandHandler):
     """Recupera o documento em XML à partir de seu identificador.
 
+    Levanta `documentstore.exceptions.DeletedVersion` caso o documento tenha
+    sido excluído.
+
     :param id: Identificador único do documento.
     :param version_index: (opcional) Número inteiro correspondente a versão do
     documento. Por padrão retorna a versão mais recente.
@@ -156,6 +160,9 @@ class FetchAssetsList(CommandHandler):
 class RegisterAssetVersion(CommandHandler):
     """Registra uma nova versão do ativo digital de documento já registrado.
 
+    Levanta `documentstore.exceptions.DeletedVersion` caso o documento tenha
+    sido excluído.
+
     :param id: Identificador alfanumérico para o documento.
     :param asset_id: Identificador alfanumérico para o ativo.
     :param asset_url: URL válida e publicamente acessível para o ativo digital.
@@ -180,6 +187,9 @@ class RegisterAssetVersion(CommandHandler):
 
 class DiffDocumentVersions(CommandHandler):
     """Compara duas versões do Documento.
+
+    Levanta `documentstore.exceptions.DeletedVersion` caso o documento, em
+    alguma das versões, tenha sido excluído.
 
     :param id: Identificador único do documento.
     :param from_version_at: string de texto de um timestamp UTC referente a
@@ -398,7 +408,8 @@ class RegisterRenditionVersion(CommandHandler):
     """Registra uma nova versão de uma manifestação do documento já registrado.
 
     Levanta a exceção `documentstore.exceptions.VersionAlreadySet` caso a versão
-    seja a mesma da última registrada.
+    seja a mesma da última registrada, e `documentstore.exceptions.DeletedVersion`
+    caso o documento tenha sido excluído.
 
     :param id: Identificador alfanumérico para o documento.
     :param filename: Nome do arquivo que corresponde à manifestação.
@@ -464,6 +475,21 @@ class FetchDocumentRenditions(CommandHandler):
         return version.get("renditions", [])
 
 
+class DeleteDocument(CommandHandler):
+    """Adiciona uma nova versão ao documento indicando sua exclusão.
+
+    :param id: Identificador único do documento.
+    """
+
+    def __call__(self, id: str) -> None:
+        session = self.Session()
+        document = session.documents.fetch(id)
+        document.new_deleted_version()
+        result = session.documents.update(document)
+        session.notify(Events.DOCUMENT_DELETED, {"document": document, "id": id})
+        return result
+
+
 def log_change(data, session, now=utcnow, entity="", deleted=False):
     change = {"timestamp": now(), "entity": entity, "id": data["id"]}
 
@@ -515,6 +541,10 @@ DEFAULT_SUBSCRIBERS = [
     (
         Events.RENDITION_VERSION_REGISTERED,
         functools.partial(log_change, entity="DocumentRendition"),
+    ),
+    (
+        Events.DOCUMENT_DELETED,
+        functools.partial(log_change, entity="Document", deleted=True),
     ),
 ]
 
@@ -572,4 +602,5 @@ def get_handlers(
         ),
         "register_rendition_version": RegisterRenditionVersion(SessionWrapper),
         "fetch_document_renditions": FetchDocumentRenditions(SessionWrapper),
+        "delete_document": DeleteDocument(SessionWrapper),
     }

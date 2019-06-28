@@ -27,3 +27,9 @@ class VersionAlreadySet(RetryableError):
     """Erro que representa a tentativa de definir uma nova versão idêntica a 
     anterior. 
     """
+
+
+class DeletedVersion(NonRetryableError):
+    """Erro que representa a tentativa de recuperar o XML de um documento
+    em uma versão que foi excluída.
+    """

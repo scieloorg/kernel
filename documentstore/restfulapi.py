@@ -9,6 +9,7 @@ from pyramid.httpexceptions import (
     HTTPNoContent,
     HTTPCreated,
     HTTPBadRequest,
+    HTTPGone,
 )
 from cornice import Service
 from cornice.validators import colander_body_validator
@@ -269,6 +270,13 @@ class DocumentSchema(colander.MappingSchema):
     querystring = QueryDocumentSchema()
 
 
+class DeleteDocumentSchema(colander.MappingSchema):
+    """Representa o schema de dados front do documento.
+    """
+
+    data = colander.SchemaNode(colander.String(), missing=colander.drop)
+
+
 class FrontDocumentSchema(colander.MappingSchema):
     """Representa o schema de dados front do documento.
     """
@@ -336,6 +344,8 @@ def fetch_document_data(request):
         )
     except (exceptions.DoesNotExist, ValueError) as exc:
         raise HTTPNotFound(exc)
+    except exceptions.DeletedVersion as exc:
+        raise HTTPGone(exc)
 
 
 @documents.put(
@@ -382,6 +392,29 @@ def put_document(request):
         return HTTPNoContent("document updated successfully")
     else:
         return HTTPCreated("document created successfully")
+
+
+@documents.delete(
+    schema=DeleteDocumentSchema(),
+    response_schemas={
+        "204": DeleteDocumentSchema(description="Documento excluído com sucesso"),
+        "404": DeleteDocumentSchema(description="Documento não encontrado"),
+    },
+)
+def delete_document(request):
+    """Adiciona uma nova versão ao documento indicando que o mesmo foi excluído.
+    """
+    try:
+        request.services["delete_document"](id=request.matchdict["document_id"])
+    except exceptions.DoesNotExist as exc:
+        raise HTTPNotFound(exc)
+    except exceptions.VersionAlreadySet as exc:
+        LOGGER.info(
+            'skipping request to add deleted version to "%s": %s',
+            request.matchdict["document_id"],
+            exc,
+        )
+    raise HTTPNoContent("document deleted successfully")
 
 
 @manifest.get(
@@ -506,6 +539,8 @@ def diff_document_versions(request):
         )
     except (exceptions.DoesNotExist, ValueError) as exc:
         raise HTTPNotFound(exc)
+    except exceptions.DeletedVersion as exc:
+        raise HTTPGone(exc)
 
 
 @front.get(
@@ -940,8 +975,8 @@ class PlainTextRenderer:
 
 DEFAULT_SETTINGS = [
     ("kernel.app.mongodb.dsn", "KERNEL_APP_MONGODB_DSN", str, "mongodb://db:27017/"),
-    ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True), 
-    ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087), 
+    ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True),
+    ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087),
 ]
 
 
