@@ -42,10 +42,12 @@ MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))
 BACKOFF_FACTOR = float(os.environ.get("KERNEL_LIB_BACKOFF_FACTOR", "1.2"))
 OBJECTSTORE_RESPONSE_TIME_SECONDS = Summary(
     "kernel_objectstore_response_time_seconds",
-    "Elapsed time between the request for an XML and the response")
+    "Elapsed time between the request for an XML and the response",
+)
 OBJECTSTORE_REQUEST_FAILURES_TOTAL = Counter(
     "kernel_objectstore_request_failures_total",
-    "Total number of exceptions raised when requesting for an XML from the object-store")
+    "Total number of exceptions raised when requesting for an XML from the object-store",
+)
 
 
 def utcnow():
@@ -143,6 +145,12 @@ class DocumentManifest:
         selected_rendition["data"].append(
             {"timestamp": now(), "url": data_uri, "size_bytes": size_bytes}
         )
+        return _manifest
+
+    @staticmethod
+    def add_deleted_version(manifest: dict, now: Callable[[], str] = utcnow) -> dict:
+        _manifest = deepcopy(manifest)
+        _manifest["versions"].append({"deleted": True, "timestamp": now()})
         return _manifest
 
 
@@ -309,16 +317,18 @@ class Document:
         except ValueError:
             latest_version = {"assets": {}}
 
-        return {
-            asset_key: latest_version["assets"].get(asset_key, "")
-            for asset_key in tolink
-        }
+        assets = latest_version.get("assets", {})
+
+        return {asset_key: assets.get(asset_key, "") for asset_key in tolink}
 
     def version(self, index=-1) -> dict:
         try:
             version = self.manifest["versions"][index]
         except IndexError:
             raise ValueError("missing version for index: %s" % index) from None
+
+        if version.get("deleted"):
+            return version
 
         def _latest(uris):
             try:
@@ -377,6 +387,9 @@ class Document:
             )
         except ValueError:
             raise ValueError("missing version for timestamp: %s" % timestamp) from None
+
+        if target_version.get("deleted"):
+            return target_version
 
         def _at_time(uris):
             try:
@@ -440,6 +453,10 @@ class Document:
         version = (
             self.version_at(version_at) if version_at else self.version(version_index)
         )
+
+        if version.get("deleted"):
+            raise exceptions.DeletedVersion("cannot get data: the document was deleted")
+
         xml_tree, data_assets = assets_getter(version["data"], timeout=timeout)
 
         version_assets = version["assets"]
@@ -458,6 +475,11 @@ class Document:
             latest_version = self.version()
         except ValueError:
             latest_version = {"assets": {}}
+
+        if latest_version.get("deleted"):
+            raise exceptions.DeletedVersion(
+                "cannot add version: the document is deleted"
+            )
 
         if latest_version.get("assets", {}).get(asset_id) == data_url:
             raise exceptions.VersionAlreadySet(
@@ -486,6 +508,11 @@ class Document:
         except ValueError:
             latest_version = {"renditions": []}
 
+        if latest_version.get("deleted"):
+            raise exceptions.DeletedVersion(
+                "cannot add version: the document is deleted"
+            )
+
         selected_rendition = [
             r
             for r in latest_version.get("renditions", [])
@@ -503,6 +530,21 @@ class Document:
         self.manifest = DocumentManifest.add_rendition_version(
             self._manifest, filename, data_url, mimetype, lang, size_bytes
         )
+
+    def new_deleted_version(self) -> None:
+        """Adiciona uma nova versão que indica que o documento foi removido.
+        """
+        try:
+            latest_version = self.version()
+        except ValueError:
+            latest_version = {}
+
+        if latest_version.get("deleted"):
+            raise exceptions.VersionAlreadySet(
+                "could not add deleted version: the document is already deleted"
+            )
+
+        self.manifest = DocumentManifest.add_deleted_version(self._manifest)
 
 
 class BundleManifest:

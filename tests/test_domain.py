@@ -118,6 +118,29 @@ SAMPLE_MANIFEST_WITH_RENDITIONS = {
         },
     ],
 }
+SAMPLE_MANIFEST_WITH_DELETIONS = {
+    "id": "0034-8910-rsp-48-2-0275",
+    "versions": [
+        {
+            "data": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275.xml",
+            "assets": {
+                "0034-8910-rsp-48-2-0275-gf01.gif": [
+                    (
+                        "2018-08-05T23:03:44.971230Z",
+                        "/rawfiles/8e644999a8fa4/0034-8910-rsp-48-2-0275-gf01.gif",
+                    ),
+                    (
+                        "2018-08-05T23:08:41.590174Z",
+                        "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-gf01.gif",
+                    ),
+                ]
+            },
+            "timestamp": "2018-08-05T23:02:29.392990Z",
+            "renditions": [],
+        },
+        {"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"},
+    ],
+}
 
 
 def fake_utcnow():
@@ -205,6 +228,11 @@ class DocumentTests(unittest.TestCase):
             "renditions": [],
         }
         self.assertEqual(oldest, expected)
+
+    def test_version_of_deleted_document(self):
+        document = domain.Document(manifest=SAMPLE_MANIFEST_WITH_DELETIONS)
+        expected = {"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}
+        self.assertEqual(document.version(), expected)
 
     def test_new_version_automaticaly_references_latest_known_assets(self):
         manifest = {
@@ -295,6 +323,11 @@ class DocumentTests(unittest.TestCase):
             ValueError, lambda: document.version_at("2018-08-05 23:03:44")
         )
 
+    def test_version_at_of_deleted_document(self):
+        document = domain.Document(manifest=SAMPLE_MANIFEST_WITH_DELETIONS)
+        expected = {"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}
+        self.assertEqual(document.version_at("2018-08-05T23:30:29Z"), expected)
+
     def test_add_new_rendition(self):
         document = self.make_one()
         self.assertEqual(len(document.version()["renditions"]), 0)
@@ -363,6 +396,22 @@ class DocumentTests(unittest.TestCase):
             798765,
         )
 
+    def test_add_new_rendition_raises_if_version_is_deleted(self):
+        sample_manifest = {
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [{"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}],
+        }
+        document = domain.Document(manifest=sample_manifest)
+        self.assertRaises(
+            exceptions.DeletedVersion,
+            document.new_rendition_version,
+            "0034-8910-rsp-48-2-0275-en.pdf",
+            "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-en.pdf",
+            "application/pdf",
+            "en",
+            798765,
+        )
+
     def test_get_latest_renditions_of_latest_version(self):
         expected = [
             {
@@ -417,6 +466,35 @@ class DocumentTests(unittest.TestCase):
         self.assertEqual(
             document.version_at("2018-08-05T23:40:00Z")["renditions"], expected
         )
+
+    def test_raises_when_try_to_get_data_from_deleted_document(self):
+        sample_manifest = {
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [{"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}],
+        }
+        document = domain.Document(manifest=sample_manifest)
+        self.assertRaises(exceptions.DeletedVersion, document.data)
+
+    def test_raises_when_try_to_add_asset_version_to_deleted_document(self):
+        sample_manifest = {
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [{"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}],
+        }
+        document = domain.Document(manifest=sample_manifest)
+        self.assertRaises(
+            exceptions.DeletedVersion,
+            document.new_asset_version,
+            "0034-8910-rsp-48-2-0275-v2.gif",
+            "/rawfiles/bf139b9aa3066/0034-8910-rsp-48-2-0275-v2.gif",
+        )
+
+    def test_raises_when_try_to_delete_a_deleted_document(self):
+        sample_manifest = {
+            "id": "0034-8910-rsp-48-2-0275",
+            "versions": [{"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}],
+        }
+        document = domain.Document(manifest=sample_manifest)
+        self.assertRaises(exceptions.VersionAlreadySet, document.new_deleted_version)
 
 
 class BundleManifestTest(UnittestMixin, unittest.TestCase):
