@@ -48,7 +48,9 @@ def tween_factory(handler, registry):
             )
             if response:
                 RESPONSE_SIZE_BYTES.labels(route_pattern).observe(
+                    # content_length é None em casos de exceção
                     response.content_length
+                    or 0
                 )
             REQUESTS_INPROGRESS.dec()
 
