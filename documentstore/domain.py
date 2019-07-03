@@ -293,11 +293,7 @@ class Document:
         ``NonRetryableError`` para representar problemas no acesso aos dados
         do XML.
         """
-        try:
-            latest_version = self.version()
-        except ValueError:
-            latest_version = {"data": ""}
-
+        latest_version = self._latest_or_default()
         if latest_version.get("data") == data_url:
             raise exceptions.VersionAlreadySet(
                 "could not add version: the version is equal to the latest one"
@@ -312,13 +308,8 @@ class Document:
         """Retorna um mapa entre as chaves dos ativos em `tolink` e as
         referências já existentes na última versão.
         """
-        try:
-            latest_version = self.version()
-        except ValueError:
-            latest_version = {"assets": {}}
-
+        latest_version = self._latest_or_default()
         assets = latest_version.get("assets", {})
-
         return {asset_key: assets.get(asset_key, "") for asset_key in tolink}
 
     def version(self, index=-1) -> dict:
@@ -466,20 +457,28 @@ class Document:
 
         return etree.tostring(xml_tree, encoding="utf-8", pretty_print=False)
 
+    def _latest_or_default(self):
+        try:
+            return self.version()
+        except ValueError:
+            return {}
+
+    def _latest_if_not_deleted(self, exception):
+        latest_version = self._latest_or_default()
+
+        if latest_version.get("deleted"):
+            raise exception
+        else:
+            return latest_version
+
     def new_asset_version(self, asset_id, data_url) -> None:
         """Adiciona `data_url` como uma nova versão do ativo `asset_id` vinculado
         a versão mais recente do documento. É importante notar que nenhuma validação
         será executada em `data_url`.
         """
-        try:
-            latest_version = self.version()
-        except ValueError:
-            latest_version = {"assets": {}}
-
-        if latest_version.get("deleted"):
-            raise exceptions.DeletedVersion(
-                "cannot add version: the document is deleted"
-            )
+        latest_version = self._latest_if_not_deleted(
+            exceptions.DeletedVersion("cannot add version: the document is deleted")
+        )
 
         if latest_version.get("assets", {}).get(asset_id) == data_url:
             raise exceptions.VersionAlreadySet(
@@ -503,15 +502,9 @@ class Document:
         documento. É importante notar que nenhuma validação será executada em 
         `data_url`, `mimetype` ou `size_bytes`.
         """
-        try:
-            latest_version = self.version()
-        except ValueError:
-            latest_version = {"renditions": []}
-
-        if latest_version.get("deleted"):
-            raise exceptions.DeletedVersion(
-                "cannot add version: the document is deleted"
-            )
+        latest_version = self._latest_if_not_deleted(
+            exceptions.DeletedVersion("cannot add version: the document is deleted")
+        )
 
         selected_rendition = [
             r
@@ -534,15 +527,11 @@ class Document:
     def new_deleted_version(self) -> None:
         """Adiciona uma nova versão que indica que o documento foi removido.
         """
-        try:
-            latest_version = self.version()
-        except ValueError:
-            latest_version = {}
-
-        if latest_version.get("deleted"):
-            raise exceptions.VersionAlreadySet(
+        latest_version = self._latest_if_not_deleted(
+            exceptions.VersionAlreadySet(
                 "could not add deleted version: the document is already deleted"
             )
+        )
 
         self.manifest = DocumentManifest.add_deleted_version(self._manifest)
 
