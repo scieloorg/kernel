@@ -70,6 +70,12 @@ bundles = Service(
     description="Get documents bundle data.",
 )
 
+bundles_add_document = Service(
+    name="bundles_add_document",
+    path="/bundles/{bundle_id}/documents",
+    description="Add documents in documents bundle.",
+)
+
 changes = Service(
     name="changes", path="/changes", description="Get changes from all entities"
 )
@@ -227,6 +233,13 @@ class DocumentsBundleSchema(colander.MappingSchema):
                 colander.String(), validator=colander.Length(2, 2)
             )
             value = colander.SchemaNode(colander.String(), validator=colander.Length(1))
+
+
+class AddDocumentInDocumentsBundleSchema(colander.MappingSchema):
+    """Representa o schema de dados para registro o relacionamento de documento no 
+    Documents Bundle."""
+
+    doc = colander.SchemaNode(colander.String(), missing=colander.drop)
 
 
 class QueryChangeSchema(colander.MappingSchema):
@@ -627,6 +640,48 @@ def patch_documents_bundle(request):
         return HTTPNotFound(str(exc))
     else:
         return HTTPNoContent("bundle updated successfully")
+
+
+@bundles_add_document.post(
+    schema=AddDocumentInDocumentsBundleSchema(),
+    response_schemas={
+        "204": AddDocumentInDocumentsBundleSchema(
+            description="Documents Bundle atualizado com sucesso."
+        ),
+        "404": AddDocumentInDocumentsBundleSchema(description="Documents Bundle não encontrado."),
+    },
+    validators=(colander_body_validator,),
+    accept="application/json",
+    renderer="json",
+)
+def add_document_documents_bundle(request):
+    try:
+        request.services["add_document_to_documents_bundle"](
+            request.matchdict["bundle_id"], doc=request.validated
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
+    else:
+        return HTTPNoContent("document added in bundle successfully")
+
+
+def insert_document_documents_bundle(request):
+    try:
+        request.services["insert_document_to_documents_bundle"](
+            request.matchdict["bundle_id"], **request.validated
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
+    else:
+        return HTTPNoContent(
+            "document insert in bundle in position %s successfully" % (request.POST.get("index",'1'))
+        )
+
+
+
+
+
+
 
 
 @changes.get(
