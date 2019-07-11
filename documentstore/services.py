@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, List
 import difflib
 import functools
 from io import BytesIO
@@ -8,6 +8,7 @@ from clea import join as clea_join, core as clea_core
 
 from .interfaces import Session
 from .domain import Document, DocumentsBundle, Journal, utcnow
+from .exceptions import DoesNotExist, AlreadyExists
 
 __all__ = ["get_handlers"]
 
@@ -28,6 +29,7 @@ class Events(Enum):
     ISSUE_ADDED_TO_JOURNAL = auto()
     ISSUE_INSERTED_TO_JOURNAL = auto()
     ISSUE_REMOVED_FROM_JOURNAL = auto()
+    JOURNAL_ISSUES_UPDATED = auto()
     AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL = auto()
     AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL = auto()
     RENDITION_VERSION_REGISTERED = auto()
@@ -355,6 +357,27 @@ class InsertIssueToJournal(CommandHandler):
         )
 
 
+class UpdateIssuesInJournal(CommandHandler):
+    """Atualiza a lista de issues de um Journal removendo todos os itens
+    anteriormente associados"""
+
+    def __call__(self, id: str, issues: List[str]) -> None:
+        session = self.Session()
+        _journal = session.journals.fetch(id)
+
+        for issue in _journal.issues:
+            _journal.remove_issue(issue)
+
+        for issue in issues:
+            _journal.add_issue(issue)
+
+        session.journals.update(_journal)
+        session.notify(
+            Events.JOURNAL_ISSUES_UPDATED,
+            {"journal": _journal, "id": id, "issues": issues},
+        )
+
+
 class RemoveIssueFromJournal(CommandHandler):
     def __call__(self, id: str, issue: str) -> None:
         session = self.Session()
@@ -546,6 +569,7 @@ DEFAULT_SUBSCRIBERS = [
         Events.DOCUMENT_DELETED,
         functools.partial(log_change, entity="Document", deleted=True),
     ),
+    (Events.JOURNAL_ISSUES_UPDATED, functools.partial(log_change, entity="Journal")),
 ]
 
 
@@ -593,6 +617,7 @@ def get_handlers(
         "add_issue_to_journal": AddIssueToJournal(SessionWrapper),
         "insert_issue_to_journal": InsertIssueToJournal(SessionWrapper),
         "remove_issue_from_journal": RemoveIssueFromJournal(SessionWrapper),
+        "update_issues_in_journal": UpdateIssuesInJournal(SessionWrapper),
         "fetch_changes": FetchChanges(SessionWrapper),
         "set_ahead_of_print_bundle_to_journal": SetAheadOfPrintBundleToJournal(
             SessionWrapper
