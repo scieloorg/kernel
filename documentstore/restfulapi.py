@@ -10,6 +10,7 @@ from pyramid.httpexceptions import (
     HTTPCreated,
     HTTPBadRequest,
     HTTPGone,
+    HTTPUnprocessableEntity,
 )
 from cornice import Service
 from cornice.validators import colander_body_validator
@@ -303,6 +304,13 @@ class JournalIssuesSchema(colander.MappingSchema):
 
     issue = colander.SchemaNode(colander.String())
     index = colander.SchemaNode(colander.Int(), missing=colander.drop)
+
+
+class JournalIssuesReplaceSchema(colander.SequenceSchema):
+    """Representa o schema de dados utilizado durante a atualização
+    da lista completa de fascículos de um periódico"""
+
+    issue = colander.SchemaNode(colander.String())
 
 
 class DeleteJournalIssuesSchema(colander.MappingSchema):
@@ -848,6 +856,36 @@ def patch_journal_issues(request):
         return HTTPNoContent("issue added to journal successfully.")
     else:
         return HTTPNoContent("issue added to journal successfully.")
+
+
+@journal_issues.put(
+    schema=JournalIssuesReplaceSchema(),
+    validators=(colander_body_validator,),
+    response_schemas={
+        "204": JournalIssuesReplaceSchema(
+            description="Lista de fascículos atualizada com sucesso"
+        ),
+        "422": JournalIssuesReplaceSchema(
+            description="Erro ao atualizar a lista de issues. Payload com conteúdo inválido."
+        ),
+        "404": JournalIssuesReplaceSchema(description="Periódico não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def put_journal_issues(request):
+    try:
+        request.services["update_issues_in_journal"](
+            id=request.matchdict["journal_id"], issues=request.validated
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(str(exc))
+    except exceptions.AlreadyExists as exc:
+        return HTTPUnprocessableEntity(
+            explanation="cannot process the request with duplicated items."
+        )
+
+    return HTTPNoContent("issues list updated successfully.")
 
 
 @journals_aop.patch(
