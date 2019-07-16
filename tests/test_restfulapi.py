@@ -297,6 +297,63 @@ class PatchDocumentsBundleTest(unittest.TestCase):
         self.assertIsInstance(response, HTTPNoContent)
 
 
+class PutDocumentsBundleDocumentTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route(
+            "bundles_documents", pattern="/bundles/{bundle_id}/documents"
+        )
+
+        # register a issue
+        self.request.matchdict = {"bundle_id": "example-bundle-id"}
+        self.request.validated = apptesting.documents_bundle_registry_data_fixture()
+        restfulapi.put_documents_bundle(self.request)
+
+    def test_should_call_update_documents_in_issues(self):
+        self.request.matchdict["bundle_id"] = "example-bundle-id"
+        self.request.validated = ["doc-1", "doc-2"]
+        MockUpdateDocumentsInIssues = Mock()
+        self.request.services[
+            "update_documents_in_documents_bundle"
+        ] = MockUpdateDocumentsInIssues
+        restfulapi.put_bundles_documents(self.request)
+        MockUpdateDocumentsInIssues.assert_called_once_with(
+            id="example-bundle-id", docs=["doc-1", "doc-2"]
+        )
+
+    def test_should_return_422_if_already_exists_exception_is_raised(self):
+        self.request.matchdict["bundle_id"] = "example-bundle-id"
+        self.request.validated = ["doc-1", "doc-1"]
+        response = restfulapi.put_bundles_documents(self.request)
+        self.assertIsInstance(response, HTTPUnprocessableEntity)
+
+    def test_should_not_update_if_already_exists_exception_is_raised(self):
+        self.request.matchdict["bundle_id"] = "example-bundle-id"
+        self.request.validated = ["doc-1", "doc-1"]
+        restfulapi.put_bundles_documents(self.request)
+        response = restfulapi.fetch_documents_bundle(self.request)
+        self.assertEqual([], response.get("items"))
+
+    def test_should_return_404_if_bundle_not_found(self):
+        self.request.matchdict["bundle_id"] = "example-bundle-id"
+        self.request.validated = ["doc-1"]
+        MockUpdateDocumentsInIssues = Mock(
+            side_effect=exceptions.DoesNotExist("Does Not Exist")
+        )
+        self.request.services[
+            "update_documents_in_documents_bundle"
+        ] = MockUpdateDocumentsInIssues
+        response = restfulapi.put_bundles_documents(self.request)
+        self.assertIsInstance(response, HTTPNotFound)
+
+    def test_should_return_204_if_bundle_issues_was_updated(self):
+        self.request.matchdict["bundle_id"] = "example-bundle-id"
+        self.request.validated = ["doc-1"]
+        response = restfulapi.put_bundles_documents(self.request)
+        self.assertIsInstance(response, HTTPNoContent)
+
+
 class FetchChangeUnitTest(unittest.TestCase):
     def setUp(self):
         self.request = make_request()
