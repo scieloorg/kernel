@@ -11,6 +11,7 @@ from pyramid.httpexceptions import (
     HTTPCreated,
     HTTPNoContent,
     HTTPBadRequest,
+    HTTPUnprocessableEntity,
 )
 
 from documentstore import services, restfulapi, exceptions
@@ -549,6 +550,58 @@ class PatchJournalIssuesTest(unittest.TestCase):
                 self.request.services[command] = MockPatchJournal
                 response = restfulapi.patch_journal_issues(self.request)
                 self.assertIsInstance(response, HTTPNoContent)
+
+
+class PutJournalIssuesTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("journals", pattern="/journals/{journal_id}")
+        self.config.add_route("journals", pattern="/journals/{journals_id}/issues")
+
+        # register a journal
+        self.request.matchdict = {"journal_id": "example-journal-id"}
+        self.request.validated = apptesting.journal_registry_fixture()
+        restfulapi.put_journal(self.request)
+
+    def test_should_call_update_issues_in_journal(self):
+        self.request.matchdict["journal_id"] = "example-journal-id"
+        self.request.validated = ["issue-1", "issue-2"]
+        MockUpdateIssuesInJournal = Mock()
+        self.request.services["update_issues_in_journal"] = MockUpdateIssuesInJournal
+        restfulapi.put_journal_issues(self.request)
+        MockUpdateIssuesInJournal.assert_called_once_with(
+            id="example-journal-id", issues=["issue-1", "issue-2"]
+        )
+
+    def test_should_return_422_if_already_exists_exception_is_raised(self):
+        self.request.matchdict["journal_id"] = "example-journal-id"
+        self.request.validated = ["issue-1", "issue-1"]
+        response = restfulapi.put_journal_issues(self.request)
+        self.assertIsInstance(response, HTTPUnprocessableEntity)
+
+    def test_should_not_update_if_already_exists_exception_is_raised(self):
+        self.request.matchdict["journal_id"] = "example-journal-id"
+        self.request.validated = ["issue-1", "issue-1"]
+        restfulapi.put_journal_issues(self.request)
+        response = restfulapi.get_journal(self.request)
+        self.assertEqual([], response.get("items"))
+
+    def test_should_return_404_if_journal_not_found(self):
+        self.request.matchdict["journal_id"] = "example-journal-id"
+        self.request.validated = ["issue-1"]
+        MockUpdateIssuesInJournal = Mock(
+            side_effect=exceptions.DoesNotExist("Does Not Exist")
+        )
+        self.request.services["update_issues_in_journal"] = MockUpdateIssuesInJournal
+        response = restfulapi.put_journal_issues(self.request)
+        self.assertIsInstance(response, HTTPNotFound)
+
+    def test_should_return_204_if_journal_issues_was_updated(self):
+        self.request.matchdict["journal_id"] = "example-journal-id"
+        self.request.validated = ["issue-1"]
+        response = restfulapi.put_journal_issues(self.request)
+        self.assertIsInstance(response, HTTPNoContent)
 
 
 class DeleteJournalIssuesSchemaTest(unittest.TestCase):

@@ -525,6 +525,79 @@ class RemoveIssueFromJournalTest(CommandTestMixin, unittest.TestCase):
                 )
 
 
+class UpdateIssuesInJournalTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services.get("update_issues_in_journal")
+        self.event = services.Events.JOURNAL_ISSUES_UPDATED
+        create_journal_command = self.services.get("create_journal")
+        create_journal_command(id="journal-example-id")
+
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
+
+    def test_raises_does_not_exists_if_journal_not_found(self):
+        self.assertRaises(
+            exceptions.DoesNotExist, self.command, id="not-found-journal", issues=[]
+        )
+
+    def test_issues_list_should_be_updated(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.issues = ["a", "b", "c"]
+            JournalStub.add_issue = mock.Mock()
+            JournalStub.remove_issue = mock.Mock()
+            mock_fetch.return_value = JournalStub
+
+            self.command(id="journal-example-id", issues=["d"])
+            JournalStub.remove_issue.assert_has_calls(
+                [mock.call("a"), mock.call("b"), mock.call("c")]
+            )
+            JournalStub.add_issue.assert_called_once_with("d")
+
+    def test_raises_already_exists_if_duplicated_are_in_list(self):
+        self.assertRaises(
+            exceptions.AlreadyExists,
+            self.command,
+            id="journal-example-id",
+            issues=["a", "a", "b", "a", "b"]
+        )
+
+    def test_should_call_update_journal(self):
+        with mock.patch.object(self.session.journals, "update") as mock_update:
+            self.command(id="journal-example-id", issues=["a"])
+            mock_update.assert_called_once()
+
+    def test_should_empty_journal_issues(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.issues = ["a"]
+            JournalStub.add_issue = mock.Mock()
+            JournalStub.remove_issue = mock.Mock()
+            mock_fetch.return_value = JournalStub
+
+            self.command(id="journal-example-id", issues=[])
+            JournalStub.remove_issue.assert_has_calls([mock.call("a")])
+            JournalStub.add_issue.assert_not_called()
+
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
+            JournalStub = mock.Mock(spec=domain.Journal)
+            JournalStub.issues = []
+            mock_fetch.return_value = JournalStub
+
+            with mock.patch.object(self.session, "notify") as mock_notify:
+                self.command(id="journal-example-id", issues=["a"])
+                mock_notify.assert_called_once_with(
+                    self.event,
+                    {
+                        "journal": JournalStub,
+                        "id": "journal-example-id",
+                        "issues": ["a"],
+                    },
+                )
+
+
 class SetAheadOfPrintBundleToJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
