@@ -40,3 +40,4 @@ nosetests.xml
 
 # Local app
 datadir
+.DS_Store

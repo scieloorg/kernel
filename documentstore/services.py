@@ -29,6 +29,7 @@ class Events(Enum):
     ISSUE_ADDED_TO_JOURNAL = auto()
     ISSUE_INSERTED_TO_JOURNAL = auto()
     ISSUE_REMOVED_FROM_JOURNAL = auto()
+    ISSUE_DOCUMENTS_UPDATED = auto()
     JOURNAL_ISSUES_UPDATED = auto()
     AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL = auto()
     AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL = auto()
@@ -293,6 +294,26 @@ class InsertDocumentToDocumentsBundle(CommandHandler):
         session.notify(
             Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
             {"bundle": _bundle, "id": id, "index": index, "doc": doc},
+        )
+
+
+class UpdateDocumentInDocumentsBundle(CommandHandler):
+    """Atualiza a lista de documentos de uma Issue removendo todos os itens
+    anteriormente associados"""
+
+    def __call__(self, id: str, docs: List[str]) -> None:
+        session = self.Session()
+        _bundle = session.documents_bundles.fetch(id)
+
+        for doc in _bundle.documents:
+            _bundle.remove_document(doc)
+
+        for doc in docs:
+            _bundle.add_document(doc)
+
+        session.documents_bundles.update(_bundle)
+        session.notify(
+            Events.ISSUE_DOCUMENTS_UPDATED, {"bundle": _bundle, "id": id, "docs": docs}
         )
 
 
@@ -570,6 +591,10 @@ DEFAULT_SUBSCRIBERS = [
         functools.partial(log_change, entity="Document", deleted=True),
     ),
     (Events.JOURNAL_ISSUES_UPDATED, functools.partial(log_change, entity="Journal")),
+    (
+        Events.ISSUE_DOCUMENTS_UPDATED,
+        functools.partial(log_change, entity="DocumentsBundle"),
+    ),
 ]
 
 
@@ -609,6 +634,9 @@ def get_handlers(
             SessionWrapper
         ),
         "insert_document_to_documents_bundle": InsertDocumentToDocumentsBundle(
+            SessionWrapper
+        ),
+        "update_documents_in_documents_bundle": UpdateDocumentInDocumentsBundle(
             SessionWrapper
         ),
         "create_journal": CreateJournal(SessionWrapper),

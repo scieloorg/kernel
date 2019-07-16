@@ -272,6 +272,79 @@ class InsertDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
             )
 
 
+class UpdateDocumentInDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services.get("update_documents_in_documents_bundle")
+        self.event = services.Events.ISSUE_DOCUMENTS_UPDATED
+        create_documents_bundle_command = self.services.get("create_documents_bundle")
+        create_documents_bundle_command(id="issue-example-id")
+
+    def test_event(self):
+        self.assertIn(self.event, self.SUBSCRIBERS_EVENTS)
+
+    def test_raises_does_not_exists_if_journal_not_found(self):
+        self.assertRaises(
+            exceptions.DoesNotExist, self.command, id="not-found-issue", docs=[]
+        )
+
+    def test_issues_list_should_be_updated(self):
+        with mock.patch.object(self.session.documents_bundles, "fetch") as mock_fetch:
+            DocumentsBundleStub = mock.Mock(spec=domain.DocumentsBundle)
+            DocumentsBundleStub.documents = ["a", "b", "c"]
+            DocumentsBundleStub.add_document = mock.Mock()
+            DocumentsBundleStub.remove_document = mock.Mock()
+            mock_fetch.return_value = DocumentsBundleStub
+
+            self.command(id="issue-example-id", docs=["d"])
+            DocumentsBundleStub.remove_document.assert_has_calls(
+                [mock.call("a"), mock.call("b"), mock.call("c")]
+            )
+            DocumentsBundleStub.add_document.assert_called_once_with("d")
+
+    def test_raises_already_exists_if_duplicated_are_in_list(self):
+        self.assertRaises(
+            exceptions.AlreadyExists,
+            self.command,
+            id="issue-example-id",
+            docs=["a", "a", "b", "a", "b"],
+        )
+
+    def test_should_call_update_issue(self):
+        with mock.patch.object(self.session.documents_bundles, "update") as mock_update:
+            self.command(id="issue-example-id", docs=["a"])
+            mock_update.assert_called_once()
+
+    def test_should_empty_bundle_document(self):
+        with mock.patch.object(self.session.documents_bundles, "fetch") as mock_fetch:
+            DocumentsBundleStub = mock.Mock(spec=domain.DocumentsBundle)
+            DocumentsBundleStub.documents = ["a"]
+            DocumentsBundleStub.add_document = mock.Mock()
+            DocumentsBundleStub.remove_document = mock.Mock()
+            mock_fetch.return_value = DocumentsBundleStub
+
+            self.command(id="issue-example-id", docs=[])
+            DocumentsBundleStub.remove_document.assert_has_calls([mock.call("a")])
+            DocumentsBundleStub.add_document.assert_not_called()
+
+    def test_command_notify_event(self):
+        with mock.patch.object(self.session.documents_bundles, "fetch") as mock_fetch:
+            DocumentsBundleStub = mock.Mock(spec=domain.DocumentsBundle)
+            DocumentsBundleStub.documents = []
+            mock_fetch.return_value = DocumentsBundleStub
+
+            with mock.patch.object(self.session, "notify") as mock_notify:
+                self.command(id="issue-example-id", docs=["a"])
+                mock_notify.assert_called_once_with(
+                    self.event,
+                    {
+                        "bundle": DocumentsBundleStub,
+                        "id": "issue-example-id",
+                        "docs": ["a"],
+                    },
+                )
+
+
 class CreateJournalTest(CommandTestMixin, unittest.TestCase):
     def setUp(self):
         self.services, self.session = make_services()
@@ -560,7 +633,7 @@ class UpdateIssuesInJournalTest(CommandTestMixin, unittest.TestCase):
             exceptions.AlreadyExists,
             self.command,
             id="journal-example-id",
-            issues=["a", "a", "b", "a", "b"]
+            issues=["a", "a", "b", "a", "b"],
         )
 
     def test_should_call_update_journal(self):

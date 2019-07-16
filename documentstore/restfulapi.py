@@ -71,10 +71,10 @@ bundles = Service(
     description="Get documents bundle data.",
 )
 
-bundles_add_document = Service(
-    name="bundles_add_document",
+bundles_documents = Service(
+    name="bundles_documents",
     path="/bundles/{bundle_id}/documents",
-    description="Add documents in documents bundle.",
+    description="Documents updation to documents bundle.",
 )
 
 changes = Service(
@@ -236,11 +236,11 @@ class DocumentsBundleSchema(colander.MappingSchema):
             value = colander.SchemaNode(colander.String(), validator=colander.Length(1))
 
 
-class AddDocumentInDocumentsBundleSchema(colander.MappingSchema):
+class DocumentsBundleDocumentsReplaceSchema(colander.SequenceSchema):
     """Representa o schema de dados para registro o relacionamento de documento no 
     Documents Bundle."""
 
-    doc = colander.SchemaNode(colander.String(), missing=colander.drop)
+    docs = colander.SchemaNode(colander.String())
 
 
 class QueryChangeSchema(colander.MappingSchema):
@@ -650,46 +650,36 @@ def patch_documents_bundle(request):
         return HTTPNoContent("bundle updated successfully")
 
 
-@bundles_add_document.post(
-    schema=AddDocumentInDocumentsBundleSchema(),
-    response_schemas={
-        "204": AddDocumentInDocumentsBundleSchema(
-            description="Documents Bundle atualizado com sucesso."
-        ),
-        "404": AddDocumentInDocumentsBundleSchema(description="Documents Bundle não encontrado."),
-    },
+@bundles_documents.put(
+    schema=DocumentsBundleDocumentsReplaceSchema(),
     validators=(colander_body_validator,),
+    response_schemas={
+        "204": DocumentsBundleDocumentsReplaceSchema(
+            description="Lista de documentos atualizada com sucesso"
+        ),
+        "422": DocumentsBundleDocumentsReplaceSchema(
+            description="Erro ao atualizar a lista de documetos. Payload com conteúdo inválido."
+        ),
+        "404": DocumentsBundleDocumentsReplaceSchema(
+            description="Fascículo não encontrado"
+        ),
+    },
     accept="application/json",
     renderer="json",
 )
-def add_document_documents_bundle(request):
+def put_bundles_documents(request):
     try:
-        request.services["add_document_to_documents_bundle"](
-            request.matchdict["bundle_id"], doc=request.validated
+        request.services["update_documents_in_documents_bundle"](
+            id=request.matchdict["bundle_id"], docs=request.validated
         )
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))
-    else:
-        return HTTPNoContent("document added in bundle successfully")
-
-
-def insert_document_documents_bundle(request):
-    try:
-        request.services["insert_document_to_documents_bundle"](
-            request.matchdict["bundle_id"], **request.validated
-        )
-    except exceptions.DoesNotExist as exc:
-        return HTTPNotFound(str(exc))
-    else:
-        return HTTPNoContent(
-            "document insert in bundle in position %s successfully" % (request.POST.get("index",'1'))
+    except exceptions.AlreadyExists as exc:
+        return HTTPUnprocessableEntity(
+            explanation="cannot process the request with duplicated items."
         )
 
-
-
-
-
-
+    return HTTPNoContent("documents list updated successfully.")
 
 
 @changes.get(
