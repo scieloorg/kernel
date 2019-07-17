@@ -74,7 +74,7 @@ bundles = Service(
 bundles_documents = Service(
     name="bundles_documents",
     path="/bundles/{bundle_id}/documents",
-    description="Documents updation to documents bundle.",
+    description="Update documents of documents bundle.",
 )
 
 changes = Service(
