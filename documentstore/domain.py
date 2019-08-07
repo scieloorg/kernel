@@ -577,13 +577,35 @@ class BundleManifest:
         return bundle["metadata"].get(name, [])
 
     @staticmethod
-    def add_item(bundle: dict, item: str, now: Callable[[], str] = utcnow) -> dict:
-        if item in bundle["items"]:
+    def get_item(bundle: dict, id: str) -> dict:
+        """Recupera um item a partir de um identificador"""
+
+        for item in bundle["items"]:
+            if id == item["id"]:
+                return item
+
+    @staticmethod
+    def add_item(bundle: dict, item: dict, now: Callable[[], str] = utcnow) -> dict:
+
+        try:
+            _item = dict(item)
+            _id = _item["id"]
+        except ValueError:
+            raise ValueError(
+                "cannot add this item " '"%s": item must be dict' % item
+            ) from None
+        except KeyError:
+            raise KeyError(
+                "cannot add this item " '"%s": item must contain id key' % item
+            ) from None
+
+        if BundleManifest.get_item(bundle, _id) is not None:
             raise exceptions.AlreadyExists(
-                'cannot add item "%s" in bundle: ' "the item already exists" % item
+                'cannot add item "%s" in bundle: ' "the item id already exists" % _id
             )
+
         _bundle = deepcopy(bundle)
-        _bundle["items"].append(item)
+        _bundle["items"].append(_item)
         _bundle["updated"] = now()
         return _bundle
 
