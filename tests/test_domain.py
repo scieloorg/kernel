@@ -744,13 +744,13 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, {"id": "/documents/0034-8910-rsp-48-2-0775"}
         )
         documents_bundle = domain.BundleManifest.insert_item(
-            documents_bundle, 0, "/documents/0034-8910-rsp-48-2-0275"
+            documents_bundle, 0, {"id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertEqual(
-            documents_bundle["items"][0], "/documents/0034-8910-rsp-48-2-0275"
+            documents_bundle["items"][0], {"id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertEqual(
-            documents_bundle["items"][1], "/documents/0034-8910-rsp-48-2-0775"
+            documents_bundle["items"][1], {"id": "/documents/0034-8910-rsp-48-2-0775"}
         )
         self.assertTrue(current_updated < documents_bundle["updated"])
 
@@ -763,12 +763,12 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         current_item_len = len(documents_bundle["items"])
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
-            'cannot insert item "/documents/0034-8910-rsp-48-2-0775" in bundle: '
-            "the item already exists",
+            'cannot insert item id "/documents/0034-8910-rsp-48-2-0775" in bundle: '
+            "the item id already exists",
             domain.BundleManifest.insert_item,
             documents_bundle,
             0,
-            "/documents/0034-8910-rsp-48-2-0775",
+            {"id": "/documents/0034-8910-rsp-48-2-0775"},
         )
         self.assertEqual(current_updated, documents_bundle["updated"])
         self.assertEqual(current_item_len, len(documents_bundle["items"]))
@@ -779,16 +779,16 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, {"id": "/documents/0034-8910-rsp-48-2-0475"}
         )
         documents_bundle = domain.BundleManifest.insert_item(
-            documents_bundle, -10, "/documents/0034-8910-rsp-48-2-0275"
+            documents_bundle, -10, {"id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertEqual(
-            documents_bundle["items"][0], "/documents/0034-8910-rsp-48-2-0275"
+            documents_bundle["items"][0], {"id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         documents_bundle = domain.BundleManifest.insert_item(
-            documents_bundle, 10, "/documents/0034-8910-rsp-48-2-0975"
+            documents_bundle, 10, {"id": "/documents/0034-8910-rsp-48-2-0975"}
         )
         self.assertEqual(
-            documents_bundle["items"][-1], "/documents/0034-8910-rsp-48-2-0975"
+            documents_bundle["items"][-1], {"id": "/documents/0034-8910-rsp-48-2-0975"}
         )
 
     def test_remove_item(self):
@@ -1082,9 +1082,13 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
         documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0276"})
         documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0277"})
-        documents_bundle.insert_document(1, "/documents/0034-8910-rsp-48-2-0271")
+        documents_bundle.insert_document(
+            1, {"id": "/documents/0034-8910-rsp-48-2-0271"}
+        )
+
         self.assertEqual(
-            "/documents/0034-8910-rsp-48-2-0271", documents_bundle.manifest["items"][1]
+            {"id": "/documents/0034-8910-rsp-48-2-0271"},
+            documents_bundle.manifest["items"][1],
         )
         self.assertEqual(4, len(documents_bundle.manifest["items"]))
 
@@ -1093,11 +1097,11 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
-            'cannot insert item "/documents/0034-8910-rsp-48-2-0275" in bundle: '
-            "the item already exists",
+            'cannot insert item id "/documents/0034-8910-rsp-48-2-0275" in bundle: '
+            "the item id already exists",
             documents_bundle.insert_document,
             1,
-            "/documents/0034-8910-rsp-48-2-0275",
+            {"id": "/documents/0034-8910-rsp-48-2-0275"},
         )
 
     def test_data_is_not_none(self):
@@ -1858,9 +1862,9 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_insert_issue(self):
         journal = domain.Journal(id="0034-8910-rsp")
         input_expected = [
-            (0, "0034-8910-rsp-48-2", 0),
-            (1, "0034-8910-rsp-48-3", 1),
-            (10, "0034-8910-rsp-48-4", -1),
+            (0, {"id": "0034-8910-rsp-48-2"}, 0),
+            (1, {"id": "0034-8910-rsp-48-3"}, 1),
+            (10, {"id": "0034-8910-rsp-48-4"}, -1),
         ]
         for index, issue, expected in input_expected:
             with self.subTest(index=index, issue=issue, expected=expected):
@@ -1869,32 +1873,37 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_insert_issue_shifts_item_in_current_position(self):
         journal = domain.Journal(id="0034-8910-rsp")
-        journal.insert_issue(0, "0034-8910-rsp-48-2")
-        journal.insert_issue(0, "0034-8910-rsp-48-3")
+        journal.insert_issue(0, {"id": "0034-8910-rsp-48-2"})
+        journal.insert_issue(0, {"id": "0034-8910-rsp-48-3"})
         self.assertEqual(
-            ["0034-8910-rsp-48-3", "0034-8910-rsp-48-2"], journal.manifest["items"]
+            [{"id": "0034-8910-rsp-48-3"}, {"id": "0034-8910-rsp-48-2"}],
+            journal.manifest["items"],
         )
 
     def test_insert_issue_shifts_item_in_the_last_position(self):
         journal = domain.Journal(id="0034-8910-rsp")
-        journal.insert_issue(0, "0034-8910-rsp-48-2")
-        journal.insert_issue(0, "0034-8910-rsp-48-3")
-        journal.insert_issue(-1, "0034-8910-rsp-48-4")
+        journal.insert_issue(0, {"id": "0034-8910-rsp-48-2"})
+        journal.insert_issue(0, {"id": "0034-8910-rsp-48-3"})
+        journal.insert_issue(-1, {"id": "0034-8910-rsp-48-4"})
         self.assertEqual(
-            ["0034-8910-rsp-48-3", "0034-8910-rsp-48-4", "0034-8910-rsp-48-2"],
+            [
+                {"id": "0034-8910-rsp-48-3"},
+                {"id": "0034-8910-rsp-48-4"},
+                {"id": "0034-8910-rsp-48-2"},
+            ],
             journal.manifest["items"],
         )
 
     def test_insert_issue_raises_exception_if_item_already_exists(self):
         journal = domain.Journal(id="0034-8910-rsp")
-        journal.insert_issue(0, "0034-8910-rsp-48-2")
+        journal.insert_issue(0, {"id": "0034-8910-rsp-48-2"})
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
-            'cannot insert item "0034-8910-rsp-48-2" in bundle: '
-            "the item already exists",
+            'cannot insert item id "0034-8910-rsp-48-2" in bundle: '
+            "the item id already exists",
             journal.insert_issue,
             1,
-            "0034-8910-rsp-48-2",
+            {"id": "0034-8910-rsp-48-2"},
         )
 
     def test_remove_issue(self):
@@ -1921,16 +1930,20 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_get_issues(self):
         journal = domain.Journal(id="0034-8910-rsp")
         input_issues = [
-            "0034-8910-rsp-48-1",
-            "0034-8910-rsp-48-2",
-            "0034-8910-rsp-48-3",
+            {"id": "0034-8910-rsp-48-1"},
+            {"id": "0034-8910-rsp-48-2"},
+            {"id": "0034-8910-rsp-48-3"},
         ]
 
         for issue in input_issues:
             journal.insert_issue(0, issue)
 
         self.assertEqual(
-            ["0034-8910-rsp-48-3", "0034-8910-rsp-48-2", "0034-8910-rsp-48-1"],
+            [
+                {"id": "0034-8910-rsp-48-3"},
+                {"id": "0034-8910-rsp-48-2"},
+                {"id": "0034-8910-rsp-48-1"},
+            ],
             journal.issues,
         )
 

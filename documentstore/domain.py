@@ -611,16 +611,30 @@ class BundleManifest:
 
     @staticmethod
     def insert_item(
-        items_bundle: dict, index: int, item: str, now: Callable[[], str] = utcnow
+        bundle: dict, index: int, item: dict, now: Callable[[], str] = utcnow
     ) -> dict:
-        if item in items_bundle["items"]:
+
+        try:
+            _item = dict(item)
+            _id = _item["id"]
+        except ValueError:
+            raise ValueError(
+                "cannot insert this item " '"%s": item must be dict' % item
+            ) from None
+        except KeyError:
+            raise KeyError(
+                "cannot insert this item " '"%s": item must contain id key' % item
+            ) from None
+
+        if BundleManifest.get_item(bundle, _id) is not None:
             raise exceptions.AlreadyExists(
-                'cannot insert item "%s" in bundle: ' "the item already exists" % item
+                'cannot insert item id "%s" in bundle: '
+                "the item id already exists" % _id
             )
-        _items_bundle = deepcopy(items_bundle)
-        _items_bundle["items"].insert(index, item)
-        _items_bundle["updated"] = now()
-        return _items_bundle
+        _bundle = deepcopy(bundle)
+        _bundle["items"].insert(index, _item)
+        _bundle["updated"] = now()
+        return _bundle
 
     @staticmethod
     def remove_item(
