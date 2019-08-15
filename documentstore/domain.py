@@ -638,16 +638,20 @@ class BundleManifest:
 
     @staticmethod
     def remove_item(
-        items_bundle: dict, item: str, now: Callable[[], str] = utcnow
+        bundle: dict, item_id: str, now: Callable[[], str] = utcnow
     ) -> dict:
-        if item not in items_bundle["items"]:
+
+        item = BundleManifest.get_item(bundle, item_id)
+
+        if item is None:
             raise exceptions.DoesNotExist(
-                'cannot remove item "%s" from bundle: ' "the item does not exist" % item
+                "cannot remove item from bundle: "
+                'the item id "%s" does not exist' % item_id
             )
-        _items_bundle = deepcopy(items_bundle)
-        _items_bundle["items"].remove(item)
-        _items_bundle["updated"] = now()
-        return _items_bundle
+        _bundle = deepcopy(bundle)
+        _bundle["items"].remove(item)
+        _bundle["updated"] = now()
+        return _bundle
 
     @staticmethod
     def set_component(
