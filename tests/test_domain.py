@@ -801,7 +801,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, "/documents/0034-8910-rsp-48-2-0475"
         )
         self.assertNotIn(
-            "/documents/0034-8910-rsp-48-2-0475", documents_bundle["items"]
+            {"id": "/documents/0034-8910-rsp-48-2-0475"}, documents_bundle["items"]
         )
         self.assertTrue(current_updated < documents_bundle["updated"])
 
@@ -811,8 +811,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         current_item_len = len(documents_bundle["items"])
         self._assert_raises_with_message(
             exceptions.DoesNotExist,
-            'cannot remove item "/documents/0034-8910-rsp-48-2-0775" from bundle: '
-            "the item does not exist",
+            "cannot remove item from bundle: "
+            'the item id "/documents/0034-8910-rsp-48-2-0775" does not exist',
             domain.BundleManifest.remove_item,
             documents_bundle,
             "/documents/0034-8910-rsp-48-2-0775",
@@ -1061,18 +1061,23 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0277"})
         documents_bundle.remove_document("/documents/0034-8910-rsp-48-2-0275")
         self.assertNotIn(
-            "/documents/0034-8910-rsp-48-2-0275", documents_bundle.manifest["items"]
+            {"id": "/documents/0034-8910-rsp-48-2-0275"},
+            documents_bundle.manifest["items"],
         )
         self.assertEqual(2, len(documents_bundle.manifest["items"]))
 
     def test_remove_document_raises_exception_if_item_does_not_exist(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.add_document("/documents/0034-8910-rsp-48-2-0276")
-        documents_bundle.add_document("/documents/0034-8910-rsp-48-2-0277")
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0276", "order": 4}
+        )
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0277", "order": 2}
+        )
         self._assert_raises_with_message(
             exceptions.DoesNotExist,
-            'cannot remove item "/documents/0034-8910-rsp-48-2-0275" from bundle: '
-            "the item does not exist",
+            "cannot remove item from bundle: "
+            'the item id "/documents/0034-8910-rsp-48-2-0275" does not exist',
             documents_bundle.remove_document,
             "/documents/0034-8910-rsp-48-2-0275",
         )
@@ -1921,8 +1926,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0034-8910-rsp")
         self._assert_raises_with_message(
             exceptions.DoesNotExist,
-            'cannot remove item "0034-8910-rsp-48-2" from bundle: '
-            "the item does not exist",
+            "cannot remove item from bundle: "
+            'the item id "0034-8910-rsp-48-2" does not exist',
             journal.remove_issue,
             "0034-8910-rsp-48-2",
         )
