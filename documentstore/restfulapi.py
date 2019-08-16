@@ -240,7 +240,10 @@ class DocumentsBundleDocumentsReplaceSchema(colander.SequenceSchema):
     """Representa o schema de dados para registro o relacionamento de documento no 
     Documents Bundle."""
 
-    docs = colander.SchemaNode(colander.String())
+    @colander.instantiate(missing=colander.drop)
+    class document(colander.MappingSchema):
+        id = colander.SchemaNode(colander.String())
+        order = colander.SchemaNode(colander.String())
 
 
 class QueryChangeSchema(colander.MappingSchema):
