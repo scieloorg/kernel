@@ -301,12 +301,12 @@ class UpdateDocumentInDocumentsBundle(CommandHandler):
     """Atualiza a lista de documentos de uma Issue removendo todos os itens
     anteriormente associados"""
 
-    def __call__(self, id: str, docs: List[str]) -> None:
+    def __call__(self, id: str, docs: List[Dict]) -> None:
         session = self.Session()
         _bundle = session.documents_bundles.fetch(id)
 
         for doc in _bundle.documents:
-            _bundle.remove_document(doc)
+            _bundle.remove_document(doc["id"])
 
         for doc in docs:
             _bundle.add_document(doc)
@@ -382,12 +382,12 @@ class UpdateIssuesInJournal(CommandHandler):
     """Atualiza a lista de issues de um Journal removendo todos os itens
     anteriormente associados"""
 
-    def __call__(self, id: str, issues: List[str]) -> None:
+    def __call__(self, id: str, issues: List[Dict]) -> None:
         session = self.Session()
         _journal = session.journals.fetch(id)
 
         for issue in _journal.issues:
-            _journal.remove_issue(issue)
+            _journal.remove_issue(issue["id"])
 
         for issue in issues:
             _journal.add_issue(issue)
