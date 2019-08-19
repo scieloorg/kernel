@@ -312,32 +312,32 @@ class PutDocumentsBundleDocumentTest(unittest.TestCase):
 
     def test_should_call_update_documents_in_issues(self):
         self.request.matchdict["bundle_id"] = "example-bundle-id"
-        self.request.validated = ["doc-1", "doc-2"]
+        self.request.validated = [{"id": "doc-1"}, {"id": "doc-2"}]
         MockUpdateDocumentsInIssues = Mock()
         self.request.services[
             "update_documents_in_documents_bundle"
         ] = MockUpdateDocumentsInIssues
         restfulapi.put_bundles_documents(self.request)
         MockUpdateDocumentsInIssues.assert_called_once_with(
-            id="example-bundle-id", docs=["doc-1", "doc-2"]
+            id="example-bundle-id", docs=[{"id": "doc-1"}, {"id": "doc-2"}]
         )
 
     def test_should_return_422_if_already_exists_exception_is_raised(self):
         self.request.matchdict["bundle_id"] = "example-bundle-id"
-        self.request.validated = ["doc-1", "doc-1"]
+        self.request.validated = [{"id": "doc-1"}, {"id": "doc-1"}]
         response = restfulapi.put_bundles_documents(self.request)
         self.assertIsInstance(response, HTTPUnprocessableEntity)
 
     def test_should_not_update_if_already_exists_exception_is_raised(self):
         self.request.matchdict["bundle_id"] = "example-bundle-id"
-        self.request.validated = ["doc-1", "doc-1"]
+        self.request.validated = [{"id": "doc-1"}, {"id": "doc-1"}]
         restfulapi.put_bundles_documents(self.request)
         response = restfulapi.fetch_documents_bundle(self.request)
         self.assertEqual([], response.get("items"))
 
     def test_should_return_404_if_bundle_not_found(self):
         self.request.matchdict["bundle_id"] = "example-bundle-id"
-        self.request.validated = ["doc-1"]
+        self.request.validated = [{"id": "doc-1"}]
         MockUpdateDocumentsInIssues = Mock(
             side_effect=exceptions.DoesNotExist("Does Not Exist")
         )
@@ -349,7 +349,7 @@ class PutDocumentsBundleDocumentTest(unittest.TestCase):
 
     def test_should_return_204_if_bundle_issues_was_updated(self):
         self.request.matchdict["bundle_id"] = "example-bundle-id"
-        self.request.validated = ["doc-1"]
+        self.request.validated = [{"id": "doc-1"}]
         response = restfulapi.put_bundles_documents(self.request)
         self.assertIsInstance(response, HTTPNoContent)
 
@@ -506,7 +506,7 @@ class PatchJournalUnitTest(unittest.TestCase):
 
 class JournalIssuesSchemaTest(unittest.TestCase):
     def test_index_field_is_optional(self):
-        data = {"issue": "1678-4596-cr-25-3"}
+        data = {"issue": {"id": "1678-4596-cr-25-3", "ns": []}}
         restfulapi.JournalIssuesSchema().deserialize(data)
 
     def test_issue_field_is_required(self):
@@ -523,7 +523,7 @@ class JournalIssuesSchemaTest(unittest.TestCase):
                 )
 
     def test_valid(self):
-        data = {"issue": "1678-4596-cr-25-3", "index": 10}
+        data = {"issue": {"id": "1678-4596-cr-25-3", "ns": []}, "index": 10}
         restfulapi.JournalIssuesSchema().deserialize(data)
 
 
@@ -623,30 +623,40 @@ class PutJournalIssuesTest(unittest.TestCase):
 
     def test_should_call_update_issues_in_journal(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = ["issue-1", "issue-2"]
+        self.request.validated = [
+            {"id": "issue-1", "ns": []},
+            {"id": "issue-2", "ns": []},
+        ]
         MockUpdateIssuesInJournal = Mock()
         self.request.services["update_issues_in_journal"] = MockUpdateIssuesInJournal
         restfulapi.put_journal_issues(self.request)
         MockUpdateIssuesInJournal.assert_called_once_with(
-            id="example-journal-id", issues=["issue-1", "issue-2"]
+            id="example-journal-id",
+            issues=[{"id": "issue-1", "ns": []}, {"id": "issue-2", "ns": []}],
         )
 
     def test_should_return_422_if_already_exists_exception_is_raised(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = ["issue-1", "issue-1"]
+        self.request.validated = [
+            {"id": "issue-1", "ns": []},
+            {"id": "issue-1", "ns": []},
+        ]
         response = restfulapi.put_journal_issues(self.request)
         self.assertIsInstance(response, HTTPUnprocessableEntity)
 
     def test_should_not_update_if_already_exists_exception_is_raised(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = ["issue-1", "issue-1"]
+        self.request.validated = [
+            {"id": "issue-1", "ns": []},
+            {"id": "issue-1", "ns": []},
+        ]
         restfulapi.put_journal_issues(self.request)
         response = restfulapi.get_journal(self.request)
         self.assertEqual([], response.get("items"))
 
     def test_should_return_404_if_journal_not_found(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = ["issue-1"]
+        self.request.validated = [{"id": "issue-1", "ns": []}]
         MockUpdateIssuesInJournal = Mock(
             side_effect=exceptions.DoesNotExist("Does Not Exist")
         )
@@ -656,7 +666,7 @@ class PutJournalIssuesTest(unittest.TestCase):
 
     def test_should_return_204_if_journal_issues_was_updated(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = ["issue-1"]
+        self.request.validated = [{"id": "issue-1", "ns": []}]
         response = restfulapi.put_journal_issues(self.request)
         self.assertIsInstance(response, HTTPNoContent)
 

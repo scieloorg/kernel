@@ -240,7 +240,10 @@ class DocumentsBundleDocumentsReplaceSchema(colander.SequenceSchema):
     """Representa o schema de dados para registro o relacionamento de documento no 
     Documents Bundle."""
 
-    docs = colander.SchemaNode(colander.String())
+    @colander.instantiate(missing=colander.drop)
+    class document(colander.MappingSchema):
+        id = colander.SchemaNode(colander.String())
+        order = colander.SchemaNode(colander.String())
 
 
 class QueryChangeSchema(colander.MappingSchema):
@@ -298,11 +301,22 @@ class FrontDocumentSchema(colander.MappingSchema):
     data = colander.SchemaNode(colander.String(), missing=colander.drop)
 
 
+class JournalIssueItem(colander.MappingSchema):
+    """Schema que representa uma Issue como item a ser relacionado
+    com um Journal"""
+
+    id = colander.SchemaNode(colander.String())
+
+    @colander.instantiate()
+    class ns(colander.SequenceSchema):
+        item = colander.SchemaNode(colander.String())
+
+
 class JournalIssuesSchema(colander.MappingSchema):
     """Representa o schema de dados de atualização de fascículos de periódico.
     """
 
-    issue = colander.SchemaNode(colander.String())
+    issue = JournalIssueItem()
     index = colander.SchemaNode(colander.Int(), missing=colander.drop)
 
 
@@ -310,7 +324,7 @@ class JournalIssuesReplaceSchema(colander.SequenceSchema):
     """Representa o schema de dados utilizado durante a atualização
     da lista completa de fascículos de um periódico"""
 
-    issue = colander.SchemaNode(colander.String())
+    issue = JournalIssueItem()
 
 
 class DeleteJournalIssuesSchema(colander.MappingSchema):
