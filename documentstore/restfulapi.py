@@ -200,9 +200,6 @@ class JournalSchema(colander.MappingSchema):
     next_journal = colander.SchemaNode(
         colander.Mapping(unknown="preserve"), missing=colander.drop
     )
-    logo_url = colander.SchemaNode(
-        colander.String(), validator=colander.url, missing=colander.drop
-    )
     previous_journal = colander.SchemaNode(
         colander.Mapping(unknown="preserve"), missing=colander.drop
     )
@@ -237,7 +234,7 @@ class DocumentsBundleSchema(colander.MappingSchema):
 
 
 class DocumentsBundleDocumentsReplaceSchema(colander.SequenceSchema):
-    """Representa o schema de dados para registro o relacionamento de documento no 
+    """Representa o schema de dados para registro o relacionamento de documento no
     Documents Bundle."""
 
     @colander.instantiate(missing=colander.drop)
@@ -976,7 +973,7 @@ def delete_journal_issues(request):
 )
 def fetch_document_renditions(request):
     """Obtém uma lista das manifestações associadas à versão do documento.
-    Produzirá uma resposta com o código HTTP 404 caso o documento solicitado 
+    Produzirá uma resposta com o código HTTP 404 caso o documento solicitado
     não exista.
     """
     when = request.GET.get("when", None)

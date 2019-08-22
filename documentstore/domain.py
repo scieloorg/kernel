@@ -498,8 +498,8 @@ class Document:
         self, filename, data_url, mimetype, lang, size_bytes
     ) -> None:
         """Adiciona `data_url` como uma nova versão da manifestação identificada
-        por `filename`, `mimetype` e `lang`, vinculada a versão mais recente do 
-        documento. É importante notar que nenhuma validação será executada em 
+        por `filename`, `mimetype` e `lang`, vinculada a versão mais recente do
+        documento. É importante notar que nenhuma validação será executada em
         `data_url`, `mimetype` ou `size_bytes`.
         """
         latest_version = self._latest_if_not_deleted(
@@ -1046,15 +1046,6 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self._manifest, "next_journal", value
         )
-
-    @property
-    def logo_url(self):
-        return BundleManifest.get_metadata(self.manifest, "logo_url")
-
-    @logo_url.setter
-    def logo_url(self, value: str):
-        value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "logo_url", value)
 
     @property
     def previous_journal(self):

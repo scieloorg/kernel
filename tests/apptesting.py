@@ -257,7 +257,6 @@ def journal_registry_fixture(sufix="", subject_areas=["AGRICULTURAL SCIENCES"]):
         "institution_responsible_for": ["Universidade Federal de Santa Maria"],
         "online_submission_url": "http://mc04.manuscriptcentral.com/cr-scielo",
         "next_journal": {},
-        "logo_url": "https://homolog.scielo.org/media/assets/cr/glogo.gif",
         "previous_journal": {"title": "Revista do Centro de Ciências Rurais"},
         "contact": {"email": "cienciarural@mail.ufsm.br"},
     }
