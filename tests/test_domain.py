@@ -1388,26 +1388,26 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_subject_areas(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.subject_areas = [
-            "AGRICULTURAL SCIENCES",
-            "APPLIED SOCIAL SCIENCES",
-            "BIOLOGICAL SCIENCES",
-            "ENGINEERING",
-            "EXACT AND EARTH SCIENCES",
-            "HEALTH SCIENCES",
-            "HUMAN SCIENCES",
-            "LINGUISTIC, LITERATURE AND ARTS",
+            "Agricultural Sciences",
+            "Applied Social Sciences",
+            "Biological Sciences",
+            "Engineering",
+            "Exact and Earth Sciences",
+            "Health Sciences",
+            "Human Sciences",
+            "Linguistics, Letters and Arts"
         ]
         self.assertEqual(
             journal.subject_areas,
             (
-                "AGRICULTURAL SCIENCES",
-                "APPLIED SOCIAL SCIENCES",
-                "BIOLOGICAL SCIENCES",
-                "ENGINEERING",
-                "EXACT AND EARTH SCIENCES",
-                "HEALTH SCIENCES",
-                "HUMAN SCIENCES",
-                "LINGUISTIC, LITERATURE AND ARTS",
+                "Agricultural Sciences",
+                "Applied Social Sciences",
+                "Biological Sciences",
+                "Engineering",
+                "Exact and Earth Sciences",
+                "Health Sciences",
+                "Human Sciences",
+                "Linguistics, Letters and Arts"
             ),
         )
         self.assertEqual(
@@ -1415,14 +1415,14 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             (
                 "2018-08-05T22:33:49.795151Z",
                 (
-                    "AGRICULTURAL SCIENCES",
-                    "APPLIED SOCIAL SCIENCES",
-                    "BIOLOGICAL SCIENCES",
-                    "ENGINEERING",
-                    "EXACT AND EARTH SCIENCES",
-                    "HEALTH SCIENCES",
-                    "HUMAN SCIENCES",
-                    "LINGUISTIC, LITERATURE AND ARTS",
+                    "Agricultural Sciences",
+                    "Applied Social Sciences",
+                    "Biological Sciences",
+                    "Engineering",
+                    "Exact and Earth Sciences",
+                    "Health Sciences",
+                    "Human Sciences",
+                    "Linguistics, Letters and Arts"
                 ),
             ),
         )
@@ -1443,22 +1443,18 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_set_subject_areas_content_raises_value_error(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         subject_areas = (
+            "Agricultural Sciences",
+            "Applied Social Sciences",
+            "Biological Sciences",
+            "Engineering",
             "AGRICULTURAL",
             "APPLIED SOCIAL",
             "BIOLOGICAL",
-            "ENGINEERING",
-            "EXACT AND EARTH",
-            "HEALTH",
-            "HUMAN",
-            "LINGUISTIC, LITERATURE AND ARTS",
         )
         invalid = [
             "AGRICULTURAL",
             "APPLIED SOCIAL",
             "BIOLOGICAL",
-            "EXACT AND EARTH",
-            "HEALTH",
-            "HUMAN",
         ]
         self._assert_raises_with_message(
             ValueError,

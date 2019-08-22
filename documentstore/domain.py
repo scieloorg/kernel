@@ -28,14 +28,14 @@ DEFAULT_XMLPARSER = etree.XMLParser(
 )
 
 SUBJECT_AREAS = (
-    "AGRICULTURAL SCIENCES",
-    "APPLIED SOCIAL SCIENCES",
-    "BIOLOGICAL SCIENCES",
-    "ENGINEERING",
-    "EXACT AND EARTH SCIENCES",
-    "HEALTH SCIENCES",
-    "HUMAN SCIENCES",
-    "LINGUISTIC, LITERATURE AND ARTS",
+    "Agricultural Sciences",
+    "Applied Social Sciences",
+    "Biological Sciences",
+    "Engineering",
+    "Exact and Earth Sciences",
+    "Health Sciences",
+    "Human Sciences",
+    "Linguistics, Letters and Arts"
 )
 
 MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))

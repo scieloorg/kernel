@@ -229,7 +229,7 @@ class SliceResultStub:
         return self._data[:val]
 
 
-def journal_registry_fixture(sufix="", subject_areas=["AGRICULTURAL SCIENCES"]):
+def journal_registry_fixture(sufix="", subject_areas=["Agricultural Sciences"]):
     return {
         "title": f"Ciência Rural-{sufix}",
         "mission": [
