@@ -165,7 +165,6 @@ class JournalSchema(colander.MappingSchema):
 
     title_iso = colander.SchemaNode(colander.String(), missing=colander.drop)
     short_title = colander.SchemaNode(colander.String(), missing=colander.drop)
-    title_slug = colander.SchemaNode(colander.String(), missing=colander.drop)
     acronym = colander.SchemaNode(colander.String(), missing=colander.drop)
     scielo_issn = colander.SchemaNode(colander.String(), missing=colander.drop)
     print_issn = colander.SchemaNode(colander.String(), missing=colander.drop)

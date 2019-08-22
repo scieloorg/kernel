@@ -865,17 +865,6 @@ class Journal:
         )
 
     @property
-    def title_slug(self):
-        return BundleManifest.get_metadata(self.manifest, "title_slug")
-
-    @title_slug.setter
-    def title_slug(self, value: str):
-        _value = str(value)
-        self.manifest = BundleManifest.set_metadata(
-            self._manifest, "title_slug", _value
-        )
-
-    @property
     def acronym(self):
         return BundleManifest.get_metadata(self.manifest, "acronym")
 

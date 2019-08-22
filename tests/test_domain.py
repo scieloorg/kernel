@@ -1284,19 +1284,6 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             [("2018-08-05T22:33:49.795151Z", "Rev. Saúde Pública")],
         )
 
-    def test_title_slug_is_empty_str(self):
-        journal = domain.Journal(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.title_slug, "")
-
-    def test_set_title_slug(self):
-        journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.title_slug = "pesquisa-veterinaria-brasileira"
-        self.assertEqual(journal.title_slug, "pesquisa-veterinaria-brasileira")
-        self.assertEqual(
-            journal.manifest["metadata"]["title_slug"],
-            [("2018-08-05T22:33:49.795151Z", "pesquisa-veterinaria-brasileira")],
-        )
-
     def test_acronym_is_empty_str(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         self.assertEqual(journal.acronym, "")

@@ -244,7 +244,6 @@ def journal_registry_fixture(sufix="", subject_areas=["Agricultural Sciences"]):
         ],
         "title_iso": f"Ciênc. rural-{sufix}",
         "short_title": f"Cienc. Rural-{sufix}",
-        "title_slug": f"ciencia-rural-{sufix}",
         "acronym": "cr",
         "scielo_issn": "0103-8478",
         "print_issn": "0103-8478",
