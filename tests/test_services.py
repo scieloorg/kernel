@@ -1,6 +1,7 @@
 import unittest
 from unittest import mock
 import datetime
+import random
 
 from documentstore import services, exceptions, domain
 
@@ -33,7 +34,9 @@ class CreateDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
         self.assertIsNone(self.command(id="xpto"))
 
     def test_command_with_documents_success(self):
-        self.assertIsNone(self.command(id="xpto", docs=[{"id": "/document/1"}, {"id": "/document/2"}]))
+        self.assertIsNone(
+            self.command(id="xpto", docs=[{"id": "/document/1"}, {"id": "/document/2"}])
+        )
 
     def test_command_with_metadata_success(self):
         self.assertIsNone(
@@ -87,7 +90,9 @@ class FetchDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
             id="xpto", docs=[{"id": "/document/1"}, {"id": "/document/2"}]
         )
         result = self.command(id="xpto")
-        self.assertEqual(result["items"], [{"id": "/document/1"}, {"id": "/document/2"}])
+        self.assertEqual(
+            result["items"], [{"id": "/document/1"}, {"id": "/document/2"}]
+        )
 
     def test_command_with_metadata_success(self):
         self.services["create_documents_bundle"](
@@ -119,8 +124,8 @@ class UpdateDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
             domain, "datetime", mock.Mock(wraps=datetime.datetime)
         )
         mocked_datetime = datetime_patcher.start()
-        mocked_datetime.utcnow.return_value = datetime.datetime(
-            2018, 8, 5, 22, 33, 49, 795151
+        mocked_datetime.utcnow.side_effect = lambda: (
+            datetime.datetime(2018, 8, 5, 22, 33, 49, random.randint(1, 1000000))
         )
         self.addCleanup(datetime_patcher.stop)
 
@@ -200,10 +205,14 @@ class AddDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
         self.assertEqual(result["items"], [{"id": "/document/1"}])
         self.command(id="xpto", doc={"id": "/document/2"})
         result = self.services["fetch_documents_bundle"](id="xpto")
-        self.assertEqual(result["items"], [{"id": "/document/1"}, {"id": "/document/2"}])
+        self.assertEqual(
+            result["items"], [{"id": "/document/1"}, {"id": "/document/2"}]
+        )
 
     def test_command_raises_exception_if_already_exists(self):
-        self.services["create_documents_bundle"](id="xpto", docs=[{"id": "/document/1"}])
+        self.services["create_documents_bundle"](
+            id="xpto", docs=[{"id": "/document/1"}]
+        )
         self.assertRaises(
             exceptions.AlreadyExists, self.command, id="xpto", doc={"id": "/document/1"}
         )
@@ -213,7 +222,8 @@ class AddDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="xpto", doc={"id": "/document/1"})
             mock_notify.assert_called_once_with(
-                self.event, {"id": "xpto", "doc": {"id": "/document/1"}, "bundle": mock.ANY}
+                self.event,
+                {"id": "xpto", "doc": {"id": "/document/1"}, "bundle": mock.ANY},
             )
 
 
@@ -228,7 +238,11 @@ class InsertDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
 
     def test_command_raises_exception_if_does_not_exist(self):
         self.assertRaises(
-            exceptions.DoesNotExist, self.command, id="xpto", index=0, doc={"id": "/document/1"}
+            exceptions.DoesNotExist,
+            self.command,
+            id="xpto",
+            index=0,
+            doc={"id": "/document/1"},
         )
 
     def test_command_success(self):
@@ -238,10 +252,15 @@ class InsertDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
         self.assertEqual(result["items"], [{"id": "/document/1"}])
         self.command(id="xpto", index=0, doc={"id": "/document/2"})
         result = self.services["fetch_documents_bundle"](id="xpto")
-        self.assertEqual(result["items"], [{"id": "/document/2"}, {"id": "/document/1"}])
+        self.assertEqual(
+            result["items"], [{"id": "/document/2"}, {"id": "/document/1"}]
+        )
         self.command(id="xpto", index=10, doc={"id": "/document/3"})
         result = self.services["fetch_documents_bundle"](id="xpto")
-        self.assertEqual(result["items"], [{"id": "/document/2"}, {"id": "/document/1"}, {"id": "/document/3"}])
+        self.assertEqual(
+            result["items"],
+            [{"id": "/document/2"}, {"id": "/document/1"}, {"id": "/document/3"}],
+        )
 
     def test_command_raises_exception_if_already_exists(self):
         self.services["create_documents_bundle"](
@@ -268,7 +287,12 @@ class InsertDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
             self.command(id="xpto", index=10, doc={"id": "/document/3"})
             mock_notify.assert_called_once_with(
                 self.event,
-                {"id": "xpto", "doc": {"id": "/document/3"}, "index": 10, "bundle": mock.ANY},
+                {
+                    "id": "xpto",
+                    "doc": {"id": "/document/3"},
+                    "index": 10,
+                    "bundle": mock.ANY,
+                },
             )
 
 
@@ -412,7 +436,9 @@ class AddIssueToJournalTest(CommandTestMixin, unittest.TestCase):
                 mock_update.assert_called_once_with(JournalStub)
 
     def test_command_success(self):
-        self.assertIsNone(self.command(id="0034-8910-rsp", issue={"id": "0034-8910-rsp-48-2"}))
+        self.assertIsNone(
+            self.command(id="0034-8910-rsp", issue={"id": "0034-8910-rsp-48-2"})
+        )
 
     def test_command_raises_exception_if_journal_does_not_exist(self):
         self.assertRaises(
@@ -473,8 +499,12 @@ class InsertIssueToJournalTest(CommandTestMixin, unittest.TestCase):
             JournalStub = mock.Mock(spec=domain.Journal)
             JournalStub.insert_issue = mock.Mock()
             mock_fetch.return_value = JournalStub
-            self.command(id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"})
-            JournalStub.insert_issue.assert_called_once_with(0, {"id": "0034-8910-rsp-48-2"})
+            self.command(
+                id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"}
+            )
+            JournalStub.insert_issue.assert_called_once_with(
+                0, {"id": "0034-8910-rsp-48-2"}
+            )
 
     def test_command_update_journals(self):
         with mock.patch.object(self.session.journals, "fetch") as mock_fetch:
@@ -482,18 +512,26 @@ class InsertIssueToJournalTest(CommandTestMixin, unittest.TestCase):
             JournalStub.insert_issue = mock.Mock()
             mock_fetch.return_value = JournalStub
             with mock.patch.object(self.session.journals, "update") as mock_update:
-                self.command(id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"})
+                self.command(
+                    id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"}
+                )
                 mock_update.assert_called_once_with(JournalStub)
 
     def test_command_success(self):
         self.assertIsNone(
-            self.command(id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"})
+            self.command(
+                id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"}
+            )
         )
         self.assertIsNone(
-            self.command(id="0034-8910-rsp", index=10, issue={"id": "0034-8910-rsp-48-3"})
+            self.command(
+                id="0034-8910-rsp", index=10, issue={"id": "0034-8910-rsp-48-3"}
+            )
         )
         self.assertIsNone(
-            self.command(id="0034-8910-rsp", index=-1, issue={"id": "0034-8910-rsp-48-4"})
+            self.command(
+                id="0034-8910-rsp", index=-1, issue={"id": "0034-8910-rsp-48-4"}
+            )
         )
 
     def test_command_raises_exception_if_issue_already_exists(self):
@@ -519,7 +557,9 @@ class InsertIssueToJournalTest(CommandTestMixin, unittest.TestCase):
             JournalStub.insert_issue = mock.Mock()
             mock_fetch.return_value = JournalStub
             with mock.patch.object(self.session, "notify") as mock_notify:
-                self.command(id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"})
+                self.command(
+                    id="0034-8910-rsp", index=0, issue={"id": "0034-8910-rsp-48-2"}
+                )
                 mock_notify.assert_called_once_with(
                     self.event,
                     {
