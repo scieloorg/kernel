@@ -1338,7 +1338,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_status_is_empty_str(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.status, "")
+        self.assertEqual(journal.status, {})
 
     def test_set_status(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")

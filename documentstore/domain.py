@@ -908,7 +908,7 @@ class Journal:
 
     @property
     def status(self):
-        return BundleManifest.get_metadata(self.manifest, "status")
+        return BundleManifest.get_metadata(self.manifest, "status", {})
 
     @status.setter
     def status(self, value: dict):
@@ -922,7 +922,7 @@ class Journal:
 
     @property
     def subject_areas(self):
-        return BundleManifest.get_metadata(self.manifest, "subject_areas")
+        return BundleManifest.get_metadata(self.manifest, "subject_areas", [])
 
     @subject_areas.setter
     def subject_areas(self, value: tuple):
@@ -945,7 +945,7 @@ class Journal:
 
     @property
     def sponsors(self) -> Tuple[dict]:
-        return BundleManifest.get_metadata(self.manifest, "sponsors")
+        return BundleManifest.get_metadata(self.manifest, "sponsors", [])
 
     @sponsors.setter
     def sponsors(self, value: Tuple[dict]) -> None:
@@ -972,7 +972,7 @@ class Journal:
 
     @property
     def subject_categories(self):
-        return BundleManifest.get_metadata(self.manifest, "subject_categories")
+        return BundleManifest.get_metadata(self.manifest, "subject_categories", [])
 
     @subject_categories.setter
     def subject_categories(self, value: Union[list, tuple]):
