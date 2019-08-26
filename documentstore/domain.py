@@ -726,6 +726,38 @@ class DocumentsBundle:
         )
 
     @property
+    def publication_month(self):
+        return BundleManifest.get_metadata(self.manifest, "publication_month")
+
+    @publication_month.setter
+    def publication_month(self, value: Union[str, int]):
+        _value = str(value).zfill(2)
+        if not re.match(r"^\d{2}$", _value):
+            raise ValueError(
+                "cannot set publication_month with value "
+                f'"{_value}": the value is not valid'
+            )
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "publication_month", _value
+        )
+
+    @property
+    def publication_season(self):
+        return BundleManifest.get_metadata(self.manifest, "publication_season")
+
+    @publication_season.setter
+    def publication_season(self, value: Union[str, int]):
+        _value = str(value)
+        if not re.match(r"^\w{3}-\w{3}$", _value):
+            raise ValueError(
+                "cannot set publication_season with value "
+                f'"{_value}": the value is not valid'
+            )
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "publication_season", _value
+        )
+
+    @property
     def volume(self):
         return BundleManifest.get_metadata(self.manifest, "volume")
 

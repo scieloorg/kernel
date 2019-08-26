@@ -917,6 +917,59 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
             18,
         )
 
+    def test_publication_month_is_empty_str(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self.assertEqual(documents_bundle.publication_month, "")
+
+    def test_set_publication_month(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.publication_month = "08"
+        self.assertEqual(documents_bundle.publication_month, "08")
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["publication_month"],
+            [("2018-08-05T22:33:49.795151Z", "08")],
+        )
+
+    def test_set_publication_month_convert_to_str(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.publication_month = 8
+        self.assertEqual(documents_bundle.publication_month, "08")
+
+    def test_set_publication_month_validates_four_digits_year(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set publication_month with value " '"Jan": the value is not valid',
+            setattr,
+            documents_bundle,
+            "publication_month",
+            "Jan",
+        )
+
+    def test_publication_season_is_empty_str(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self.assertEqual(documents_bundle.publication_season, "")
+
+    def test_set_publication_season(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.publication_season = "Jan-Feb"
+        self.assertEqual(documents_bundle.publication_season, "Jan-Feb")
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["publication_season"],
+            [("2018-08-05T22:33:49.795151Z", "Jan-Feb")],
+        )
+
+    def test_set_publication_season_validates_four_digits_year(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set publication_season with value " '"8": the value is not valid',
+            setattr,
+            documents_bundle,
+            "publication_season",
+            8,
+        )
+
     def test_volume_is_empty_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         self.assertEqual(documents_bundle.volume, "")
