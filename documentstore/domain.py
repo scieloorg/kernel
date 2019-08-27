@@ -743,18 +743,17 @@ class DocumentsBundle:
 
     @property
     def publication_season(self):
-        return BundleManifest.get_metadata(self.manifest, "publication_season")
+        return BundleManifest.get_metadata(self.manifest, "publication_season", [])
 
     @publication_season.setter
-    def publication_season(self, value: Union[str, int]):
-        _value = str(value)
-        if not re.match(r"^\w{3}-\w{3}$", _value):
+    def publication_season(self, value: List):
+        if len(value) != len(set(value)):
             raise ValueError(
                 "cannot set publication_season with value "
-                f'"{_value}": the value is not valid'
+                f'"{value}": the value is not valid'
             )
         self.manifest = BundleManifest.set_metadata(
-            self._manifest, "publication_season", _value
+            self._manifest, "publication_season", value
         )
 
     @property
