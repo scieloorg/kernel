@@ -355,7 +355,7 @@ class UpdateJournalMetadata(CommandHandler):
 
 
 class AddIssueToJournal(CommandHandler):
-    def __call__(self, id: str, issue: str) -> None:
+    def __call__(self, id: str, issue: dict) -> None:
         session = self.Session()
         _journal = session.journals.fetch(id)
         _journal.add_issue(issue)
@@ -367,7 +367,7 @@ class AddIssueToJournal(CommandHandler):
 
 
 class InsertIssueToJournal(CommandHandler):
-    def __call__(self, id: str, index: int, issue: str) -> None:
+    def __call__(self, id: str, index: int, issue: dict) -> None:
         session = self.Session()
         _journal = session.journals.fetch(id)
         _journal.insert_issue(index, issue)
