@@ -948,26 +948,71 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_publication_season_is_empty_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        self.assertEqual(documents_bundle.publication_season, [])
+        self.assertEqual(documents_bundle.publication_season, ())
 
     def test_set_publication_season(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.publication_season = [1, 6]
-        self.assertEqual(documents_bundle.publication_season, [1, 6])
+        documents_bundle.publication_season = (1, 6)
+        self.assertEqual(documents_bundle.publication_season, (1, 6))
         self.assertEqual(
             documents_bundle.manifest["metadata"]["publication_season"],
-            [("2018-08-05T22:33:49.795151Z", [1, 6])],
+            [("2018-08-05T22:33:49.795151Z", (1, 6))],
         )
 
-    def test_set_publication_season_validates_four_digits_year(self):
+    def test_set_publication_season_convert_string(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.publication_season = "1234456"
+        self.assertEqual(
+            documents_bundle.publication_season, ("1", "2", "3", "4", "4", "5", "6")
+        )
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["publication_season"],
+            [("2018-08-05T22:33:49.795151Z", ("1", "2", "3", "4", "4", "5", "6"))],
+        )
+
+    def test_set_publication_season_validates_repeat_items(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         self._assert_raises_with_message(
             ValueError,
-            "cannot set publication_season with value " '"[1, 1]": the value is not valid',
+            "cannot set publication_season with value "
+            '"[1, 1]": the value is not valid',
             setattr,
             documents_bundle,
             "publication_season",
             [1, 1],
+        )
+
+    def test_set_publication_season_validates_string_items(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set publication_season with value "
+            '"abcd": the value is not valid',
+            setattr,
+            documents_bundle,
+            "publication_season",
+            "abcd",
+        )
+
+    def test_set_publication_season_validates_integer(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set publication_season with value "
+            '"10": the value is not valid',
+            setattr,
+            documents_bundle,
+            "publication_season",
+            10,
+        )
+
+    def test_set_publication_season_convert_to_tuple(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.publication_season = [1, 6]
+        self.assertEqual(documents_bundle.publication_season, (1, 6))
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["publication_season"],
+            [("2018-08-05T22:33:49.795151Z", (1, 6))],
         )
 
     def test_volume_is_empty_str(self):
@@ -1435,7 +1480,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "Exact and Earth Sciences",
             "Health Sciences",
             "Human Sciences",
-            "Linguistics, Letters and Arts"
+            "Linguistics, Letters and Arts",
         ]
         self.assertEqual(
             journal.subject_areas,
@@ -1447,7 +1492,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
                 "Exact and Earth Sciences",
                 "Health Sciences",
                 "Human Sciences",
-                "Linguistics, Letters and Arts"
+                "Linguistics, Letters and Arts",
             ),
         )
         self.assertEqual(
@@ -1462,7 +1507,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
                     "Exact and Earth Sciences",
                     "Health Sciences",
                     "Human Sciences",
-                    "Linguistics, Letters and Arts"
+                    "Linguistics, Letters and Arts",
                 ),
             ),
         )
@@ -1491,11 +1536,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "APPLIED SOCIAL",
             "BIOLOGICAL",
         )
-        invalid = [
-            "AGRICULTURAL",
-            "APPLIED SOCIAL",
-            "BIOLOGICAL",
-        ]
+        invalid = ["AGRICULTURAL", "APPLIED SOCIAL", "BIOLOGICAL"]
         self._assert_raises_with_message(
             ValueError,
             "cannot set subject_areas with value %s: " % repr(subject_areas)

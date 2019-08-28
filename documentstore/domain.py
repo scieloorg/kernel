@@ -35,7 +35,7 @@ SUBJECT_AREAS = (
     "Exact and Earth Sciences",
     "Health Sciences",
     "Human Sciences",
-    "Linguistics, Letters and Arts"
+    "Linguistics, Letters and Arts",
 )
 
 MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))
@@ -743,17 +743,24 @@ class DocumentsBundle:
 
     @property
     def publication_season(self):
-        return BundleManifest.get_metadata(self.manifest, "publication_season", [])
+        return BundleManifest.get_metadata(self.manifest, "publication_season", ())
 
     @publication_season.setter
-    def publication_season(self, value: List):
-        if len(value) != len(set(value)):
+    def publication_season(self, value: Tuple[int]):
+        try:
+            _value = tuple(value)
+            [int(item) for item in _value]
+            if len(set(_value)) < 2:
+                raise ValueError
+
+        except (ValueError, TypeError):
             raise ValueError(
                 "cannot set publication_season with value "
                 f'"{value}": the value is not valid'
-            )
+            ) from None
+
         self.manifest = BundleManifest.set_metadata(
-            self._manifest, "publication_season", value
+            self._manifest, "publication_season", _value
         )
 
     @property
