@@ -2,7 +2,7 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
-from typing import Union, Callable, Any, Tuple, List
+from typing import Union, Callable, Any, Tuple, List, Dict
 from datetime import datetime
 import time
 import os
@@ -35,7 +35,7 @@ SUBJECT_AREAS = (
     "Exact and Earth Sciences",
     "Health Sciences",
     "Human Sciences",
-    "Linguistics, Letters and Arts"
+    "Linguistics, Letters and Arts",
 )
 
 MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))
@@ -724,6 +724,24 @@ class DocumentsBundle:
         self.manifest = BundleManifest.set_metadata(
             self._manifest, "publication_year", _value
         )
+
+    @property
+    def publication_months(self):
+        return BundleManifest.get_metadata(self.manifest, "publication_months", {})
+
+    @publication_months.setter
+    def publication_months(self, value: Dict):
+        try:
+            _value = dict(value)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "cannot set publication_months with value "
+                f'"{value}": the value is not valid'
+            )
+        else:
+            self.manifest = BundleManifest.set_metadata(
+                self._manifest, "publication_months", _value
+            )
 
     @property
     def volume(self):

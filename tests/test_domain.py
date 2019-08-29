@@ -917,6 +917,30 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
             18,
         )
 
+    def test_publication_months_is_empty_dict(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self.assertEqual(documents_bundle.publication_months, {})
+
+    def test_set_publication_months(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.publication_months = {"start": "08", "end": "09"}
+        self.assertEqual(documents_bundle.publication_months, {"start": "08", "end": "09"})
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["publication_months"],
+            [("2018-08-05T22:33:49.795151Z", {"start": "08", "end": "09"})],
+        )
+
+    def test_set_publication_months_validates_not_dict(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self._assert_raises_with_message(
+            ValueError,
+            "cannot set publication_months with value " '"Jan": the value is not valid',
+            setattr,
+            documents_bundle,
+            "publication_months",
+            "Jan",
+        )
+
     def test_volume_is_empty_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         self.assertEqual(documents_bundle.volume, "")
@@ -1382,7 +1406,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "Exact and Earth Sciences",
             "Health Sciences",
             "Human Sciences",
-            "Linguistics, Letters and Arts"
+            "Linguistics, Letters and Arts",
         ]
         self.assertEqual(
             journal.subject_areas,
@@ -1394,7 +1418,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
                 "Exact and Earth Sciences",
                 "Health Sciences",
                 "Human Sciences",
-                "Linguistics, Letters and Arts"
+                "Linguistics, Letters and Arts",
             ),
         )
         self.assertEqual(
@@ -1409,7 +1433,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
                     "Exact and Earth Sciences",
                     "Health Sciences",
                     "Human Sciences",
-                    "Linguistics, Letters and Arts"
+                    "Linguistics, Letters and Arts",
                 ),
             ),
         )
@@ -1438,11 +1462,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             "APPLIED SOCIAL",
             "BIOLOGICAL",
         )
-        invalid = [
-            "AGRICULTURAL",
-            "APPLIED SOCIAL",
-            "BIOLOGICAL",
-        ]
+        invalid = ["AGRICULTURAL", "APPLIED SOCIAL", "BIOLOGICAL"]
         self._assert_raises_with_message(
             ValueError,
             "cannot set subject_areas with value %s: " % repr(subject_areas)
