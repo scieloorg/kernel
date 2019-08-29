@@ -302,11 +302,11 @@ class JournalIssueItem(colander.MappingSchema):
     com um Journal"""
 
     id = colander.SchemaNode(colander.String())
-
-    @colander.instantiate()
-    class ns(colander.SequenceSchema):
-        item = colander.SchemaNode(colander.String())
-
+    order = colander.SchemaNode(colander.String(), missing=colander.drop)
+    year = colander.SchemaNode(colander.String())
+    volume = colander.SchemaNode(colander.String(), missing=colander.drop)
+    number = colander.SchemaNode(colander.String(), missing=colander.drop)
+    supplement = colander.SchemaNode(colander.String(), missing=colander.drop)
 
 class JournalIssuesSchema(colander.MappingSchema):
     """Representa o schema de dados de atualização de fascículos de periódico.
