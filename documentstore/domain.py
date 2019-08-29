@@ -2,7 +2,7 @@ import itertools
 from copy import deepcopy
 from io import BytesIO
 import re
-from typing import Union, Callable, Any, Tuple, List
+from typing import Union, Callable, Any, Tuple, List, Dict
 from datetime import datetime
 import time
 import os
@@ -726,42 +726,22 @@ class DocumentsBundle:
         )
 
     @property
-    def publication_month(self):
-        return BundleManifest.get_metadata(self.manifest, "publication_month")
+    def publication_months(self):
+        return BundleManifest.get_metadata(self.manifest, "publication_months", {})
 
-    @publication_month.setter
-    def publication_month(self, value: Union[str, int]):
-        _value = str(value).zfill(2)
-        if not re.match(r"^\d{2}$", _value):
-            raise ValueError(
-                "cannot set publication_month with value "
-                f'"{_value}": the value is not valid'
-            )
-        self.manifest = BundleManifest.set_metadata(
-            self._manifest, "publication_month", _value
-        )
-
-    @property
-    def publication_season(self):
-        return BundleManifest.get_metadata(self.manifest, "publication_season", ())
-
-    @publication_season.setter
-    def publication_season(self, value: Tuple[int]):
+    @publication_months.setter
+    def publication_months(self, value: Dict):
         try:
-            _value = tuple(value)
-            [int(item) for item in _value]
-            if len(set(_value)) < 2:
-                raise ValueError
-
-        except (ValueError, TypeError):
+            _value = dict(value)
+        except (TypeError, ValueError):
             raise ValueError(
-                "cannot set publication_season with value "
+                "cannot set publication_months with value "
                 f'"{value}": the value is not valid'
-            ) from None
-
-        self.manifest = BundleManifest.set_metadata(
-            self._manifest, "publication_season", _value
-        )
+            )
+        else:
+            self.manifest = BundleManifest.set_metadata(
+                self._manifest, "publication_months", _value
+            )
 
     @property
     def volume(self):
