@@ -1,7 +1,6 @@
 import json
 import unittest
 from unittest.mock import Mock
-from copy import deepcopy
 
 from documentstore import adapters, domain, exceptions, interfaces
 from . import apptesting
@@ -357,7 +356,7 @@ class ChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
 
 class MongoDBTests(unittest.TestCase):
     def test_mongoclient_isnt_instantiated_during_init(self):
-        """É importante que a instância de `pymongo.MongoClient` não seja 
+        """É importante que a instância de `pymongo.MongoClient` não seja
         criada durante a inicialização de `adapters.MongoDB`, mas apenas quando
         a conexão com o banco for necessária. Essa medida visa evitar problemas
         em aplicações que operam no modelo *prefork* como é o caso do Gunicorn.

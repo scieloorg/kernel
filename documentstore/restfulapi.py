@@ -4,7 +4,6 @@ import os
 from pyramid.settings import asbool
 from pyramid.config import Configurator
 from pyramid.httpexceptions import (
-    HTTPOk,
     HTTPNotFound,
     HTTPNoContent,
     HTTPCreated,
@@ -217,6 +216,15 @@ class JournalAOPSchema(colander.MappingSchema):
 class DocumentsBundleSchema(colander.MappingSchema):
     """Representa o schema de dados para registro de Documents Bundle."""
 
+    @colander.instantiate(missing=colander.drop)
+    class publication_months(colander.MappingSchema):
+        month = colander.SchemaNode(colander.Int(), missing=colander.drop)
+
+        @colander.instantiate(missing=colander.drop)
+        class interval(colander.TupleSchema):
+            start_month = colander.SchemaNode(colander.Int(), missing=colander.drop)
+            end_month = colander.SchemaNode(colander.Int(), missing=colander.drop)
+
     publication_year = colander.SchemaNode(colander.Int(), missing=colander.drop)
     supplement = colander.SchemaNode(colander.String(), missing=colander.drop)
     volume = colander.SchemaNode(colander.String(), missing=colander.drop)
@@ -307,6 +315,7 @@ class JournalIssueItem(colander.MappingSchema):
     volume = colander.SchemaNode(colander.String(), missing=colander.drop)
     number = colander.SchemaNode(colander.String(), missing=colander.drop)
     supplement = colander.SchemaNode(colander.String(), missing=colander.drop)
+
 
 class JournalIssuesSchema(colander.MappingSchema):
     """Representa o schema de dados de atualização de fascículos de periódico.

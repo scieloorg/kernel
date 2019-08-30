@@ -158,6 +158,7 @@ def documents_bundle_registry_data_fixture():
         "supplement": "1",
         "volume": "1",
         "number": "1",
+        "publication_months": {'month': 1},
         "titles": [
             {
                 "language": "es",
