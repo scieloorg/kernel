@@ -222,6 +222,16 @@ class DocumentsBundleSchemaTest(unittest.TestCase):
         data = apptesting.documents_bundle_registry_data_fixture()
         restfulapi.DocumentsBundleSchema().deserialize(data)
 
+    def test_if_month_and_range_are_mutually_exclusive(self):
+        data = apptesting.documents_bundle_registry_data_fixture()
+        pub_months_dict = data['publication_months']
+        pub_months_dict['range'] = (1, 2)
+        data['publication_months'] = pub_months_dict
+
+        self.assertRaises(
+            colander.Invalid, restfulapi.JournalIssuesSchema().deserialize, data
+        )
+
 
 class PutDocumentsBundleTest(unittest.TestCase):
     def setUp(self):

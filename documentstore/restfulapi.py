@@ -216,12 +216,16 @@ class JournalAOPSchema(colander.MappingSchema):
 class DocumentsBundleSchema(colander.MappingSchema):
     """Representa o schema de dados para registro de Documents Bundle."""
 
-    @colander.instantiate(missing=colander.drop)
+    def combined_validator(node, value):
+        if value.get('month') and value.get('range'):
+            raise colander.Invalid(node, "The month and range fields are mutually exclusive.")
+
+    @colander.instantiate(missing=colander.drop, validator=combined_validator)
     class publication_months(colander.MappingSchema):
         month = colander.SchemaNode(colander.Int(), missing=colander.drop)
 
         @colander.instantiate(missing=colander.drop)
-        class interval(colander.TupleSchema):
+        class range(colander.TupleSchema):
             start_month = colander.SchemaNode(colander.Int(), missing=colander.drop)
             end_month = colander.SchemaNode(colander.Int(), missing=colander.drop)
 
