@@ -1079,8 +1079,28 @@ class PlainTextRenderer:
         return value
 
 
+def split_dsn(dsns):
+    """Produz uma lista de DSNs a partir de uma string separada de DSNs separados
+    por espaços ou quebras de linha. A escolha dos separadores se baseia nas 
+    convenções do framework Pyramid.
+    """
+    return [dsn.strip() for dsn in str(dsns).split() if dsn]
+
+
 DEFAULT_SETTINGS = [
-    ("kernel.app.mongodb.dsn", "KERNEL_APP_MONGODB_DSN", str, "mongodb://db:27017/"),
+    (
+        "kernel.app.mongodb.dsn",
+        "KERNEL_APP_MONGODB_DSN",
+        split_dsn,
+        "mongodb://db:27017/",
+    ),
+    ("kernel.app.mongodb.replicaset", "KERNEL_APP_MONGODB_REPLICASET", str, ""),
+    (
+        "kernel.app.mongodb.readpreference",
+        "KERNEL_APP_MONGODB_READPREFERENCE",
+        str,
+        "secondaryPreferred",
+    ),
     ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True),
     ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087),
 ]
@@ -1120,7 +1140,13 @@ def main(global_config, **settings):
     config.add_renderer("xml", XMLRenderer)
     config.add_renderer("text", PlainTextRenderer)
 
-    mongo = adapters.MongoDB(settings["kernel.app.mongodb.dsn"])
+    mongo = adapters.MongoDB(
+        settings["kernel.app.mongodb.dsn"],
+        options={
+            "replicaSet": settings["kernel.app.mongodb.replicaset"],
+            "readPreference": settings["kernel.app.mongodb.readpreference"],
+        },
+    )
     Session = adapters.Session.partial(mongo)
 
     config.add_request_method(

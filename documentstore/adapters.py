@@ -26,21 +26,34 @@ class MongoDB:
     código necessita conhecer detalhes de conexão, nome do banco de dados ou
     das coleções que armazenam cada tipo de entidade. Caso seja necessário criar
     índices, aqui é o lugar.
+
+    :param options: (opcional) dicionário com opções que serão passadas diretamente
+    na instanciação de `pymongo.MongoClient`. Veja as opções em:
+    https://api.mongodb.com/python/current/api/pymongo/mongo_client.html
     """
 
-    def __init__(self, uri, dbname="document-store", mongoclient=pymongo.MongoClient):
+    def __init__(
+        self,
+        uri,
+        dbname="document-store",
+        mongoclient=pymongo.MongoClient,
+        options=None,
+    ):
         self._dbname = dbname
         self._uri = uri
         self._MongoClient = mongoclient
         self._client_instance = None
+        self._options = options or {}
 
     @property
     def _client(self):
         """Posterga a instanciação de `pymongo.MongoClient` até o seu primeiro
         uso.
         """
+        options = {k: v for k, v in self._options.items() if v}
+
         if not self._client_instance:
-            self._client_instance = self._MongoClient(self._uri)
+            self._client_instance = self._MongoClient(self._uri, **options)
             LOGGER.debug(
                 "new MongoDB client created: <%s at %s>",
                 repr(self._client_instance),
