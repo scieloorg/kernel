@@ -43,11 +43,23 @@ Para mais informação sobre a nova arquitetura de sistemas de informação da M
 Configurando a aplicação:
 
 
-diretiva no arquivo .ini      | variável de ambiente          | valor padrão
-------------------------------|-------------------------------|--------------------
-kernel.app.mongodb.dsn        | KERNEL_APP_MONGODB_DSN        | mongodb://db:27017
-kernel.app.prometheus.enabled | KERNEL_APP_PROMETHEUS_ENABLED | True
-kernel.app.prometheus.port    | KERNEL_APP_PROMETHEUS_PORT    | 8087
+diretiva no arquivo .ini          | variável de ambiente              | valor padrão
+----------------------------------|-----------------------------------|--------------------
+kernel.app.mongodb.dsn            | KERNEL_APP_MONGODB_DSN            | mongodb://db:27017
+kernel.app.mongodb.replicaset     | KERNEL_APP_MONGODB_REPLICASET     |
+kernel.app.mongodb.readpreference | KERNEL_APP_MONGODB_READPREFERENCE | secondaryPreferred
+kernel.app.prometheus.enabled     | KERNEL_APP_PROMETHEUS_ENABLED     | True
+kernel.app.prometheus.port        | KERNEL_APP_PROMETHEUS_PORT        | 8087
+
+
+A configuração padrão assume o uso de uma instância *standalone* do MongoDB. Para
+uma instância de produção recomenda-se o uso de *replica sets*. Para mais detalhes
+acesse https://docs.mongodb.com/manual/replication/.
+
+Ao conectar-se a um *replica set*, a diretiva `kernel.app.mongodb.replicaset`
+deve ser definida com o nome do *replica set*. Além disso, é possível informar os diversos
+*seeds* do *replica set* por meio da diretiva `kernel.app.mongodb.dsn`,
+separando suas URIs com espaços em branco ou quebra de linha.
 
 
 Configurações avançadas:
