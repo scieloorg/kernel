@@ -4,7 +4,7 @@ import pkg_resources
 from pyramid.tweens import EXCVIEW
 from prometheus_client import start_http_server, Histogram, Gauge, Summary, Info
 
-_VERSION = pkg_resources.get_distribution("scielo-documentstore").version
+_VERSION = pkg_resources.get_distribution("scielo-kernel").version
 
 APP_INFO = Info(
     "kernel",

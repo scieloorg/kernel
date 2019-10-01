@@ -7,13 +7,14 @@ with open(os.path.join(setup_path, "README.md")) as readme:
     long_description = readme.read()
 
 setuptools.setup(
-    name="scielo-documentstore",
+    name="scielo-kernel",
     version="0.1",
-    author="Gustavo Fonseca",
-    author_email="gustavo@gfonseca.net",
-    description="scielo-documentstore é uma implementação experimental de um "
-    "pacote Python que busca tratar da persistência de documentos XML "
-    "em múltiplas versões.",
+    author="SciELO Dev Team",
+    author_email="scielo-dev@googlegroups.com",
+    description="Kernel é o componente central da nova arquitetura de sistemas "
+    "de informação da Metodologia SciELO. É responsável pela gestão, "
+    "preservação e desempenha o papel de fonte autoritativa dos dados de uma "
+    "coleção de periódicos científicos.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="2-clause BSD",
@@ -21,7 +22,7 @@ setuptools.setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests", "docs"]
     ),
     include_package_data=False,
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=[
         "lxml",
         "requests",
@@ -36,14 +37,13 @@ setuptools.setup(
         "prometheus_client",
     ],
     test_suite="tests",
-    classifiers=(
+    classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Environment :: Other Environment",
         "License :: OSI Approved :: BSD License",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3 :: Only",
         "Operating System :: OS Independent",
-    ),
+    ],
     entry_points={"paste.app_factory": ["main = documentstore.restfulapi:main"]},
 )

@@ -7,7 +7,7 @@ RUN cd /src \
 
 
 FROM python:3.7-alpine
-MAINTAINER gustavo.fonseca@scielo.org
+MAINTAINER scielo-dev@googlegroups.com
 
 COPY --from=build /deps/* /deps/
 COPY production.ini /app/config.ini
@@ -19,7 +19,7 @@ RUN apk add --no-cache --virtual .build-deps \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir raven \
     && pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-index --find-links=file:///deps -U scielo-documentstore \
+    && pip install --no-index --find-links=file:///deps -U scielo-kernel \
     && apk --purge del .build-deps \
     && rm requirements.txt \
     && rm -rf /deps
