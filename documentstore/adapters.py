@@ -184,7 +184,7 @@ class ChangesStore(interfaces.ChangesDataStore):
         return self._collection.find(
             {"_id": {"$gt": since}},
             sort=[("_id", pymongo.ASCENDING)],
-            projection={"_id": False},
+            projection={"_id": False, "content": False, "content_type": False},
         ).limit(limit)
 
 
