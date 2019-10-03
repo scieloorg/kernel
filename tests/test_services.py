@@ -58,7 +58,7 @@ class CreateDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
                     "id": "xpto",
                     "docs": [{"id": "/document/1"}],
                     "metadata": None,
-                    "bundle": mock.ANY,
+                    "instance": mock.ANY,
                 },
             )
 
@@ -179,7 +179,7 @@ class UpdateDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
                 {
                     "id": "xpto",
                     "metadata": {"publication_year": "2019"},
-                    "bundle": mock.ANY,
+                    "instance": mock.ANY,
                 },
             )
 
@@ -223,7 +223,7 @@ class AddDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
             self.command(id="xpto", doc={"id": "/document/1"})
             mock_notify.assert_called_once_with(
                 self.event,
-                {"id": "xpto", "doc": {"id": "/document/1"}, "bundle": mock.ANY},
+                {"id": "xpto", "doc": {"id": "/document/1"}, "instance": mock.ANY},
             )
 
 
@@ -291,7 +291,7 @@ class InsertDocumentToDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
                     "id": "xpto",
                     "doc": {"id": "/document/3"},
                     "index": 10,
-                    "bundle": mock.ANY,
+                    "instance": mock.ANY,
                 },
             )
 
@@ -362,7 +362,7 @@ class UpdateDocumentInDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
                 mock_notify.assert_called_once_with(
                     self.event,
                     {
-                        "bundle": DocumentsBundleStub,
+                        "instance": DocumentsBundleStub,
                         "id": "issue-example-id",
                         "docs": [{"id": "a"}],
                     },
@@ -403,7 +403,7 @@ class CreateJournalTest(CommandTestMixin, unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(id="jxpto")
             mock_notify.assert_called_once_with(
-                self.event, {"id": "jxpto", "journal": mock.ANY, "metadata": None}
+                self.event, {"id": "jxpto", "instance": mock.ANY, "metadata": None}
             )
 
 
@@ -467,7 +467,7 @@ class AddIssueToJournalTest(CommandTestMixin, unittest.TestCase):
                 mock_notify.assert_called_once_with(
                     self.event,
                     {
-                        "journal": JournalStub,
+                        "instance": JournalStub,
                         "id": "0034-8910-rsp",
                         "issue": {"id": "0034-8910-rsp-48-2"},
                     },
@@ -563,7 +563,7 @@ class InsertIssueToJournalTest(CommandTestMixin, unittest.TestCase):
                 mock_notify.assert_called_once_with(
                     self.event,
                     {
-                        "journal": JournalStub,
+                        "instance": JournalStub,
                         "id": "0034-8910-rsp",
                         "index": 0,
                         "issue": {"id": "0034-8910-rsp-48-2"},
@@ -631,7 +631,7 @@ class RemoveIssueFromJournalTest(CommandTestMixin, unittest.TestCase):
                 mock_notify.assert_called_once_with(
                     self.event,
                     {
-                        "journal": JournalStub,
+                        "instance": JournalStub,
                         "id": "0034-8910-rsp",
                         "issue": "0034-8910-rsp-48-2",
                     },
@@ -704,7 +704,7 @@ class UpdateIssuesInJournalTest(CommandTestMixin, unittest.TestCase):
                 mock_notify.assert_called_once_with(
                     self.event,
                     {
-                        "journal": JournalStub,
+                        "instance": JournalStub,
                         "id": "journal-example-id",
                         "issues": [{"id": "a"}],
                     },
@@ -760,7 +760,7 @@ class SetAheadOfPrintBundleToJournalTest(CommandTestMixin, unittest.TestCase):
                 mock_notify.assert_called_once_with(
                     self.event,
                     {
-                        "journal": JournalStub,
+                        "instance": JournalStub,
                         "id": "0034-8910-rsp",
                         "aop": "0034-8910-rsp-aop",
                     },
@@ -809,7 +809,7 @@ class RemoveAheadOfPrintBundleFromJournalTest(CommandTestMixin, unittest.TestCas
             with mock.patch.object(self.session, "notify") as mock_notify:
                 self.command(id="0034-8910-rsp")
                 mock_notify.assert_called_once_with(
-                    self.event, {"journal": JournalStub, "id": "0034-8910-rsp"}
+                    self.event, {"instance": JournalStub, "id": "0034-8910-rsp"}
                 )
 
 
@@ -936,7 +936,7 @@ class UpdateJornalMetadataTest(CommandTestMixin, unittest.TestCase):
             self.command(id="1678-4596-cr", metadata=metadata)
             mock_notify.assert_called_once_with(
                 self.event,
-                {"id": "1678-4596-cr", "metadata": metadata, "journal": mock.ANY},
+                {"id": "1678-4596-cr", "metadata": metadata, "instance": mock.ANY},
             )
 
 
@@ -1016,7 +1016,7 @@ class RegisterRenditionVersionTest(CommandTestMixin, unittest.TestCase):
             mock_notify.assert_called_once_with(
                 self.event,
                 {
-                    "document": mock.ANY,
+                    "instance": mock.ANY,
                     "id": self.document.id(),
                     "filename": "0034-8910-rsp-48-2-0275-pt.pdf",
                     "data_url": "/rawfiles/7ca9f9b2687cb/0034-8910-rsp-48-2-0275-pt.pdf",
@@ -1132,5 +1132,5 @@ class DeleteDocumentTest(CommandTestMixin, unittest.TestCase):
         with mock.patch.object(self.session, "notify") as mock_notify:
             self.command(self.document.id())
             mock_notify.assert_called_once_with(
-                self.event, {"document": mock.ANY, "id": self.document.id()}
+                self.event, {"instance": mock.ANY, "id": self.document.id()}
             )
