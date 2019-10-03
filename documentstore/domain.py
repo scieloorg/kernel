@@ -262,6 +262,7 @@ class Document:
     _timestamp_pattern = (
         r"^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z)?$"
     )
+    data_type = "text/xml"
 
     def __init__(self, id=None, manifest=None):
         assert any([id, manifest])
@@ -456,6 +457,8 @@ class Document:
             target_node.attrib["{http://www.w3.org/1999/xlink}href"] = version_href
 
         return etree.tostring(xml_tree, encoding="utf-8", pretty_print=False)
+
+    data_bytes = data
 
     def _latest_or_default(self):
         try:
@@ -687,6 +690,8 @@ class DocumentsBundle:
     e abertos, Ahead of Print, Documentos Provisórios, Erratas e Retratações.
     """
 
+    data_type = "application/json"
+
     def __init__(self, id: str = None, manifest: dict = None):
         assert any([id, manifest])
         self.manifest = manifest or BundleManifest.new(id)
@@ -700,6 +705,11 @@ class DocumentsBundle:
             attr: value[-1][-1] for attr, value in _manifest["metadata"].items()
         }
         return _manifest
+
+    def data_bytes(self) -> bytes:
+        """Retorna `self.data()` codificado em utf-8.
+        """
+        return json.dumps(self.data()).encode("utf-8")
 
     @property
     def manifest(self):
@@ -807,6 +817,8 @@ class Journal:
     DocumentsBundle.
     """
 
+    data_type = "application/json"
+
     def __init__(self, id: str = None, manifest: dict = None):
         assert any([id, manifest])
         self.manifest = manifest or BundleManifest.new(id)
@@ -837,6 +849,11 @@ class Journal:
             _manifest["metadata"][key] = value[-1][-1]
 
         return _manifest
+
+    def data_bytes(self) -> bytes:
+        """Retorna `self.data()` codificado em utf-8.
+        """
+        return json.dumps(self.data()).encode("utf-8")
 
     @property
     def mission(self):

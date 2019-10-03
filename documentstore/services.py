@@ -535,135 +535,69 @@ class DeleteDocument(CommandHandler):
         return result
 
 
-def log_change(data, session, now=utcnow, entity="", deleted=False, content_type=""):
-    def _get_content():
-        instance = None
-        for key in ["document", "bundle", "journal"]:
-            try:
-                instance = data[key]
-            except KeyError:
-                continue
-            else:
-                break
-
-        if instance is None:
-            return ""
-        else:
-            return instance.data()
-
+def log_change(data, session, now=utcnow, entity="", deleted=False):
     change = {"timestamp": now(), "entity": entity, "id": data["id"]}
 
     if deleted:
         change["deleted"] = True
-
-    content = _get_content()
-    if content:
-        change["content"] = content
-        change["content_type"] = content_type
+    else:
+        change["content"] = data["instance"].data_bytes()
+        change["content_type"] = data["instance"].data_type
 
     session.changes.add(change)
 
 
 DEFAULT_SUBSCRIBERS = [
-    (
-        Events.DOCUMENT_REGISTERED,
-        functools.partial(log_change, entity="Document", content_type="text/xml"),
-    ),
+    (Events.DOCUMENT_REGISTERED, functools.partial(log_change, entity="Document")),
     (
         Events.DOCUMENT_VERSION_REGISTERED,
-        functools.partial(log_change, entity="Document", content_type="text/xml"),
+        functools.partial(log_change, entity="Document"),
     ),
-    (
-        Events.ASSET_VERSION_REGISTERED,
-        functools.partial(log_change, entity="Document", content_type="text/xml"),
-    ),
+    (Events.ASSET_VERSION_REGISTERED, functools.partial(log_change, entity="Document")),
     (
         Events.DOCUMENTSBUNDLE_CREATED,
-        functools.partial(
-            log_change, entity="DocumentsBundle", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="DocumentsBundle"),
     ),
     (
         Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
-        functools.partial(
-            log_change, entity="DocumentsBundle", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="DocumentsBundle"),
     ),
     (
         Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
-        functools.partial(
-            log_change, entity="DocumentsBundle", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="DocumentsBundle"),
     ),
     (
         Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
-        functools.partial(
-            log_change, entity="DocumentsBundle", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="DocumentsBundle"),
     ),
-    (
-        Events.JOURNAL_CREATED,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
-    ),
-    (
-        Events.JOURNAL_METATADA_UPDATED,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
-    ),
-    (
-        Events.ISSUE_ADDED_TO_JOURNAL,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
-    ),
-    (
-        Events.ISSUE_INSERTED_TO_JOURNAL,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
-    ),
+    (Events.JOURNAL_CREATED, functools.partial(log_change, entity="Journal")),
+    (Events.JOURNAL_METATADA_UPDATED, functools.partial(log_change, entity="Journal")),
+    (Events.ISSUE_ADDED_TO_JOURNAL, functools.partial(log_change, entity="Journal")),
+    (Events.ISSUE_INSERTED_TO_JOURNAL, functools.partial(log_change, entity="Journal")),
     (
         Events.ISSUE_REMOVED_FROM_JOURNAL,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="Journal"),
     ),
     (
         Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="Journal"),
     ),
     (
         Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="Journal"),
     ),
     (
         Events.RENDITION_VERSION_REGISTERED,
-        functools.partial(
-            log_change, entity="DocumentRendition", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="DocumentRendition"),
     ),
     (
         Events.DOCUMENT_DELETED,
         functools.partial(log_change, entity="Document", deleted=True),
     ),
-    (
-        Events.JOURNAL_ISSUES_UPDATED,
-        functools.partial(
-            log_change, entity="Journal", content_type="application/json"
-        ),
-    ),
+    (Events.JOURNAL_ISSUES_UPDATED, functools.partial(log_change, entity="Journal")),
     (
         Events.ISSUE_DOCUMENTS_UPDATED,
-        functools.partial(
-            log_change, entity="DocumentsBundle", content_type="application/json"
-        ),
+        functools.partial(log_change, entity="DocumentsBundle"),
     ),
 ]
 
