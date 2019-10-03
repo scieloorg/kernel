@@ -72,7 +72,7 @@ class BaseRegisterDocument(CommandHandler):
         self._persist(session, document)
         self._notify(
             session,
-            {"document": document, "id": id, "data_url": data_url, "assets": assets},
+            {"instance": document, "id": id, "data_url": data_url, "assets": assets},
         )
 
 
@@ -179,7 +179,7 @@ class RegisterAssetVersion(CommandHandler):
         session.notify(
             Events.ASSET_VERSION_REGISTERED,
             {
-                "document": document,
+                "instance": document,
                 "id": id,
                 "asset_id": asset_id,
                 "asset_url": asset_url,
@@ -249,7 +249,7 @@ class CreateDocumentsBundle(CommandHandler):
         result = session.documents_bundles.add(_bundle)
         session.notify(
             Events.DOCUMENTSBUNDLE_CREATED,
-            {"bundle": _bundle, "id": id, "docs": docs, "metadata": metadata},
+            {"instance": _bundle, "id": id, "docs": docs, "metadata": metadata},
         )
         return result
 
@@ -269,7 +269,7 @@ class UpdateDocumentsBundleMetadata(CommandHandler):
         session.documents_bundles.update(_bundle)
         session.notify(
             Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
-            {"bundle": _bundle, "id": id, "metadata": metadata},
+            {"instance": _bundle, "id": id, "metadata": metadata},
         )
 
 
@@ -281,7 +281,7 @@ class AddDocumentToDocumentsBundle(CommandHandler):
         session.documents_bundles.update(_bundle)
         session.notify(
             Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
-            {"bundle": _bundle, "id": id, "doc": doc},
+            {"instance": _bundle, "id": id, "doc": doc},
         )
 
 
@@ -293,7 +293,7 @@ class InsertDocumentToDocumentsBundle(CommandHandler):
         session.documents_bundles.update(_bundle)
         session.notify(
             Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
-            {"bundle": _bundle, "id": id, "index": index, "doc": doc},
+            {"instance": _bundle, "id": id, "index": index, "doc": doc},
         )
 
 
@@ -313,7 +313,8 @@ class UpdateDocumentInDocumentsBundle(CommandHandler):
 
         session.documents_bundles.update(_bundle)
         session.notify(
-            Events.ISSUE_DOCUMENTS_UPDATED, {"bundle": _bundle, "id": id, "docs": docs}
+            Events.ISSUE_DOCUMENTS_UPDATED,
+            {"instance": _bundle, "id": id, "docs": docs},
         )
 
 
@@ -326,7 +327,7 @@ class CreateJournal(CommandHandler):
         result = session.journals.add(_journal)
         session.notify(
             Events.JOURNAL_CREATED,
-            {"journal": _journal, "id": id, "metadata": metadata},
+            {"instance": _journal, "id": id, "metadata": metadata},
         )
         return result
 
@@ -350,7 +351,7 @@ class UpdateJournalMetadata(CommandHandler):
         session.journals.update(_journal)
         session.notify(
             Events.JOURNAL_METATADA_UPDATED,
-            {"id": id, "metadata": metadata, "journal": _journal},
+            {"id": id, "metadata": metadata, "instance": _journal},
         )
 
 
@@ -362,7 +363,7 @@ class AddIssueToJournal(CommandHandler):
         session.journals.update(_journal)
         session.notify(
             Events.ISSUE_ADDED_TO_JOURNAL,
-            {"journal": _journal, "id": id, "issue": issue},
+            {"instance": _journal, "id": id, "issue": issue},
         )
 
 
@@ -374,7 +375,7 @@ class InsertIssueToJournal(CommandHandler):
         session.journals.update(_journal)
         session.notify(
             Events.ISSUE_INSERTED_TO_JOURNAL,
-            {"journal": _journal, "id": id, "index": index, "issue": issue},
+            {"instance": _journal, "id": id, "index": index, "issue": issue},
         )
 
 
@@ -395,7 +396,7 @@ class UpdateIssuesInJournal(CommandHandler):
         session.journals.update(_journal)
         session.notify(
             Events.JOURNAL_ISSUES_UPDATED,
-            {"journal": _journal, "id": id, "issues": issues},
+            {"instance": _journal, "id": id, "issues": issues},
         )
 
 
@@ -407,7 +408,7 @@ class RemoveIssueFromJournal(CommandHandler):
         session.journals.update(_journal)
         session.notify(
             Events.ISSUE_REMOVED_FROM_JOURNAL,
-            {"journal": _journal, "id": id, "issue": issue},
+            {"instance": _journal, "id": id, "issue": issue},
         )
 
 
@@ -419,7 +420,7 @@ class SetAheadOfPrintBundleToJournal(CommandHandler):
         session.journals.update(_journal)
         session.notify(
             Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
-            {"journal": _journal, "id": id, "aop": aop},
+            {"instance": _journal, "id": id, "aop": aop},
         )
 
 
@@ -431,7 +432,7 @@ class RemoveAheadOfPrintBundleFromJournal(CommandHandler):
         session.journals.update(_journal)
         session.notify(
             Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
-            {"journal": _journal, "id": id},
+            {"instance": _journal, "id": id},
         )
 
 
@@ -483,7 +484,7 @@ class RegisterRenditionVersion(CommandHandler):
         session.notify(
             Events.RENDITION_VERSION_REGISTERED,
             {
-                "document": document,
+                "instance": document,
                 "id": id,
                 "filename": filename,
                 "data_url": data_url,
@@ -530,7 +531,7 @@ class DeleteDocument(CommandHandler):
         document = session.documents.fetch(id)
         document.new_deleted_version()
         result = session.documents.update(document)
-        session.notify(Events.DOCUMENT_DELETED, {"document": document, "id": id})
+        session.notify(Events.DOCUMENT_DELETED, {"instance": document, "id": id})
         return result
 
 
