@@ -199,21 +199,28 @@ class InMemoryChangesDataStore(interfaces.ChangesDataStore):
 class MongoDBCollectionStub:
     def __init__(self):
         self._mongo_store = OrderedDict()
+        self._timestamps = set()  # devem ser únicos
 
     def insert_one(self, data):
         import pymongo
+        from bson.objectid import ObjectId
 
-        if data["_id"] in self._mongo_store:
+        if "_id" not in data:
+            data["_id"] = ObjectId()
+
+        if data["_id"] in self._mongo_store or \
+           data["timestamp"] in self._timestamps:
             raise pymongo.errors.DuplicateKeyError("")
         else:
             self._mongo_store[data["_id"]] = data
+            self._timestamps.add(data["timestamp"])
 
     def find(self, query, sort=None, projection=None):
-        since = query["_id"]["$gt"]
+        since = query["timestamp"]["$gt"]
 
         first = 0
         for i, change_key in enumerate(self._mongo_store):
-            if self._mongo_store[change_key]["_id"] <= since:
+            if self._mongo_store[change_key]["timestamp"] <= since:
                 continue
             else:
                 first = i

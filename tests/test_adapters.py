@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch, PropertyMock
 
 from documentstore import adapters, domain, exceptions, interfaces
 from . import apptesting
@@ -372,3 +372,18 @@ class MongoDBTests(unittest.TestCase):
             "mongodb://test_db:27017", dbname="store", mongoclient=mock_mongoclient
         )
         mock_mongoclient.assert_not_called()
+
+    def test_create_indexes_on_changes_timestamp(self):
+        import pymongo
+
+        mock_mongodb_collection = Mock()
+        mock_mongodb_collection.create_index = Mock()
+        with patch(
+            "documentstore.adapters.MongoDB.changes", new_callable=PropertyMock
+        ) as mock_changes:
+            mock_changes.return_value = mock_mongodb_collection
+            mongodb = adapters.MongoDB("mongodb://test_db:27017", dbname="store")
+            mongodb.create_indexes()
+            mock_mongodb_collection.create_index.assert_called_with(
+                [("timestamp", pymongo.ASCENDING)], unique=True, background=True
+            )
