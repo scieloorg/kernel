@@ -10,7 +10,7 @@ from . import apptesting
 
 def make_services():
     session = apptesting.Session()
-    return services.get_handlers(lambda: session), session
+    return services.get_handlers(lambda: session, subscribers=[]), session
 
 
 class CommandTestMixin:

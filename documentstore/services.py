@@ -3,6 +3,7 @@ import difflib
 import functools
 from io import BytesIO
 from enum import Enum, auto
+import gzip
 
 from clea import join as clea_join, core as clea_core
 
@@ -535,13 +536,15 @@ class DeleteDocument(CommandHandler):
         return result
 
 
-def log_change(data, session, now=utcnow, entity="", deleted=False):
+def log_change(
+    data, session, now=utcnow, entity="", deleted=False, compress=gzip.compress
+):
     change = {"timestamp": now(), "entity": entity, "id": data["id"]}
 
     if deleted:
         change["deleted"] = True
     else:
-        change["content"] = data["instance"].data_bytes()
+        change["content_gz"] = compress(data["instance"].data_bytes())
         change["content_type"] = data["instance"].data_type
 
     session.changes.add(change)
