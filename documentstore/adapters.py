@@ -89,6 +89,11 @@ class MongoDB:
     def changes(self):
         return self._collection("changes")
 
+    def create_indexes(self):
+        self.changes.create_index(
+            [("timestamp", pymongo.ASCENDING)], unique=True, background=True
+        )
+
 
 class Session(interfaces.Session):
     """Implementação de `interfaces.Session` para armazenamento em MongoDB.
@@ -171,19 +176,17 @@ class ChangesStore(interfaces.ChangesDataStore):
         self._collection = collection
 
     def add(self, change: dict):
-        change["_id"] = change["timestamp"]
         try:
             self._collection.insert_one(change)
-        except pymongo.errors.DuplicateKeyError:
+        except pymongo.errors.DuplicateKeyError as exc:
             raise exceptions.AlreadyExists(
-                "cannot add data with id "
-                '"%s": the id is already in use' % change["_id"]
+                'cannot add data with id "%s": %s' % (change["_id"], exc)
             ) from None
 
     def filter(self, since: str = "", limit: int = 500):
         return self._collection.find(
-            {"_id": {"$gt": since}},
-            sort=[("_id", pymongo.ASCENDING)],
+            {"timestamp": {"$gt": since}},
+            sort=[("timestamp", pymongo.ASCENDING)],
             projection={"_id": False, "content_gz": False, "content_type": False},
         ).limit(limit)
 
