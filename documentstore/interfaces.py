@@ -35,6 +35,10 @@ class ChangesDataStore(abc.ABC):
     def filter(self, since: str = "", limit: int = 500) -> list:
         pass
 
+    @abc.abstractmethod
+    def fetch(self, id: str):
+        pass
+
 
 class Session(abc.ABC):
     """Concentra os pontos de acesso aos repositórios de dados.
