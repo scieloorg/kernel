@@ -45,5 +45,8 @@ setuptools.setup(
         "Programming Language :: Python :: 3 :: Only",
         "Operating System :: OS Independent",
     ],
-    entry_points={"paste.app_factory": ["main = documentstore.restfulapi:main"]},
+    entry_points={
+        "paste.app_factory": ["main = documentstore.restfulapi:main"],
+        "console_scripts": ["kernelctl = documentstore.kernelctl:main"],
+    },
 )
