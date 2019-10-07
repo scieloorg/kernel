@@ -12,6 +12,7 @@ import logging
 import json
 
 import pymongo
+from bson.objectid import ObjectId
 
 from . import interfaces
 from . import exceptions
@@ -189,6 +190,15 @@ class ChangesStore(interfaces.ChangesDataStore):
             sort=[("timestamp", pymongo.ASCENDING)],
             projection={"_id": False, "content_gz": False, "content_type": False},
         ).limit(limit)
+
+    def fetch(self, id: str) -> dict:
+        change = self._collection.find_one({"_id": ObjectId(id)})
+        if change:
+            return change
+        else:
+            raise exceptions.DoesNotExist(
+                "cannot fetch data with id " '"%s": data does not exist' % id
+            )
 
 
 class DocumentStore(BaseStore):

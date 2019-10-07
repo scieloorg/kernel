@@ -1,5 +1,8 @@
 from collections import OrderedDict
 
+import pymongo
+from bson.objectid import ObjectId
+
 from documentstore import interfaces, exceptions, domain
 
 
@@ -158,7 +161,7 @@ def documents_bundle_registry_data_fixture():
         "supplement": "1",
         "volume": "1",
         "number": "1",
-        "publication_months": {'month': 1},
+        "publication_months": {"month": 1},
         "titles": [
             {
                 "language": "es",
@@ -178,22 +181,30 @@ def documents_bundle_registry_data_fixture():
 
 class InMemoryChangesDataStore(interfaces.ChangesDataStore):
     def __init__(self):
-        self._data_store = OrderedDict()
+        self._timestamps = OrderedDict()  # timestamps -> mudanças
+        self._ids = {}  # ids -> mudanças
 
     def add(self, change: dict):
-
-        if change["timestamp"] in self._data_store:
+        change["_id"] = str(change.get("_id") or ObjectId())
+        if change["timestamp"] in self._timestamps or change["_id"] in self._ids:
             raise exceptions.AlreadyExists()
         else:
-            self._data_store[change["timestamp"]] = change
+            self._timestamps[change["timestamp"]] = change
+            self._ids[change["_id"]] = change
 
     def filter(self, since: str = "", limit: int = 500):
 
         return [
             change
-            for timestamp, change in self._data_store.items()
+            for timestamp, change in self._timestamps.items()
             if timestamp > since
         ][:limit]
+
+    def fetch(self, id: str) -> dict:
+        try:
+            return self._ids[id]
+        except KeyError:
+            raise exceptions.DoesNotExist()
 
 
 class MongoDBCollectionStub:
@@ -202,14 +213,10 @@ class MongoDBCollectionStub:
         self._timestamps = set()  # devem ser únicos
 
     def insert_one(self, data):
-        import pymongo
-        from bson.objectid import ObjectId
-
         if "_id" not in data:
             data["_id"] = ObjectId()
 
-        if data["_id"] in self._mongo_store or \
-           data["timestamp"] in self._timestamps:
+        if data["_id"] in self._mongo_store or data["timestamp"] in self._timestamps:
             raise pymongo.errors.DuplicateKeyError("")
         else:
             self._mongo_store[data["_id"]] = data
@@ -227,6 +234,13 @@ class MongoDBCollectionStub:
                 break
 
         return SliceResultStub(list(self._mongo_store.values())[first:])
+
+    def find_one(self, query):
+        change_id = query["_id"]
+        try:
+            return self._mongo_store[change_id]
+        except KeyError:
+            return None
 
 
 class SliceResultStub:

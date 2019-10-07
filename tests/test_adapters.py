@@ -344,6 +344,37 @@ class ChangesStoreTestMixin:
 
         self.assertEqual(list(store.filter(limit=2)), changes[:2])
 
+    def test_fetch_by_id(self):
+        from bson.objectid import ObjectId
+
+        store = self.Store()
+
+        changes = [
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+                "_id": ObjectId(),
+            },
+            {
+                "timestamp": "2018-08-05T23:03:47.891432Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+                "_id": ObjectId(),
+            },
+            {
+                "timestamp": "2018-08-05T23:06:47.621560Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+                "_id": ObjectId(),
+            },
+        ]
+
+        for change in changes:
+            store.add(change)
+
+        self.assertEqual(store.fetch(str(changes[1]["_id"])), changes[1])
+
 
 class InMemoryChangesStoreTest(ChangesStoreTestMixin, unittest.TestCase):
     Store = apptesting.InMemoryChangesDataStore
