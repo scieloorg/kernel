@@ -25,6 +25,8 @@ with open(os.path.join(_CWD, "0034-8910-rsp-48-2-0347.xml"), "rb") as f:
 def make_request():
     request = testing.DummyRequest()
     session = apptesting.Session()
+    # atenção: os callbacks em `services.DEFAULT_SUBSCRIBERS` serão executados
+    # após os eventos!
     request.services = services.get_handlers(lambda: session)
     return request
 
@@ -224,9 +226,9 @@ class DocumentsBundleSchemaTest(unittest.TestCase):
 
     def test_if_month_and_range_are_mutually_exclusive(self):
         data = apptesting.documents_bundle_registry_data_fixture()
-        pub_months_dict = data['publication_months']
-        pub_months_dict['range'] = (1, 2)
-        data['publication_months'] = pub_months_dict
+        pub_months_dict = data["publication_months"]
+        pub_months_dict["range"] = (1, 2)
+        data["publication_months"] = pub_months_dict
 
         self.assertRaises(
             colander.Invalid, restfulapi.JournalIssuesSchema().deserialize, data
@@ -431,6 +433,31 @@ class FetchChangeUnitTest(unittest.TestCase):
         self.assertEqual(
             restfulapi.fetch_changes(self.request)["results"], changes[11:16]
         )
+
+
+class FetchChangeDetailsUnitTest(unittest.TestCase):
+    def setUp(self):
+        self.request = make_request()
+        self.config = testing.setUp()
+        self.config.add_route("documents", pattern="/documents/{document_id}")
+
+    def make_document(self):
+        self.request.matchdict = {"document_id": "0000-0000-23-24-2231"}
+        self.request.validated = apptesting.document_registry_data_fixture()
+        restfulapi.put_document(self.request)
+
+    def get_changes_ids(self):
+        return [
+            c["change_id"] for c in restfulapi.fetch_changes(self.request)["results"]
+        ]
+
+    def test_change_details_structure(self):
+        self.make_document()
+        self.request.matchdict = {"change_id": self.get_changes_ids()[0]}
+        result = restfulapi.fetch_change(self.request)
+        for key in ["id", "change_id", "timestamp", "content_gz_b64", "content_type"]:
+            with self.subTest(key=key):
+                self.assertTrue(key in result)
 
 
 class CreateJournalUnitTests(unittest.TestCase):

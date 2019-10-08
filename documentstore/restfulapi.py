@@ -1,5 +1,6 @@
 import logging
 import os
+import base64
 
 from pyramid.settings import asbool
 from pyramid.config import Configurator
@@ -78,6 +79,10 @@ bundles_documents = Service(
 
 changes = Service(
     name="changes", path="/changes", description="Get changes from all entities"
+)
+
+change_details = Service(
+    name="change_details", path="/changes/{change_id}", description="Get one change."
 )
 
 journals = Service(
@@ -217,8 +222,10 @@ class DocumentsBundleSchema(colander.MappingSchema):
     """Representa o schema de dados para registro de Documents Bundle."""
 
     def combined_validator(node, value):
-        if value.get('month') and value.get('range'):
-            raise colander.Invalid(node, "The month and range fields are mutually exclusive.")
+        if value.get("month") and value.get("range"):
+            raise colander.Invalid(
+                node, "The month and range fields are mutually exclusive."
+            )
 
     @colander.instantiate(missing=colander.drop, validator=combined_validator)
     class publication_months(colander.MappingSchema):
@@ -270,6 +277,13 @@ class ChangeSchema(colander.MappingSchema):
     timestamp = colander.SchemaNode(colander.String())
     deleted = colander.SchemaNode(colander.Boolean())
     querystring = QueryChangeSchema()
+
+
+class ChangeDetailsSchema(colander.MappingSchema):
+    """Representa o schema de dados para os detalhes de um registro de mudança.
+    """
+
+    data = colander.SchemaNode(colander.String(), missing=colander.drop)
 
 
 class ManifestSchema(colander.MappingSchema):
@@ -733,7 +747,8 @@ def fetch_changes(request):
             "id": request.route_path(entity["route"], **{entity["marker"]: c["id"]}),
             "timestamp": c["timestamp"],
         }
-
+        if "_id" in c:
+            result["change_id"] = str(c["_id"])
         if "deleted" in c:
             result["deleted"] = c["deleted"]
 
@@ -754,6 +769,53 @@ def fetch_changes(request):
             for c in request.services["fetch_changes"](since=since, limit=limit)
         ],
     }
+
+
+@change_details.get(
+    schema=ChangeDetailsSchema(),
+    response_schemas={
+        "200": ChangeDetailsSchema(description="Retorna o registro da mudança"),
+        "404": ChangeDetailsSchema(description="Registro não encontrado"),
+    },
+    accept="application/json",
+    renderer="json",
+)
+def fetch_change(request):
+    """Obtém um único registro de mudança.
+
+    Este endpoint é capaz de retornar o `snapshot` dos dados no momento
+    imediatamente após sua mudança.
+    """
+    entity_route_map = {
+        "Document": {"route": "documents", "marker": "document_id"},
+        "DocumentRendition": {"route": "renditions", "marker": "document_id"},
+        "Journal": {"route": "journals", "marker": "journal_id"},
+        "DocumentsBundle": {"route": "bundles", "marker": "bundle_id"},
+    }
+
+    def _format_change(c):
+        entity = entity_route_map[c["entity"]]
+        result = {
+            "id": request.route_path(entity["route"], **{entity["marker"]: c["id"]}),
+            "timestamp": c["timestamp"],
+        }
+        if "_id" in c:
+            result["change_id"] = str(c["_id"])
+        if "deleted" in c:
+            result["deleted"] = c["deleted"]
+        if "content_gz" in c:
+            result["content_gz_b64"] = base64.b64encode(c["content_gz"]).decode("ascii")
+        if "content_type" in c:
+            result["content_type"] = c["content_type"]
+
+        return result
+
+    try:
+        return _format_change(
+            request.services["fetch_change"](id=request.matchdict["change_id"])
+        )
+    except exceptions.DoesNotExist as exc:
+        return HTTPNotFound(exc)
 
 
 @journals.put(
