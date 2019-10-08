@@ -450,6 +450,17 @@ class FetchChanges(CommandHandler):
         return session.changes.filter(since=since, limit=limit)
 
 
+class FetchChange(CommandHandler):
+    """Recupera registro de mudança de entidade.
+
+    :param id: Identificador da mudança a ser recuperada.
+    """
+
+    def __call__(self, id: str) -> dict:
+        session = self.Session()
+        return session.changes.fetch(id=id)
+
+
 class RegisterRenditionVersion(CommandHandler):
     """Registra uma nova versão de uma manifestação do documento já registrado.
 
@@ -654,6 +665,7 @@ def get_handlers(
         "remove_issue_from_journal": RemoveIssueFromJournal(SessionWrapper),
         "update_issues_in_journal": UpdateIssuesInJournal(SessionWrapper),
         "fetch_changes": FetchChanges(SessionWrapper),
+        "fetch_change": FetchChange(SessionWrapper),
         "set_ahead_of_print_bundle_to_journal": SetAheadOfPrintBundleToJournal(
             SessionWrapper
         ),

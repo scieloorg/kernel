@@ -3,6 +3,7 @@ from unittest import mock
 import datetime
 import random
 
+from bson.objectid import ObjectId
 from documentstore import services, exceptions, domain
 
 from . import apptesting
@@ -1134,3 +1135,30 @@ class DeleteDocumentTest(CommandTestMixin, unittest.TestCase):
             mock_notify.assert_called_once_with(
                 self.event, {"instance": mock.ANY, "id": self.document.id()}
             )
+
+
+class FetchChangeTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.change_id = str(ObjectId())
+        self.session.changes.add(
+            {
+                "_id": self.change_id,
+                "timestamp": "2018-08-05T23:08:50.331687Z",
+                "entity": "Document",
+                "id": "S0034-89102014000200347",
+                "content_gz": '{"hello": "world"}',
+                "content_type": "application/json",
+            }
+        )
+
+        self.command = self.services.get("fetch_change")
+
+    def test_should_raise_does_not_exists_exception(self):
+        self.assertRaises(exceptions.DoesNotExist, self.command, id="missing-change")
+
+    def test_should_return_a_change(self):
+        self.assertIsNotNone(self.command(id=self.change_id))
+
+    def test_should_require_an_id(self):
+        self.assertRaises(TypeError, self.command)
