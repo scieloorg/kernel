@@ -719,6 +719,35 @@ def put_bundles_documents(request):
     return HTTPNoContent("documents list updated successfully.")
 
 
+entity_route_map = {
+    "Document": {"route": "documents", "marker": "document_id"},
+    "DocumentRendition": {"route": "renditions", "marker": "document_id"},
+    "Journal": {"route": "journals", "marker": "journal_id"},
+    "DocumentsBundle": {"route": "bundles", "marker": "bundle_id"},
+}
+
+
+def _format_change(c, request):
+    """Transforma um registro de mudança em algo mais *palatável* para ser
+    retornado por uma interface restful.
+    """
+    entity = entity_route_map[c["entity"]]
+    result = {
+        "id": request.route_path(entity["route"], **{entity["marker"]: c["id"]}),
+        "timestamp": c["timestamp"],
+    }
+    if "_id" in c:
+        result["change_id"] = str(c["_id"])
+    if "deleted" in c:
+        result["deleted"] = c["deleted"]
+    if "content_gz" in c:
+        result["content_gz_b64"] = base64.b64encode(c["content_gz"]).decode("ascii")
+    if "content_type" in c:
+        result["content_type"] = c["content_type"]
+
+    return result
+
+
 @changes.get(
     schema=ChangeSchema(),
     response_schemas={
@@ -733,27 +762,6 @@ def put_bundles_documents(request):
 def fetch_changes(request):
     """Obtém a lista de mudanças, recebe os argumentos `since` e `limit`.
     """
-
-    entity_route_map = {
-        "Document": {"route": "documents", "marker": "document_id"},
-        "DocumentRendition": {"route": "renditions", "marker": "document_id"},
-        "Journal": {"route": "journals", "marker": "journal_id"},
-        "DocumentsBundle": {"route": "bundles", "marker": "bundle_id"},
-    }
-
-    def _format_change(c):
-        entity = entity_route_map[c["entity"]]
-        result = {
-            "id": request.route_path(entity["route"], **{entity["marker"]: c["id"]}),
-            "timestamp": c["timestamp"],
-        }
-        if "_id" in c:
-            result["change_id"] = str(c["_id"])
-        if "deleted" in c:
-            result["deleted"] = c["deleted"]
-
-        return result
-
     since = request.GET.get("since", "")
 
     try:
@@ -765,7 +773,7 @@ def fetch_changes(request):
         "since": since,
         "limit": limit,
         "results": [
-            _format_change(c)
+            _format_change(c, request)
             for c in request.services["fetch_changes"](since=since, limit=limit)
         ],
     }
@@ -786,33 +794,9 @@ def fetch_change(request):
     Este endpoint é capaz de retornar o `snapshot` dos dados no momento
     imediatamente após sua mudança.
     """
-    entity_route_map = {
-        "Document": {"route": "documents", "marker": "document_id"},
-        "DocumentRendition": {"route": "renditions", "marker": "document_id"},
-        "Journal": {"route": "journals", "marker": "journal_id"},
-        "DocumentsBundle": {"route": "bundles", "marker": "bundle_id"},
-    }
-
-    def _format_change(c):
-        entity = entity_route_map[c["entity"]]
-        result = {
-            "id": request.route_path(entity["route"], **{entity["marker"]: c["id"]}),
-            "timestamp": c["timestamp"],
-        }
-        if "_id" in c:
-            result["change_id"] = str(c["_id"])
-        if "deleted" in c:
-            result["deleted"] = c["deleted"]
-        if "content_gz" in c:
-            result["content_gz_b64"] = base64.b64encode(c["content_gz"]).decode("ascii")
-        if "content_type" in c:
-            result["content_type"] = c["content_type"]
-
-        return result
-
     try:
         return _format_change(
-            request.services["fetch_change"](id=request.matchdict["change_id"])
+            request.services["fetch_change"](id=request.matchdict["change_id"]), request
         )
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(exc)
