@@ -1,6 +1,7 @@
 import logging
 import os
 import base64
+import pkg_resources
 
 from pyramid.settings import asbool
 from pyramid.config import Configurator
@@ -18,12 +19,16 @@ from cornice.service import get_services
 import colander
 from slugify import slugify
 from cornice_swagger import CorniceSwagger
+import sentry_sdk
+from sentry_sdk.integrations.pyramid import PyramidIntegration
 
 from . import services
 from . import adapters
 from . import exceptions
 
 LOGGER = logging.getLogger(__name__)
+
+VERSION = pkg_resources.get_distribution("scielo-kernel").version
 
 swagger = Service(
     name="Kernel API", path="/__api__", description="Kernel API documentation"
@@ -1149,6 +1154,9 @@ DEFAULT_SETTINGS = [
     ),
     ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True),
     ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087),
+    ("kernel.app.sentry.enabled", "KERNEL_APP_SENTRY_ENABLED", asbool, False),
+    ("kernel.app.sentry.dsn", "KERNEL_APP_SENTRY_DSN", str, ""),
+    ("kernel.app.sentry.environment", "KERNEL_APP_SENTRY_ENVIRONMENT", str, ""),
 ]
 
 
@@ -1198,5 +1206,16 @@ def main(global_config, **settings):
     config.add_request_method(
         lambda request: services.get_handlers(Session), "services", reify=True
     )
+
+    if settings["kernel.app.sentry.enabled"]:
+        if settings["kernel.app.sentry.dsn"]:
+            sentry_sdk.init(
+                dsn=settings["kernel.app.sentry.dsn"],
+                integrations=[PyramidIntegration(transaction_style="route_pattern")],
+                release=f"scielo-kernel@{VERSION}",
+                environment=settings["kernel.app.sentry.environment"],
+            )
+        else:
+            LOGGER.info("cannot setup Sentry: the dsn was not provided")
 
     return config.make_wsgi_app()

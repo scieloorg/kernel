@@ -22,6 +22,7 @@ regex==2019.11.1
 repoze.lru==0.7
 requests==2.22.0
 scielo-clea==0.4.0
+sentry-sdk==0.12.3
 simplejson==3.16.0
 six==1.11.0
 translationstring==1.3

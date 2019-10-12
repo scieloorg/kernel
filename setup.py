@@ -35,6 +35,7 @@ setuptools.setup(
         "scielo-clea>=0.3.0",
         "waitress",
         "prometheus_client",
+        "sentry-sdk",
     ],
     test_suite="tests",
     classifiers=[
