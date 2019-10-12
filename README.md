@@ -50,6 +50,9 @@ kernel.app.mongodb.replicaset     | KERNEL_APP_MONGODB_REPLICASET     |
 kernel.app.mongodb.readpreference | KERNEL_APP_MONGODB_READPREFERENCE | secondaryPreferred
 kernel.app.prometheus.enabled     | KERNEL_APP_PROMETHEUS_ENABLED     | True
 kernel.app.prometheus.port        | KERNEL_APP_PROMETHEUS_PORT        | 8087
+kernel.app.sentry.enabled         | KERNEL_APP_SENTRY_ENABLED         | False 
+kernel.app.sentry.dsn             | KERNEL_APP_SENTRY_DSN             | 
+kernel.app.sentry.environment     | KERNEL_APP_SENTRY_ENVIRONMENT     | 
 
 
 A configuração padrão assume o uso de uma instância *standalone* do MongoDB. Para
