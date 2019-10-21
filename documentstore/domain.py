@@ -233,9 +233,13 @@ class retry_gracefully:
 def fetch_data(url: str, timeout: float = 2) -> bytes:
     try:
         response = requests.get(url, timeout=timeout)
-    except (requests.ConnectionError, requests.Timeout) as exc:
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
         raise exceptions.RetryableError(exc) from exc
-    except (requests.InvalidSchema, requests.MissingSchema, requests.InvalidURL) as exc:
+    except (
+        requests.exceptions.InvalidSchema,
+        requests.exceptions.MissingSchema,
+        requests.exceptions.InvalidURL,
+    ) as exc:
         raise exceptions.NonRetryableError(exc) from exc
     else:
         try:
