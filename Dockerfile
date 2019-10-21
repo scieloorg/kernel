@@ -29,4 +29,4 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED 1
 
 USER nobody
-
+CMD ["pserve", "/app/config.ini"]

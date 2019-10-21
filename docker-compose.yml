@@ -13,7 +13,6 @@ services:
         build:
             context: .
             dockerfile: ./Dockerfile
-        command: ["pserve", "/app/config.ini"]
         user: nobody
         restart: always
         depends_on:
