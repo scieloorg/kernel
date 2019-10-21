@@ -1,6 +1,6 @@
 certifi==2019.9.11
 chardet==3.0.4
-colander==1.4
+colander==1.7.0
 cornice==3.4.0
 cornice-swagger==0.7.0
 hupper==1.3
