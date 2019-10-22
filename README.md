@@ -70,10 +70,30 @@ variável de ambiente      | valor padrão
 KERNEL_LIB_MAX_RETRIES    | 4
 KERNEL_LIB_BACKOFF_FACTOR | 1.2
 
+### Executando via código-fonte e Pip:
 
-Executando a aplicação:
+```bash
+$ git clone https://github.com/scieloorg/kernel.git
+$ cd kernel
+$ pip install -r requirements.txt && python setup.py develop
+$ pserve development.ini
+```
 
-```docker-compose up -d```
+Esta configuração espera uma instância de MongoDB escutando *localhost* na
+porta *27017*.
+
+Na primeira vez será necessário criar os índices do banco de dados. Para tal
+execute o comando `kernelctl create-indexes`*`mongo-db-dsn`*.
+
+
+### Executando via Docker:
+
+`$ docker-compose up -d`
+
+Na primeira vez será necessário criar os índices do banco de dados:
+
+`$ docker-compose exec webapp kernelctl create-indexes`*`mongo-db-dsn`*
+
 
 Testando o registro de um documento de exemplo:
 
