@@ -1,6 +1,7 @@
 # 6. Novo PID do SciELO
 
 Data: 2019-04-12
+Atualização: 2019-11-29
 
 ## Status
 
@@ -31,7 +32,13 @@ documentos.
 Durante a migração dos dados da coleção para uma instância do Kernel, todos
 os documentos deverão receber o novo PID, que no XML do documento será
 representado no elemento
-`/article/front/article-meta/article-id[@pub-id-type = "publisher-id" and @specific-use="scielo"]`.
+`/article/front/article-meta/article-id[@pub-id-type = "publisher-id" and @specific-use="scielo-v3"]`.
+
+A representação do PID padrão `S0001-37652000000100002` passa a ser:
+`/article/front/article-meta/article-id[@pub-id-type = "publisher-id" and @specific-use="scielo-v2"]`.
+
+A representação do PID anterior ao padrão `S0001-37652000000100002` passa a ser:
+`/article/front/article-meta/article-id[@pub-id-type = "publisher-id" and @specific-use="scielo-v1"]`.
 
 De maneira resumida, o novo PID do SciELO é o resultado da função
 `uuid.uuid4()`, como implementada na linguagem Python, representado em base 48.
