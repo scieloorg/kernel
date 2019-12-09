@@ -8,7 +8,7 @@ with open(os.path.join(setup_path, "README.md")) as readme:
 
 setuptools.setup(
     name="scielo-kernel",
-    version="0.1rc4",
+    version="0.1rc5",
     author="SciELO Dev Team",
     author_email="scielo-dev@googlegroups.com",
     description="Kernel é o componente central da nova arquitetura de sistemas "
