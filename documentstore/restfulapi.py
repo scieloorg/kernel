@@ -200,7 +200,13 @@ class JournalSchema(colander.MappingSchema):
 
     @colander.instantiate(missing=colander.drop)
     class institution_responsible_for(colander.SequenceSchema):
-        name = colander.SchemaNode(colander.String())
+        @colander.instantiate()
+        class institution(colander.MappingSchema):
+            name = colander.SchemaNode(colander.String())
+            city = colander.SchemaNode(colander.String())
+            state = colander.SchemaNode(colander.String())
+            country_code = colander.SchemaNode(colander.String())
+            country = colander.SchemaNode(colander.String())
 
     online_submission_url = colander.SchemaNode(
         colander.String(), validator=colander.url, missing=colander.drop
