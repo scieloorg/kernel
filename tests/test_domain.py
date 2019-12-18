@@ -901,6 +901,19 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
             [("2018-08-05T22:33:49.795151Z", "2018")],
         )
 
+    def test_pid_is_empty_str(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        self.assertEqual(documents_bundle.pid, "")
+
+    def test_set_pid(self):
+        documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
+        documents_bundle.pid = "1413-785220180001"
+        self.assertEqual(documents_bundle.pid, "1413-785220180001")
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["pid"],
+            [("2018-08-05T22:33:49.795151Z", "1413-785220180001")],
+        )
+
     def test_set_publication_year_convert_to_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.publication_year = 2018

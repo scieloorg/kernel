@@ -768,6 +768,15 @@ class DocumentsBundle:
         self.manifest = BundleManifest.set_metadata(self._manifest, "volume", _value)
 
     @property
+    def pid(self):
+        return BundleManifest.get_metadata(self.manifest, "pid")
+
+    @pid.setter
+    def pid(self, value: str):
+        _value = str(value)
+        self.manifest = BundleManifest.set_metadata(self._manifest, "pid", _value)
+
+    @property
     def number(self):
         return BundleManifest.get_metadata(self.manifest, "number")
 
