@@ -161,6 +161,7 @@ def documents_bundle_registry_data_fixture():
         "supplement": "1",
         "volume": "1",
         "number": "1",
+        "pid": "0102-330620190001",
         "publication_months": {"month": 1},
         "titles": [
             {

@@ -251,6 +251,7 @@ class DocumentsBundleSchema(colander.MappingSchema):
     supplement = colander.SchemaNode(colander.String(), missing=colander.drop)
     volume = colander.SchemaNode(colander.String(), missing=colander.drop)
     number = colander.SchemaNode(colander.String(), missing=colander.drop)
+    pid = colander.SchemaNode(colander.String(), missing=colander.drop)
 
     @colander.instantiate(missing=colander.drop)
     class titles(colander.SequenceSchema):
@@ -1138,7 +1139,7 @@ class PlainTextRenderer:
 
 def split_dsn(dsns):
     """Produz uma lista de DSNs a partir de uma string separada de DSNs separados
-    por espaços ou quebras de linha. A escolha dos separadores se baseia nas 
+    por espaços ou quebras de linha. A escolha dos separadores se baseia nas
     convenções do framework Pyramid.
     """
     return [dsn.strip() for dsn in str(dsns).split() if dsn]
