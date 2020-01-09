@@ -567,17 +567,15 @@ class BundleManifest:
         now: Callable[[], str] = utcnow,
     ) -> dict:
         _bundle = deepcopy(bundle)
-        _now = now()
-        metadata = _bundle["metadata"].setdefault(name, [])
-        metadata.append((_now, value))
-        _bundle["updated"] = _now
+        _bundle["metadata"][name] = value
+        _bundle["updated"] = now()
         return _bundle
 
     @staticmethod
     def get_metadata(bundle: dict, name: str, default="") -> Any:
         try:
-            return bundle["metadata"].get(name, [])[-1][1]
-        except IndexError:
+            return bundle["metadata"][name]
+        except KeyError:
             return default
 
     @staticmethod
@@ -705,11 +703,7 @@ class DocumentsBundle:
         return self.manifest.get("id", "")
 
     def data(self):
-        _manifest = self.manifest
-        _manifest["metadata"] = {
-            attr: value[-1][-1] for attr, value in _manifest["metadata"].items()
-        }
-        return _manifest
+        return self.manifest
 
     def data_bytes(self) -> bytes:
         """Retorna `self.data()` codificado em utf-8.
@@ -855,14 +849,8 @@ class Journal:
         self._manifest = value
 
     def data(self):
-        """Retorna o manifesto completo de um Journal com os
-        metadados em sua última versão"""
-        _manifest = self.manifest
-
-        for key, value in _manifest["metadata"].items():
-            _manifest["metadata"][key] = value[-1][-1]
-
-        return _manifest
+        """Retorna o manifesto completo de um Journal"""
+        return self.manifest
 
     def data_bytes(self) -> bytes:
         """Retorna `self.data()` codificado em utf-8.
