@@ -518,9 +518,10 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "publication_year", "2018", now=fake_utcnow
         )
-        self.assertEqual(
-            documents_bundle["metadata"]["publication_year"], [(fake_utcnow(), "2018")]
-        )
+
+        self.assertEqual(documents_bundle["metadata"]["publication_year"], "2018")
+
+        self.assertEqual(documents_bundle["updated"], fake_utcnow())
 
     def test_set_metadata_updates_last_modification_date(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
@@ -530,29 +531,6 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         )
         self.assertTrue(current_updated < documents_bundle["updated"])
 
-    def test_set_metadata_doesnt_overwrite_existing_values(self):
-        documents_bundle = new_bundle("0034-8910-rsp-48-2")
-        documents_bundle = domain.BundleManifest.set_metadata(
-            documents_bundle,
-            "publication_year",
-            "2018",
-            now=lambda: "2018-08-05T22:33:49.795151Z",
-        )
-        documents_bundle = domain.BundleManifest.set_metadata(
-            documents_bundle,
-            "publication_year",
-            "2019",
-            now=lambda: "2018-08-05T22:34:07.795151Z",
-        )
-        self.assertEqual(
-            documents_bundle["metadata"]["publication_year"],
-            [
-                ("2018-08-05T22:33:49.795151Z", "2018"),
-                ("2018-08-05T22:34:07.795151Z", "2019"),
-            ],
-        )
-        self.assertEqual(len(documents_bundle["metadata"]), 1)
-
     def test_set_metadata_to_preexisting_set(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         documents_bundle = domain.BundleManifest.set_metadata(
@@ -561,17 +539,14 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             "2018",
             now=lambda: "2018-08-05T22:33:49.795151Z",
         )
+        self.assertEqual(documents_bundle["metadata"]["publication_year"], "2018")
+        self.assertEqual(documents_bundle["updated"], "2018-08-05T22:33:49.795151Z")
+
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "volume", "25", now=lambda: "2018-08-05T22:34:07.795151Z"
         )
-        self.assertEqual(
-            documents_bundle["metadata"]["publication_year"],
-            [("2018-08-05T22:33:49.795151Z", "2018")],
-        )
-        self.assertEqual(
-            documents_bundle["metadata"]["volume"],
-            [("2018-08-05T22:34:07.795151Z", "25")],
-        )
+
+        self.assertEqual(documents_bundle["updated"], "2018-08-05T22:34:07.795151Z")
         self.assertEqual(len(documents_bundle["metadata"]), 2)
 
     def test_get_metadata(self):
@@ -583,19 +558,6 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             domain.BundleManifest.get_metadata(documents_bundle, "publication_year"),
             "2018",
         )
-
-    def test_get_metadata_all(self):
-        documents_bundle = new_bundle("0034-8910-rsp-48-2")
-        documents_bundle = domain.BundleManifest.set_metadata(
-            documents_bundle, "publication_year", "2018"
-        )
-        documents_bundle = domain.BundleManifest.set_metadata(
-            documents_bundle, "publication_year", "2019"
-        )
-        items = domain.BundleManifest.get_metadata_all(
-            documents_bundle, "publication_year"
-        )
-        self.assertEqual([data[1] for data in items], ["2018", "2019"])
 
     def test_get_metadata_always_returns_latest(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
@@ -821,7 +783,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         self.assertEqual(current_item_len, len(documents_bundle["items"]))
 
     def test_bundle_manifest_should_raise_value_error_when_dict_interface_isnt_used(
-        self
+        self,
     ):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         self._assert_raises_with_message(
@@ -833,7 +795,7 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
         )
 
     def test_bundle_manifest_should_raise_key_error_when_item_does_not_have_id_key(
-        self
+        self,
     ):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         current_updated = documents_bundle["updated"]
@@ -897,8 +859,7 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.publication_year = "2018"
         self.assertEqual(documents_bundle.publication_year, "2018")
         self.assertEqual(
-            documents_bundle.manifest["metadata"]["publication_year"],
-            [("2018-08-05T22:33:49.795151Z", "2018")],
+            documents_bundle.manifest["metadata"]["publication_year"], "2018",
         )
 
     def test_pid_is_empty_str(self):
@@ -910,8 +871,7 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.pid = "1413-785220180001"
         self.assertEqual(documents_bundle.pid, "1413-785220180001")
         self.assertEqual(
-            documents_bundle.manifest["metadata"]["pid"],
-            [("2018-08-05T22:33:49.795151Z", "1413-785220180001")],
+            documents_bundle.manifest["metadata"]["pid"], "1413-785220180001"
         )
 
     def test_set_publication_year_convert_to_str(self):
@@ -937,10 +897,12 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
     def test_set_publication_months(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.publication_months = {"start": "08", "end": "09"}
-        self.assertEqual(documents_bundle.publication_months, {"start": "08", "end": "09"})
+        self.assertEqual(
+            documents_bundle.publication_months, {"start": "08", "end": "09"}
+        )
         self.assertEqual(
             documents_bundle.manifest["metadata"]["publication_months"],
-            [("2018-08-05T22:33:49.795151Z", {"start": "08", "end": "09"})],
+            {"start": "08", "end": "09"},
         )
 
     def test_set_publication_months_validates_not_dict(self):
@@ -962,10 +924,7 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.volume = "25"
         self.assertEqual(documents_bundle.volume, "25")
-        self.assertEqual(
-            documents_bundle.manifest["metadata"]["volume"],
-            [("2018-08-05T22:33:49.795151Z", "25")],
-        )
+        self.assertEqual(documents_bundle.manifest["metadata"]["volume"], "25")
 
     def test_set_volume_convert_to_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
@@ -986,8 +945,7 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle.number = "3"
         self.assertEqual(documents_bundle.number, "3")
         self.assertEqual(
-            documents_bundle.manifest["metadata"]["number"],
-            [("2018-08-05T22:33:49.795151Z", "3")],
+            documents_bundle.manifest["metadata"]["number"], "3",
         )
 
     def test_set_number_convert_to_str(self):
@@ -1008,10 +966,7 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.supplement = "3"
         self.assertEqual(documents_bundle.supplement, "3")
-        self.assertEqual(
-            documents_bundle.manifest["metadata"]["supplement"],
-            [("2018-08-05T22:33:49.795151Z", "3")],
-        )
+        self.assertEqual(documents_bundle.manifest["metadata"]["supplement"], "3")
 
     def test_set_supplement_convert_to_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
@@ -1032,14 +987,11 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
             ],
         )
         self.assertEqual(
-            documents_bundle.manifest["metadata"]["titles"][-1],
-            (
-                "2018-08-05T22:33:49.795151Z",
-                [
-                    {"language": "en", "value": "Title"},
-                    {"language": "pt", "value": "Título"},
-                ],
-            ),
+            documents_bundle.manifest["metadata"]["titles"],
+            [
+                {"language": "en", "value": "Title"},
+                {"language": "pt", "value": "Título"},
+            ],
         )
 
     def test_set_titles_content_is_not_validated(self):
@@ -1247,24 +1199,21 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             ],
         )
         self.assertEqual(
-            documents_bundle.manifest["metadata"]["mission"][-1],
-            (
-                "2018-08-05T22:33:49.795151Z",
-                [
-                    {
-                        "language": "pt",
-                        "value": "Publicar trabalhos científicos originais sobre a Amazonia.",
-                    },
-                    {
-                        "language": "es",
-                        "value": "Publicar trabajos científicos originales sobre Amazonia.",
-                    },
-                    {
-                        "language": "en",
-                        "value": "To publish original scientific papers about Amazonia.",
-                    },
-                ],
-            ),
+            documents_bundle.manifest["metadata"]["mission"],
+            [
+                {
+                    "language": "pt",
+                    "value": "Publicar trabalhos científicos originais sobre a Amazonia.",
+                },
+                {
+                    "language": "es",
+                    "value": "Publicar trabajos científicos originales sobre Amazonia.",
+                },
+                {
+                    "language": "en",
+                    "value": "To publish original scientific papers about Amazonia.",
+                },
+            ],
         )
 
     def test_set_mission_content_is_not_validated(self):
@@ -1289,8 +1238,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         self.assertEqual(journal.title, "Rev. Saúde Pública")
         self.assertEqual(
-            journal.manifest["metadata"]["title"],
-            [("2018-08-05T22:33:49.795151Z", "Rev. Saúde Pública")],
+            journal.manifest["metadata"]["title"], "Rev. Saúde Pública",
         )
 
     def test_title_iso_is_empty_str(self):
@@ -1303,8 +1251,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         self.assertEqual(journal.title_iso, "Rev. Saúde Pública")
         self.assertEqual(
-            journal.manifest["metadata"]["title_iso"],
-            [("2018-08-05T22:33:49.795151Z", "Rev. Saúde Pública")],
+            journal.manifest["metadata"]["title_iso"], "Rev. Saúde Pública",
         )
 
     def test_short_title_is_empty_str(self):
@@ -1317,8 +1264,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         self.assertEqual(journal.short_title, "Rev. Saúde Pública")
         self.assertEqual(
-            journal.manifest["metadata"]["short_title"],
-            [("2018-08-05T22:33:49.795151Z", "Rev. Saúde Pública")],
+            journal.manifest["metadata"]["short_title"], "Rev. Saúde Pública",
         )
 
     def test_acronym_is_empty_str(self):
@@ -1330,8 +1276,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.acronym = "rsp"
         self.assertEqual(journal.acronym, "rsp")
         self.assertEqual(
-            journal.manifest["metadata"]["acronym"],
-            [("2018-08-05T22:33:49.795151Z", "rsp")],
+            journal.manifest["metadata"]["acronym"], "rsp",
         )
 
     def test_scielo_issn_is_empty_str(self):
@@ -1343,8 +1288,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.scielo_issn = "1809-4392"
         self.assertEqual(journal.scielo_issn, "1809-4392")
         self.assertEqual(
-            journal.manifest["metadata"]["scielo_issn"],
-            [("2018-08-05T22:33:49.795151Z", "1809-4392")],
+            journal.manifest["metadata"]["scielo_issn"], "1809-4392",
         )
 
     def test_print_issn_is_empty_str(self):
@@ -1356,8 +1300,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.print_issn = "1809-4392"
         self.assertEqual(journal.print_issn, "1809-4392")
         self.assertEqual(
-            journal.manifest["metadata"]["print_issn"],
-            [("2018-08-05T22:33:49.795151Z", "1809-4392")],
+            journal.manifest["metadata"]["print_issn"], "1809-4392",
         )
 
     def test_electronic_issn_is_empty_str(self):
@@ -1369,8 +1312,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.electronic_issn = "1809-4392"
         self.assertEqual(journal.electronic_issn, "1809-4392")
         self.assertEqual(
-            journal.manifest["metadata"]["electronic_issn"],
-            [("2018-08-05T22:33:49.795151Z", "1809-4392")],
+            journal.manifest["metadata"]["electronic_issn"], "1809-4392",
         )
 
     def test_status_is_empty_str(self):
@@ -1382,8 +1324,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.status = {"status": "current"}
         self.assertEqual(journal.status, {"status": "current"})
         self.assertEqual(
-            journal.manifest["metadata"]["status"],
-            [("2018-08-05T22:33:49.795151Z", {"status": "current"})],
+            journal.manifest["metadata"]["status"], {"status": "current"},
         )
 
     def test_get_created(self):
@@ -1435,19 +1376,16 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             ),
         )
         self.assertEqual(
-            journal.manifest["metadata"]["subject_areas"][-1],
+            journal.manifest["metadata"]["subject_areas"],
             (
-                "2018-08-05T22:33:49.795151Z",
-                (
-                    "Agricultural Sciences",
-                    "Applied Social Sciences",
-                    "Biological Sciences",
-                    "Engineering",
-                    "Exact and Earth Sciences",
-                    "Health Sciences",
-                    "Human Sciences",
-                    "Linguistics, Letters and Arts",
-                ),
+                "Agricultural Sciences",
+                "Applied Social Sciences",
+                "Biological Sciences",
+                "Engineering",
+                "Exact and Earth Sciences",
+                "Health Sciences",
+                "Human Sciences",
+                "Linguistics, Letters and Arts",
             ),
         )
 
@@ -1522,16 +1460,13 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         )
 
         self.assertEqual(
-            journal.manifest["metadata"]["sponsors"][-1],
+            journal.manifest["metadata"]["sponsors"],
             (
-                "2018-08-05T22:33:49.795151Z",
-                (
-                    {
-                        "name": "FAPESP",
-                        "url": "http://www.fapesp.br/",
-                        "logo_path": "fixtures/imgs/fapesp.png",
-                    },
-                ),
+                {
+                    "name": "FAPESP",
+                    "url": "http://www.fapesp.br/",
+                    "logo_path": "fixtures/imgs/fapesp.png",
+                },
             ),
         )
 
@@ -1579,16 +1514,11 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         )
         self.assertEqual(
             journal.manifest["metadata"]["metrics"],
-            [
-                (
-                    "2018-08-05T22:33:49.795151Z",
-                    {
-                        "scimago": {"url": "http://scimago.org", "title": "Scimago"},
-                        "google": {"total_h5": 10, "h5_median": 5, "h5_year": 2018},
-                        "scielo": "valor medio",
-                    },
-                )
-            ],
+            {
+                "scimago": {"url": "http://scimago.org", "title": "Scimago"},
+                "google": {"total_h5": 10, "h5_median": 5, "h5_year": 2018},
+                "scielo": "valor medio",
+            },
         )
 
     def test_set_metrics_content_is_not_validated(self):
@@ -1611,8 +1541,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         ]
         journal.subject_categories = categories
         self.assertEqual(
-            journal.manifest["metadata"]["subject_categories"],
-            [("2018-08-05T22:33:49.795151Z", categories)],
+            journal.manifest["metadata"]["subject_categories"], categories,
         )
 
     def test_set_int_subject_categories_content_raises_type_error(self):
@@ -1633,8 +1562,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         categories = "Health Sciences"
         journal.subject_categories = categories
         self.assertEqual(
-            journal.manifest["metadata"]["subject_categories"],
-            [("2018-08-05T22:33:49.795151Z", list(categories))],
+            journal.manifest["metadata"]["subject_categories"], list(categories),
         )
 
     def test_set_tuple_subject_categories(self):
@@ -1642,8 +1570,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         categories = ("Health Sciences Orthopedics", "Human Sciences Psychology")
         journal.subject_categories = categories
         self.assertEqual(
-            journal.manifest["metadata"]["subject_categories"],
-            [("2018-08-05T22:33:49.795151Z", list(categories))],
+            journal.manifest["metadata"]["subject_categories"], list(categories),
         )
 
     def test_set_list_like_object_to_subject_categories(self):
@@ -1675,7 +1602,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.subject_categories = fib_obj
         self.assertEqual(
             journal.manifest["metadata"]["subject_categories"],
-            [("2018-08-05T22:33:49.795151Z", ["0", "1", "1", "2", "3", "5", "8"])],
+            ["0", "1", "1", "2", "3", "5", "8"],
         )
 
     def test_institution_responsible_for_is_empty_str(self):
@@ -1688,8 +1615,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         self.assertEqual(journal.institution_responsible_for, ("Usp", "Scielo"))
         self.assertEqual(
-            journal.manifest["metadata"]["institution_responsible_for"][-1],
-            ("2018-08-05T22:33:49.795151Z", ("Usp", "Scielo")),
+            journal.manifest["metadata"]["institution_responsible_for"],
+            ("Usp", "Scielo"),
         )
 
     def test_set_institution_responsible_for_content_raises_type_error(self):
@@ -1715,10 +1642,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         url = "http://mc04.manuscriptcentral.com/rsp-scielo"
         journal.online_submission_url = url
         self.assertEqual(journal.online_submission_url, url)
-        self.assertEqual(
-            journal.manifest["metadata"]["online_submission_url"],
-            [("2018-08-05T22:33:49.795151Z", url)],
-        )
+        self.assertEqual(journal.manifest["metadata"]["online_submission_url"], url)
 
     def test_online_submission_url_default_is_empty(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
@@ -1729,8 +1653,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         next_journal = {"title": "Materials Research", "id": "journal/0034-8910"}
         journal.next_journal = next_journal
         self.assertEqual(
-            journal.manifest["metadata"]["next_journal"],
-            [("2018-08-05T22:33:49.795151Z", next_journal)],
+            journal.manifest["metadata"]["next_journal"], next_journal,
         )
 
     def test_set_str_to_next_journal_should_raise_type_error(self):
@@ -1788,8 +1711,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.previous_journal = expected
         self.assertEqual(journal.previous_journal, expected)
         self.assertEqual(
-            journal.manifest["metadata"]["previous_journal"],
-            [("2018-08-05T22:33:49.795151Z", expected)],
+            journal.manifest["metadata"]["previous_journal"], expected,
         )
 
     def test_previous_journal_default_is_empty(self):
@@ -1799,20 +1721,15 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_status_history(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.status = {"status": "CURRENT"}
+        self.assertEqual(journal.status_history, {"status": "CURRENT"})
+
         journal.status = {"status": "SUSPENDED", "notes": "motivo"}
+        self.assertEqual(
+            journal.status_history, {"status": "SUSPENDED", "notes": "motivo"}
+        )
+
         journal.status = {"status": "CEASED"}
-        self.assertEqual(
-            [item[0] for item in journal.status_history],
-            sorted([item[0] for item in journal.status_history]),
-        )
-        self.assertEqual(
-            [item[1] for item in journal.status_history],
-            [
-                {"status": "CURRENT"},
-                {"status": "SUSPENDED", "notes": "motivo"},
-                {"status": "CEASED"},
-            ],
-        )
+        self.assertEqual(journal.status_history, {"status": "CEASED"})
 
     def test_contact_is_empty_list(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
@@ -1835,8 +1752,7 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.contact = data_journal
         self.assertEqual(journal.contact, data_journal)
         self.assertEqual(
-            journal.manifest["metadata"]["contact"],
-            [("2018-08-05T22:33:49.795151Z", data_journal)],
+            journal.manifest["metadata"]["contact"], data_journal,
         )
 
     def test_set_contact_content_is_not_validated(self):

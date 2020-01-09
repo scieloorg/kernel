@@ -573,10 +573,7 @@ class BundleManifest:
 
     @staticmethod
     def get_metadata(bundle: dict, name: str, default="") -> Any:
-        try:
-            return bundle["metadata"][name]
-        except KeyError:
-            return default
+        return bundle["metadata"].get(name, default)
 
     @staticmethod
     def get_metadata_all(bundle: dict, name: str) -> Any:
