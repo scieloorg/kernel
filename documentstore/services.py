@@ -4,6 +4,7 @@ import functools
 from io import BytesIO
 from enum import Enum, auto
 import gzip
+import json
 
 from clea import join as clea_join, core as clea_core
 
@@ -461,6 +462,32 @@ class FetchChange(CommandHandler):
         return session.changes.fetch(id=id)
 
 
+class DocumentRenditions:
+    """Implementa a interface das classes de domínio para a serialização 
+    de dados. Uma instância desta classe será passada como `instance` no 
+    dicionário do sistema de eventos em decorrência da execução do comando
+    `RegisterRenditionVersion`.
+    """
+
+    data_type = "application/json"
+
+    def __init__(self, document: Document):
+        self.document = document
+
+    def data(self, version_index=-1, version_at=None):
+        version = (
+            self.document.version_at(version_at)
+            if version_at
+            else self.document.version(version_index)
+        )
+        return version.get("renditions", [])
+
+    def data_bytes(self, version_index=-1, version_at=None):
+        return json.dumps(
+            self.data(version_index=version_index, version_at=version_at)
+        ).encode("utf-8")
+
+
 class RegisterRenditionVersion(CommandHandler):
     """Registra uma nova versão de uma manifestação do documento já registrado.
 
@@ -496,7 +523,7 @@ class RegisterRenditionVersion(CommandHandler):
         session.notify(
             Events.RENDITION_VERSION_REGISTERED,
             {
-                "instance": document,
+                "instance": DocumentRenditions(document),
                 "id": id,
                 "filename": filename,
                 "data_url": data_url,
@@ -523,13 +550,8 @@ class FetchDocumentRenditions(CommandHandler):
         self, id: str, version_index: int = -1, version_at: str = None
     ) -> bytes:
         session = self.Session()
-        document = session.documents.fetch(id)
-        version = (
-            document.version_at(version_at)
-            if version_at
-            else document.version(version_index)
-        )
-        return version.get("renditions", [])
+        renditions = DocumentRenditions(session.documents.fetch(id))
+        return renditions.data(version_index=version_index, version_at=version_at)
 
 
 class DeleteDocument(CommandHandler):
