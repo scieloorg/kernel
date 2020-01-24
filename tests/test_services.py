@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest import mock
 import datetime
@@ -1162,3 +1163,47 @@ class FetchChangeTest(CommandTestMixin, unittest.TestCase):
 
     def test_should_require_an_id(self):
         self.assertRaises(TypeError, self.command)
+
+
+class RegisterDocumentVersionTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.manifest = {
+            "id": "0034-8910-rsp-48-2-0347",
+            "versions": [
+                {
+                    "data": "https://url.to/0034-8910-rsp-48-2-0347.xml",
+                    "assets": {
+                        "0034-8910-rsp-48-2-0347-gf01": [
+                            [
+                                "2018-08-05T23:03:44.971230Z",
+                                "http://www.scielo.br/img/revistas/rsp/v48n2/0034-8910-rsp-48-2-0347-gf01.jpg",
+                            ],
+                        ],
+                    },
+                    "renditions": [],
+                },
+            ],
+        }
+        self.doc = domain.Document(manifest=self.manifest)
+        self.session.documents.add(self.doc)
+        self.command = self.services["register_document_version"]
+
+    def test_swollows_VersionAlreadySet_exception_for_assets(self):
+        with mock.patch("documentstore.domain.requests.get") as mock_request:
+            with open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "0034-8910-rsp-48-2-0347.xml",
+                )
+            ) as fixture:
+                mock_request.return_value.content = fixture.read().encode("utf-8")
+
+            assets = self.doc.version()["assets"]
+            self.assertIsNone(
+                self.command(
+                    id=self.doc.id(),
+                    data_url="https://url.to.new/0034-8910-rsp-48-2-0347.xml",
+                    assets=assets,
+                )
+            )
