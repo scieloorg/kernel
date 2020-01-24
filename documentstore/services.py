@@ -10,7 +10,7 @@ from clea import join as clea_join, core as clea_core
 
 from .interfaces import Session
 from .domain import Document, DocumentsBundle, Journal, utcnow
-from .exceptions import DoesNotExist, AlreadyExists
+from .exceptions import DoesNotExist, AlreadyExists, VersionAlreadySet
 
 __all__ = ["get_handlers"]
 
@@ -61,6 +61,9 @@ class BaseRegisterDocument(CommandHandler):
     def _notify(self, session: Session, data) -> None:
         raise NotImplementedError()
 
+    def _new_asset_version(self, document, asset_id, asset_url) -> None:
+        raise NotImplementedError()
+
     def __call__(self, id: str, data_url: str, assets: Dict[str, str] = None) -> None:
         try:
             assets = dict(assets)
@@ -70,7 +73,7 @@ class BaseRegisterDocument(CommandHandler):
         document = self._get_document(session, id)
         document.new_version(data_url)
         for asset_id, asset_url in assets.items():
-            document.new_asset_version(asset_id, asset_url)
+            self._new_asset_version(document, asset_id, asset_url)
         self._persist(session, document)
         self._notify(
             session,
@@ -95,6 +98,9 @@ class RegisterDocument(BaseRegisterDocument):
     def _notify(self, session, data):
         session.notify(Events.DOCUMENT_REGISTERED, data)
 
+    def _new_asset_version(self, document, asset_id, asset_url):
+        document.new_asset_version(asset_id, asset_url)
+
 
 class RegisterDocumentVersion(BaseRegisterDocument):
     """Registra uma nova versão de um documento já registrado.
@@ -112,6 +118,15 @@ class RegisterDocumentVersion(BaseRegisterDocument):
 
     def _notify(self, session, data):
         session.notify(Events.DOCUMENT_VERSION_REGISTERED, data)
+
+    def _new_asset_version(self, document, asset_id, asset_url):
+        try:
+            document.new_asset_version(asset_id, asset_url)
+        except VersionAlreadySet as exc:
+            # ao registrar uma nova versão de documento seus ativos são linkados
+            # automaticamente, fazendo com que esta exceção seja levantada caso
+            # os mesmos ativos sejam passados explicitamente.
+            pass
 
 
 class FetchDocumentData(CommandHandler):
