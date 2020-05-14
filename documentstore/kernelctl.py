@@ -20,7 +20,7 @@ LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
 
 def _create_indexes(args):
-    mongo = adapters.MongoDB(args.dsn)
+    mongo = adapters.MongoDB(args.dsn, args.dbname)
     mongo.create_indexes()
 
 
@@ -44,6 +44,7 @@ def cli(argv=None):
     parser_create_indexes.add_argument(
         "dsn", help="DSN for MongoDB node where indexes will be created."
     )
+    parser_create_indexes.add_argument("dbname", help="Database name.")
     parser_create_indexes.set_defaults(func=_create_indexes)
 
     args = parser.parse_args()

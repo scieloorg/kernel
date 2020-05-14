@@ -46,6 +46,7 @@ Configurando a aplicação:
 diretiva no arquivo .ini          | variável de ambiente              | valor padrão
 ----------------------------------|-----------------------------------|--------------------
 kernel.app.mongodb.dsn            | KERNEL_APP_MONGODB_DSN            | mongodb://db:27017
+kernel.app.mongodb.dbname         | KERNEL_APP_MONGODB_DBNAME         | document-store
 kernel.app.mongodb.replicaset     | KERNEL_APP_MONGODB_REPLICASET     |
 kernel.app.mongodb.readpreference | KERNEL_APP_MONGODB_READPREFERENCE | secondaryPreferred
 kernel.app.prometheus.enabled     | KERNEL_APP_PROMETHEUS_ENABLED     | True
@@ -86,7 +87,7 @@ Esta configuração espera uma instância de MongoDB escutando *localhost* na
 porta *27017*.
 
 Na primeira vez será necessário criar os índices do banco de dados. Para tal
-execute o comando `kernelctl create-indexes`*`mongo-db-dsn`*.
+execute o comando `kernelctl create-indexes`*`mongo-db-dsn dbname`*.
 
 
 ### Executando via Docker:
@@ -95,7 +96,7 @@ execute o comando `kernelctl create-indexes`*`mongo-db-dsn`*.
 
 Na primeira vez será necessário criar os índices do banco de dados:
 
-`$ docker-compose exec webapp kernelctl create-indexes`*`mongo-db-dsn`*
+`$ docker-compose exec webapp kernelctl create-indexes`*`mongo-db-dsn dbname`*
 
 
 Testando o registro de um documento de exemplo:

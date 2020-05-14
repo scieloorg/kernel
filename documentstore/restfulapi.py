@@ -1159,6 +1159,7 @@ DEFAULT_SETTINGS = [
         str,
         "secondaryPreferred",
     ),
+    ("kernel.app.mongodb.dbname", "KERNEL_APP_MONGODB_DBNAME", str, "document-store"),
     ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True),
     ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087),
     ("kernel.app.sentry.enabled", "KERNEL_APP_SENTRY_ENABLED", asbool, False),
@@ -1203,6 +1204,7 @@ def main(global_config, **settings):
 
     mongo = adapters.MongoDB(
         settings["kernel.app.mongodb.dsn"],
+        settings["kernel.app.mongodb.dbname"],
         options={
             "replicaSet": settings["kernel.app.mongodb.replicaset"],
             "readPreference": settings["kernel.app.mongodb.readpreference"],
