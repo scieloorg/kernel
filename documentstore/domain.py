@@ -941,18 +941,21 @@ class Journal:
         )
 
     @property
-    def status(self):
-        return BundleManifest.get_metadata(self.manifest, "status", {})
+    def status_history(self):
+        return BundleManifest.get_metadata(self.manifest, "status_history", [])
 
-    @status.setter
-    def status(self, value: dict):
+    @status_history.setter
+    def status_history(self, value: list):
         try:
-            value = dict(value)
+            _value = [dict(status) for status in list(value)]
         except (TypeError, ValueError):
             raise TypeError(
-                "cannot set status with value " '"%s": value must be dict' % repr(value)
+                "cannot set status_history with value "
+                '"%s": value must be a list of dict' % repr(value)
             ) from None
-        self.manifest = BundleManifest.set_metadata(self._manifest, "status", value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "status_history", _value
+        )
 
     @property
     def subject_areas(self):
@@ -1086,10 +1089,6 @@ class Journal:
         self.manifest = BundleManifest.set_metadata(
             self._manifest, "previous_journal", value
         )
-
-    @property
-    def status_history(self):
-        return BundleManifest.get_metadata_all(self.manifest, "status")
 
     @property
     def contact(self) -> dict:
