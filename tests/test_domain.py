@@ -1315,16 +1315,16 @@ class JournalTest(UnittestMixin, unittest.TestCase):
             journal.manifest["metadata"]["electronic_issn"], "1809-4392",
         )
 
-    def test_status_is_empty_str(self):
+    def test_status_is_empty_list(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        self.assertEqual(journal.status, {})
+        self.assertEqual(journal.status_history, [])
 
     def test_set_status(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.status = {"status": "current"}
-        self.assertEqual(journal.status, {"status": "current"})
+        journal.status_history = [{"status": "current"}]
+        self.assertEqual(journal.status_history, [{"status": "current"}])
         self.assertEqual(
-            journal.manifest["metadata"]["status"], {"status": "current"},
+            journal.manifest["metadata"]["status_history"], [{"status": "current"}],
         )
 
     def test_get_created(self):
@@ -1720,16 +1720,16 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_status_history(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
-        journal.status = {"status": "CURRENT"}
-        self.assertEqual(journal.status_history, {"status": "CURRENT"})
+        journal.status_history = [{"status": "CURRENT"}]
+        self.assertEqual(journal.status_history, [{"status": "CURRENT"}])
 
-        journal.status = {"status": "SUSPENDED", "notes": "motivo"}
+        journal.status_history = [{"status": "SUSPENDED", "notes": "motivo"}]
         self.assertEqual(
-            journal.status_history, {"status": "SUSPENDED", "notes": "motivo"}
+            journal.status_history, [{"status": "SUSPENDED", "notes": "motivo"}]
         )
 
-        journal.status = {"status": "CEASED"}
-        self.assertEqual(journal.status_history, {"status": "CEASED"})
+        journal.status_history = [{"status": "CEASED"}]
+        self.assertEqual(journal.status_history, [{"status": "CEASED"}])
 
     def test_contact_is_empty_list(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
