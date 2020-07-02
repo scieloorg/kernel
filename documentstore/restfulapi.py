@@ -178,9 +178,12 @@ class JournalSchema(colander.MappingSchema):
     scielo_issn = colander.SchemaNode(colander.String(), missing=colander.drop)
     print_issn = colander.SchemaNode(colander.String(), missing=colander.drop)
     electronic_issn = colander.SchemaNode(colander.String(), missing=colander.drop)
-    status = colander.SchemaNode(
-        colander.Mapping(unknown="preserve"), missing=colander.drop
-    )
+
+    @colander.instantiate(missing=colander.drop)
+    class status_history(colander.SequenceSchema):
+        status = colander.SchemaNode(
+            colander.Mapping(unknown="preserve"), missing=colander.drop
+        )
 
     @colander.instantiate(missing=colander.drop)
     class subject_areas(colander.SequenceSchema):
