@@ -674,10 +674,12 @@ class PutJournalIssuesTest(unittest.TestCase):
 
     def test_should_call_update_issues_in_journal(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = [
-            {"id": "issue-1", "year": "2019"},
-            {"id": "issue-2", "year": "2019"},
-        ]
+        self.request.validated = {
+            "body": [
+                {"id": "issue-1", "year": "2019"},
+                {"id": "issue-2", "year": "2019"},
+            ],
+        }
         MockUpdateIssuesInJournal = Mock()
         self.request.services["update_issues_in_journal"] = MockUpdateIssuesInJournal
         restfulapi.put_journal_issues(self.request)
@@ -691,26 +693,30 @@ class PutJournalIssuesTest(unittest.TestCase):
 
     def test_should_return_422_if_already_exists_exception_is_raised(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = [
-            {"id": "issue-1", "year": "2019"},
-            {"id": "issue-1", "year": "2019"},
-        ]
+        self.request.validated = {
+            "body": [
+                {"id": "issue-1", "year": "2019"},
+                {"id": "issue-1", "year": "2019"},
+            ],
+        }
         response = restfulapi.put_journal_issues(self.request)
         self.assertIsInstance(response, HTTPUnprocessableEntity)
 
     def test_should_not_update_if_already_exists_exception_is_raised(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = [
-            {"id": "issue-1", "year": "2019"},
-            {"id": "issue-1", "year": "2019"},
-        ]
+        self.request.validated = {
+            "body": [
+                {"id": "issue-1", "year": "2019"},
+                {"id": "issue-1", "year": "2019"},
+            ],
+        }
         restfulapi.put_journal_issues(self.request)
         response = restfulapi.get_journal(self.request)
         self.assertEqual([], response.get("items"))
 
     def test_should_return_404_if_journal_not_found(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = [{"id": "issue-1", "year": "2019"}]
+        self.request.validated = {"body": [{"id": "issue-1", "year": "2019"}]}
         MockUpdateIssuesInJournal = Mock(
             side_effect=exceptions.DoesNotExist("Does Not Exist")
         )
@@ -720,7 +726,7 @@ class PutJournalIssuesTest(unittest.TestCase):
 
     def test_should_return_204_if_journal_issues_was_updated(self):
         self.request.matchdict["journal_id"] = "example-journal-id"
-        self.request.validated = [{"id": "issue-1", "year": "2019"}]
+        self.request.validated = {"body": [{"id": "issue-1", "year": "2019"}]}
         response = restfulapi.put_journal_issues(self.request)
         self.assertIsInstance(response, HTTPNoContent)
 
