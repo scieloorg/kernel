@@ -14,7 +14,7 @@ from pyramid.httpexceptions import (
     HTTPUnprocessableEntity,
 )
 from cornice import Service
-from cornice.validators import colander_body_validator
+from cornice.validators import colander_body_validator, colander_validator
 from cornice.service import get_services
 import colander
 from slugify import slugify
@@ -266,7 +266,7 @@ class DocumentsBundleSchema(colander.MappingSchema):
             value = colander.SchemaNode(colander.String(), validator=colander.Length(1))
 
 
-class DocumentsBundleDocumentsReplaceSchema(colander.SequenceSchema):
+class DocumentsBundleDocumentsReplaceSchemaPayload(colander.SequenceSchema):
     """Representa o schema de dados para registro o relacionamento de documento no
     Documents Bundle."""
 
@@ -274,6 +274,18 @@ class DocumentsBundleDocumentsReplaceSchema(colander.SequenceSchema):
     class document(colander.MappingSchema):
         id = colander.SchemaNode(colander.String())
         order = colander.SchemaNode(colander.String())
+
+
+class DocumentsBundleDocumentsReplaceSchema(colander.MappingSchema):
+    """A partir da versão 4.0 o Cornice passou a operar apenas com instâncias
+    de `colander.MappingSchema`, e é por isso que este *wrapper* teve que ser
+    implementado. Mais detalhes em:
+      * https://github.com/scieloorg/kernel/issues/221
+      * https://cornice.readthedocs.io/en/latest/upgrading.html?highlight=colander_validator#x-to-4-x
+      * https://cornice.readthedocs.io/en/latest/upgrading.html?highlight=colander_validator#complex-colander-validation
+    """
+
+    body = DocumentsBundleDocumentsReplaceSchemaPayload()
 
 
 class QueryChangeSchema(colander.MappingSchema):
@@ -704,7 +716,7 @@ def patch_documents_bundle(request):
 
 @bundles_documents.put(
     schema=DocumentsBundleDocumentsReplaceSchema(),
-    validators=(colander_body_validator,),
+    validators=(colander_validator,),
     response_schemas={
         "204": DocumentsBundleDocumentsReplaceSchema(
             description="Lista de documentos atualizada com sucesso"
@@ -722,7 +734,7 @@ def patch_documents_bundle(request):
 def put_bundles_documents(request):
     try:
         request.services["update_documents_in_documents_bundle"](
-            id=request.matchdict["bundle_id"], docs=request.validated
+            id=request.matchdict["bundle_id"], docs=request.validated["body"]
         )
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))
