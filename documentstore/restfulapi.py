@@ -370,11 +370,23 @@ class JournalIssuesSchema(colander.MappingSchema):
     index = colander.SchemaNode(colander.Int(), missing=colander.drop)
 
 
-class JournalIssuesReplaceSchema(colander.SequenceSchema):
+class JournalIssuesReplaceSchemaPayload(colander.SequenceSchema):
     """Representa o schema de dados utilizado durante a atualização
     da lista completa de fascículos de um periódico"""
 
     issue = JournalIssueItem()
+
+
+class JournalIssuesReplaceSchema(colander.MappingSchema):
+    """A partir da versão 4.0 o Cornice passou a operar apenas com instâncias
+    de `colander.MappingSchema`, e é por isso que este *wrapper* teve que ser
+    implementado. Mais detalhes em:
+      * https://github.com/scieloorg/kernel/issues/221
+      * https://cornice.readthedocs.io/en/latest/upgrading.html?highlight=colander_validator#x-to-4-x
+      * https://cornice.readthedocs.io/en/latest/upgrading.html?highlight=colander_validator#complex-colander-validation
+    """
+
+    body = JournalIssuesReplaceSchemaPayload()
 
 
 class DeleteJournalIssuesSchema(colander.MappingSchema):
@@ -946,7 +958,7 @@ def patch_journal_issues(request):
 
 @journal_issues.put(
     schema=JournalIssuesReplaceSchema(),
-    validators=(colander_body_validator,),
+    validators=(colander_validator,),
     response_schemas={
         "204": JournalIssuesReplaceSchema(
             description="Lista de fascículos atualizada com sucesso"
@@ -962,7 +974,7 @@ def patch_journal_issues(request):
 def put_journal_issues(request):
     try:
         request.services["update_issues_in_journal"](
-            id=request.matchdict["journal_id"], issues=request.validated
+            id=request.matchdict["journal_id"], issues=request.validated["body"]
         )
     except exceptions.DoesNotExist as exc:
         return HTTPNotFound(str(exc))
