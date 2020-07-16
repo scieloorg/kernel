@@ -1186,6 +1186,7 @@ DEFAULT_SETTINGS = [
         str,
         "secondaryPreferred",
     ),
+    ("kernel.app.mongodb.writeto", "KERNEL_APP_MONGODB_WRITETO", int, 1),
     ("kernel.app.mongodb.dbname", "KERNEL_APP_MONGODB_DBNAME", str, "document-store"),
     ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True),
     ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087),
@@ -1235,6 +1236,7 @@ def main(global_config, **settings):
         options={
             "replicaSet": settings["kernel.app.mongodb.replicaset"],
             "readPreference": settings["kernel.app.mongodb.readpreference"],
+            "w": settings["kernel.app.mongodb.writeto"],
         },
     )
     Session = adapters.Session.partial(mongo)
