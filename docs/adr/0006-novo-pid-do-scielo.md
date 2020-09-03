@@ -1,20 +1,20 @@
 # 6. Novo PID do SciELO
 
 Data: 2019-04-12
+
 Atualização: 2019-11-29
 
 ## Status
 
-Proposto
+Aceito
 
 ## Contexto
 
 O PID é uma string de texto que identifica de maneira única um documento parte
-da Rede SciELO. Desde início optou-se pela utilização de chaves naturais, p. ex.,
-`S0001-37652000000100002`, que, devido aos avanços recentes da plataforma em
-relação aos novos modelos de publicação, não é mais adequado. Os metadados
-do documento que formam o PID podem ser alterados ao longo do seu ciclo de vida,
-sendo necessário o desenvolvimento de um novo PID.
+da Rede SciELO. Desde o início optou-se pela utilização de chaves naturais, p. ex.,
+`S0001-37652000000100002`, que se mostrou inadequado após os avanços recentes 
+da plataforma em relação aos modelos de publicação suportados, dado que os metadados
+que formam o PID podem sofrer alterações ao longo do seu ciclo de vida.
 
 
 ## Decisão
