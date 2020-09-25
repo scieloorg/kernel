@@ -24,6 +24,11 @@ def _create_indexes(args):
     mongo.create_indexes()
 
 
+def _create_collections(args):
+    mongo = adapters.MongoDB(args.dsn, args.dbname)
+    mongo.create_collections()
+
+
 def cli(argv=None):
     if argv is None:
         argv = sys.argv
@@ -46,6 +51,18 @@ def cli(argv=None):
     )
     parser_create_indexes.add_argument("dbname", help="Database name.")
     parser_create_indexes.set_defaults(func=_create_indexes)
+
+    parser_create_collections = subparsers.add_parser(
+        "create-collections",
+        help="Create all database collections",
+        description="Explicitly creates all database collections. "
+        "This is required when using MongoDB < 4.4 with the transactional support enabled.",
+    )
+    parser_create_collections.add_argument(
+        "dsn", help="DSN for MongoDB node where collections will be created."
+    )
+    parser_create_collections.add_argument("dbname", help="Database name.")
+    parser_create_collections.set_defaults(func=_create_collections)
 
     args = parser.parse_args()
     # todas as mensagens serão omitidas se level > 50

@@ -51,6 +51,16 @@ class Session(abc.ABC):
     def partial(cls, *args, **kwargs):
         return functools.partial(cls, *args, **kwargs)
 
+    def __enter__(self):
+        """Inicialização do contexto transacional.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Finalização do contexto transacional.
+        """
+        pass
+
     @property
     @abc.abstractmethod
     def documents(self) -> DataStore:
