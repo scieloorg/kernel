@@ -43,18 +43,19 @@ Para mais informação sobre a nova arquitetura de sistemas de informação da M
 Configurando a aplicação:
 
 
-diretiva no arquivo .ini          | variável de ambiente              | valor padrão
-----------------------------------|-----------------------------------|--------------------
-kernel.app.mongodb.dsn            | KERNEL_APP_MONGODB_DSN            | mongodb://db:27017
-kernel.app.mongodb.dbname         | KERNEL_APP_MONGODB_DBNAME         | document-store
-kernel.app.mongodb.replicaset     | KERNEL_APP_MONGODB_REPLICASET     |
-kernel.app.mongodb.readpreference | KERNEL_APP_MONGODB_READPREFERENCE | secondaryPreferred
-kernel.app.mongodb.writeto        | KERNEL_APP_MONGODB_WRITETO        | 1
-kernel.app.prometheus.enabled     | KERNEL_APP_PROMETHEUS_ENABLED     | True
-kernel.app.prometheus.port        | KERNEL_APP_PROMETHEUS_PORT        | 8087
-kernel.app.sentry.enabled         | KERNEL_APP_SENTRY_ENABLED         | False 
-kernel.app.sentry.dsn             | KERNEL_APP_SENTRY_DSN             | 
-kernel.app.sentry.environment     | KERNEL_APP_SENTRY_ENVIRONMENT     | 
+diretiva no arquivo .ini                | variável de ambiente                    | valor padrão
+----------------------------------------|-----------------------------------------|--------------------
+kernel.app.mongodb.dsn                  | KERNEL_APP_MONGODB_DSN                  | mongodb://db:27017
+kernel.app.mongodb.dbname               | KERNEL_APP_MONGODB_DBNAME               | document-store
+kernel.app.mongodb.replicaset           | KERNEL_APP_MONGODB_REPLICASET           |
+kernel.app.mongodb.readpreference       | KERNEL_APP_MONGODB_READPREFERENCE       | secondaryPreferred
+kernel.app.mongodb.writeto              | KERNEL_APP_MONGODB_WRITETO              | 1
+kernel.app.mongodb.transactions.enabled | KERNEL_APP_MONGODB_TRANSACTIONS_ENABLED | False
+kernel.app.prometheus.enabled           | KERNEL_APP_PROMETHEUS_ENABLED           | True
+kernel.app.prometheus.port              | KERNEL_APP_PROMETHEUS_PORT              | 8087
+kernel.app.sentry.enabled               | KERNEL_APP_SENTRY_ENABLED               | False 
+kernel.app.sentry.dsn                   | KERNEL_APP_SENTRY_DSN                   | 
+kernel.app.sentry.environment           | KERNEL_APP_SENTRY_ENVIRONMENT           | 
 
 
 A configuração padrão assume o uso de uma instância *standalone* do MongoDB. Para
@@ -65,6 +66,12 @@ Ao conectar-se a um *replica set*, a diretiva `kernel.app.mongodb.replicaset`
 deve ser definida com o nome do *replica set*. Além disso, é possível informar os diversos
 *seeds* do *replica set* por meio da diretiva `kernel.app.mongodb.dsn`,
 separando suas URIs com espaços em branco ou quebra de linha.
+
+De maneira a garantir a consistência dos dados em ambiente de produção, recomenda-se que seja 
+habilitada a diretiva `kernel.app.mongodb.transactions.enabled`. Esta diretiva depende do uso 
+de *replica sets*. Recomenda-se o uso do MongoDB 4.4+, caso contrário tanto o banco de dados
+quanto as coleções terão de ser criadas explicitamente pelo DBA. Para mais detalhes acesse 
+https://docs.mongodb.com/master/core/transactions/.
 
 
 Configurações avançadas:
@@ -87,17 +94,17 @@ $ pserve development.ini
 Esta configuração espera uma instância de MongoDB escutando *localhost* na
 porta *27017*.
 
-Na primeira vez será necessário criar os índices do banco de dados. Para tal
-execute o comando `kernelctl create-indexes`*`mongo-db-dsn dbname`*.
+Na primeira vez será necessário criar a estrutura e os índices do banco de dados. Para tal
+execute o comando `kernelctl create-collections`*`mongo-db-dsn dbname`*` | kernelctl create-indexes`*`mongo-db-dsn dbname`*.
 
 
 ### Executando via Docker:
 
 `$ docker-compose up -d`
 
-Na primeira vez será necessário criar os índices do banco de dados:
+Na primeira vez será necessário criar a estrutura e os índices do banco de dados:
 
-`$ docker-compose exec webapp kernelctl create-indexes`*`mongo-db-dsn dbname`*
+`$ docker-compose exec webapp kernelctl create-collections`*`mongo-db-dsn dbname`*` | kernelctl create-indexes`*`mongo-db-dsn dbname`*
 
 
 Testando o registro de um documento de exemplo:

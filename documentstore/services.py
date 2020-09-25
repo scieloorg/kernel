@@ -69,16 +69,21 @@ class BaseRegisterDocument(CommandHandler):
             assets = dict(assets)
         except TypeError:
             assets = {}
-        session = self.Session()
-        document = self._get_document(session, id)
-        document.new_version(data_url)
-        for asset_id, asset_url in assets.items():
-            self._new_asset_version(document, asset_id, asset_url)
-        self._persist(session, document)
-        self._notify(
-            session,
-            {"instance": document, "id": id, "data_url": data_url, "assets": assets},
-        )
+        with self.Session() as session:
+            document = self._get_document(session, id)
+            document.new_version(data_url)
+            for asset_id, asset_url in assets.items():
+                self._new_asset_version(document, asset_id, asset_url)
+            self._persist(session, document)
+            self._notify(
+                session,
+                {
+                    "instance": document,
+                    "id": id,
+                    "data_url": data_url,
+                    "assets": assets,
+                },
+            )
 
 
 class RegisterDocument(BaseRegisterDocument):
@@ -189,19 +194,19 @@ class RegisterAssetVersion(CommandHandler):
     """
 
     def __call__(self, id: str, asset_id: str, asset_url: str) -> None:
-        session = self.Session()
-        document = session.documents.fetch(id)
-        document.new_asset_version(asset_id=asset_id, data_url=asset_url)
-        result = session.documents.update(document)
-        session.notify(
-            Events.ASSET_VERSION_REGISTERED,
-            {
-                "instance": document,
-                "id": id,
-                "asset_id": asset_id,
-                "asset_url": asset_url,
-            },
-        )
+        with self.Session() as session:
+            document = session.documents.fetch(id)
+            document.new_asset_version(asset_id=asset_id, data_url=asset_url)
+            result = session.documents.update(document)
+            session.notify(
+                Events.ASSET_VERSION_REGISTERED,
+                {
+                    "instance": document,
+                    "id": id,
+                    "asset_id": asset_id,
+                    "asset_url": asset_url,
+                },
+            )
         return result
 
 
@@ -257,17 +262,17 @@ class SanitizeDocumentFront(CommandHandler):
 
 class CreateDocumentsBundle(CommandHandler):
     def __call__(self, id: str, docs: list = None, metadata: dict = None) -> None:
-        session = self.Session()
-        _bundle = DocumentsBundle(id)
-        for doc in docs or []:
-            _bundle.add_document(doc)
-        for name, value in (metadata or {}).items():
-            setattr(_bundle, name, value)
-        result = session.documents_bundles.add(_bundle)
-        session.notify(
-            Events.DOCUMENTSBUNDLE_CREATED,
-            {"instance": _bundle, "id": id, "docs": docs, "metadata": metadata},
-        )
+        with self.Session() as session:
+            _bundle = DocumentsBundle(id)
+            for doc in docs or []:
+                _bundle.add_document(doc)
+            for name, value in (metadata or {}).items():
+                setattr(_bundle, name, value)
+            result = session.documents_bundles.add(_bundle)
+            session.notify(
+                Events.DOCUMENTSBUNDLE_CREATED,
+                {"instance": _bundle, "id": id, "docs": docs, "metadata": metadata},
+            )
         return result
 
 
@@ -279,39 +284,39 @@ class FetchDocumentsBundle(CommandHandler):
 
 class UpdateDocumentsBundleMetadata(CommandHandler):
     def __call__(self, id: str, metadata: dict) -> None:
-        session = self.Session()
-        _bundle = session.documents_bundles.fetch(id)
-        for name, value in metadata.items():
-            setattr(_bundle, name, value)
-        session.documents_bundles.update(_bundle)
-        session.notify(
-            Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
-            {"instance": _bundle, "id": id, "metadata": metadata},
-        )
+        with self.Session() as session:
+            _bundle = session.documents_bundles.fetch(id)
+            for name, value in metadata.items():
+                setattr(_bundle, name, value)
+            session.documents_bundles.update(_bundle)
+            session.notify(
+                Events.DOCUMENTSBUNDLE_METATADA_UPDATED,
+                {"instance": _bundle, "id": id, "metadata": metadata},
+            )
 
 
 class AddDocumentToDocumentsBundle(CommandHandler):
     def __call__(self, id: str, doc: str) -> None:
-        session = self.Session()
-        _bundle = session.documents_bundles.fetch(id)
-        _bundle.add_document(doc)
-        session.documents_bundles.update(_bundle)
-        session.notify(
-            Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
-            {"instance": _bundle, "id": id, "doc": doc},
-        )
+        with self.Session() as session:
+            _bundle = session.documents_bundles.fetch(id)
+            _bundle.add_document(doc)
+            session.documents_bundles.update(_bundle)
+            session.notify(
+                Events.DOCUMENT_ADDED_TO_DOCUMENTSBUNDLE,
+                {"instance": _bundle, "id": id, "doc": doc},
+            )
 
 
 class InsertDocumentToDocumentsBundle(CommandHandler):
     def __call__(self, id: str, index: int, doc: str) -> None:
-        session = self.Session()
-        _bundle = session.documents_bundles.fetch(id)
-        _bundle.insert_document(index, doc)
-        session.documents_bundles.update(_bundle)
-        session.notify(
-            Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
-            {"instance": _bundle, "id": id, "index": index, "doc": doc},
-        )
+        with self.Session() as session:
+            _bundle = session.documents_bundles.fetch(id)
+            _bundle.insert_document(index, doc)
+            session.documents_bundles.update(_bundle)
+            session.notify(
+                Events.DOCUMENT_INSERTED_TO_DOCUMENTSBUNDLE,
+                {"instance": _bundle, "id": id, "index": index, "doc": doc},
+            )
 
 
 class UpdateDocumentInDocumentsBundle(CommandHandler):
@@ -319,33 +324,33 @@ class UpdateDocumentInDocumentsBundle(CommandHandler):
     anteriormente associados"""
 
     def __call__(self, id: str, docs: List[Dict]) -> None:
-        session = self.Session()
-        _bundle = session.documents_bundles.fetch(id)
+        with self.Session() as session:
+            _bundle = session.documents_bundles.fetch(id)
 
-        for doc in _bundle.documents:
-            _bundle.remove_document(doc["id"])
+            for doc in _bundle.documents:
+                _bundle.remove_document(doc["id"])
 
-        for doc in docs:
-            _bundle.add_document(doc)
+            for doc in docs:
+                _bundle.add_document(doc)
 
-        session.documents_bundles.update(_bundle)
-        session.notify(
-            Events.ISSUE_DOCUMENTS_UPDATED,
-            {"instance": _bundle, "id": id, "docs": docs},
-        )
+            session.documents_bundles.update(_bundle)
+            session.notify(
+                Events.ISSUE_DOCUMENTS_UPDATED,
+                {"instance": _bundle, "id": id, "docs": docs},
+            )
 
 
 class CreateJournal(CommandHandler):
     def __call__(self, id: str, metadata: Dict[str, Any] = None) -> None:
-        session = self.Session()
-        _journal = Journal(id)
-        for name, value in (metadata or {}).items():
-            setattr(_journal, name, value)
-        result = session.journals.add(_journal)
-        session.notify(
-            Events.JOURNAL_CREATED,
-            {"instance": _journal, "id": id, "metadata": metadata},
-        )
+        with self.Session() as session:
+            _journal = Journal(id)
+            for name, value in (metadata or {}).items():
+                setattr(_journal, name, value)
+            result = session.journals.add(_journal)
+            session.notify(
+                Events.JOURNAL_CREATED,
+                {"instance": _journal, "id": id, "metadata": metadata},
+            )
         return result
 
 
@@ -361,39 +366,39 @@ class FetchJournal(CommandHandler):
 
 class UpdateJournalMetadata(CommandHandler):
     def __call__(self, id: str, metadata: Dict[str, Any] = None) -> None:
-        session = self.Session()
-        _journal = session.journals.fetch(id)
-        for name, value in metadata.items():
-            setattr(_journal, name, value)
-        session.journals.update(_journal)
-        session.notify(
-            Events.JOURNAL_METATADA_UPDATED,
-            {"id": id, "metadata": metadata, "instance": _journal},
-        )
+        with self.Session() as session:
+            _journal = session.journals.fetch(id)
+            for name, value in metadata.items():
+                setattr(_journal, name, value)
+            session.journals.update(_journal)
+            session.notify(
+                Events.JOURNAL_METATADA_UPDATED,
+                {"id": id, "metadata": metadata, "instance": _journal},
+            )
 
 
 class AddIssueToJournal(CommandHandler):
     def __call__(self, id: str, issue: dict) -> None:
-        session = self.Session()
-        _journal = session.journals.fetch(id)
-        _journal.add_issue(issue)
-        session.journals.update(_journal)
-        session.notify(
-            Events.ISSUE_ADDED_TO_JOURNAL,
-            {"instance": _journal, "id": id, "issue": issue},
-        )
+        with self.Session() as session:
+            _journal = session.journals.fetch(id)
+            _journal.add_issue(issue)
+            session.journals.update(_journal)
+            session.notify(
+                Events.ISSUE_ADDED_TO_JOURNAL,
+                {"instance": _journal, "id": id, "issue": issue},
+            )
 
 
 class InsertIssueToJournal(CommandHandler):
     def __call__(self, id: str, index: int, issue: dict) -> None:
-        session = self.Session()
-        _journal = session.journals.fetch(id)
-        _journal.insert_issue(index, issue)
-        session.journals.update(_journal)
-        session.notify(
-            Events.ISSUE_INSERTED_TO_JOURNAL,
-            {"instance": _journal, "id": id, "index": index, "issue": issue},
-        )
+        with self.Session() as session:
+            _journal = session.journals.fetch(id)
+            _journal.insert_issue(index, issue)
+            session.journals.update(_journal)
+            session.notify(
+                Events.ISSUE_INSERTED_TO_JOURNAL,
+                {"instance": _journal, "id": id, "index": index, "issue": issue},
+            )
 
 
 class UpdateIssuesInJournal(CommandHandler):
@@ -401,56 +406,56 @@ class UpdateIssuesInJournal(CommandHandler):
     anteriormente associados"""
 
     def __call__(self, id: str, issues: List[Dict]) -> None:
-        session = self.Session()
-        _journal = session.journals.fetch(id)
+        with self.Session() as session:
+            _journal = session.journals.fetch(id)
 
-        for issue in _journal.issues:
-            _journal.remove_issue(issue["id"])
+            for issue in _journal.issues:
+                _journal.remove_issue(issue["id"])
 
-        for issue in issues:
-            _journal.add_issue(issue)
+            for issue in issues:
+                _journal.add_issue(issue)
 
-        session.journals.update(_journal)
-        session.notify(
-            Events.JOURNAL_ISSUES_UPDATED,
-            {"instance": _journal, "id": id, "issues": issues},
-        )
+            session.journals.update(_journal)
+            session.notify(
+                Events.JOURNAL_ISSUES_UPDATED,
+                {"instance": _journal, "id": id, "issues": issues},
+            )
 
 
 class RemoveIssueFromJournal(CommandHandler):
     def __call__(self, id: str, issue: str) -> None:
-        session = self.Session()
-        _journal = session.journals.fetch(id)
-        _journal.remove_issue(issue)
-        session.journals.update(_journal)
-        session.notify(
-            Events.ISSUE_REMOVED_FROM_JOURNAL,
-            {"instance": _journal, "id": id, "issue": issue},
-        )
+        with self.Session() as session:
+            _journal = session.journals.fetch(id)
+            _journal.remove_issue(issue)
+            session.journals.update(_journal)
+            session.notify(
+                Events.ISSUE_REMOVED_FROM_JOURNAL,
+                {"instance": _journal, "id": id, "issue": issue},
+            )
 
 
 class SetAheadOfPrintBundleToJournal(CommandHandler):
     def __call__(self, id: str, aop: str) -> None:
-        session = self.Session()
-        _journal = session.journals.fetch(id)
-        _journal.ahead_of_print_bundle = aop
-        session.journals.update(_journal)
-        session.notify(
-            Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
-            {"instance": _journal, "id": id, "aop": aop},
-        )
+        with self.Session() as session:
+            _journal = session.journals.fetch(id)
+            _journal.ahead_of_print_bundle = aop
+            session.journals.update(_journal)
+            session.notify(
+                Events.AHEAD_OF_PRINT_BUNDLE_SET_TO_JOURNAL,
+                {"instance": _journal, "id": id, "aop": aop},
+            )
 
 
 class RemoveAheadOfPrintBundleFromJournal(CommandHandler):
     def __call__(self, id: str) -> None:
-        session = self.Session()
-        _journal = session.journals.fetch(id)
-        _journal.remove_ahead_of_print_bundle()
-        session.journals.update(_journal)
-        session.notify(
-            Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
-            {"instance": _journal, "id": id},
-        )
+        with self.Session() as session:
+            _journal = session.journals.fetch(id)
+            _journal.remove_ahead_of_print_bundle()
+            session.journals.update(_journal)
+            session.notify(
+                Events.AHEAD_OF_PRINT_BUNDLE_REMOVED_FROM_JOURNAL,
+                {"instance": _journal, "id": id},
+            )
 
 
 class FetchChanges(CommandHandler):
@@ -529,24 +534,24 @@ class RegisterRenditionVersion(CommandHandler):
         size_bytes: int,
     ) -> None:
         int_size_bytes = int(size_bytes)
-        session = self.Session()
-        document = session.documents.fetch(id)
-        document.new_rendition_version(
-            filename, data_url, mimetype, lang, int_size_bytes
-        )
-        result = session.documents.update(document)
-        session.notify(
-            Events.RENDITION_VERSION_REGISTERED,
-            {
-                "instance": DocumentRenditions(document),
-                "id": id,
-                "filename": filename,
-                "data_url": data_url,
-                "mimetype": mimetype,
-                "lang": lang,
-                "size_bytes": int_size_bytes,
-            },
-        )
+        with self.Session() as session:
+            document = session.documents.fetch(id)
+            document.new_rendition_version(
+                filename, data_url, mimetype, lang, int_size_bytes
+            )
+            result = session.documents.update(document)
+            session.notify(
+                Events.RENDITION_VERSION_REGISTERED,
+                {
+                    "instance": DocumentRenditions(document),
+                    "id": id,
+                    "filename": filename,
+                    "data_url": data_url,
+                    "mimetype": mimetype,
+                    "lang": lang,
+                    "size_bytes": int_size_bytes,
+                },
+            )
         return result
 
 
@@ -576,11 +581,11 @@ class DeleteDocument(CommandHandler):
     """
 
     def __call__(self, id: str) -> None:
-        session = self.Session()
-        document = session.documents.fetch(id)
-        document.new_deleted_version()
-        result = session.documents.update(document)
-        session.notify(Events.DOCUMENT_DELETED, {"instance": document, "id": id})
+        with self.Session() as session:
+            document = session.documents.fetch(id)
+            document.new_deleted_version()
+            result = session.documents.update(document)
+            session.notify(Events.DOCUMENT_DELETED, {"instance": document, "id": id})
         return result
 
 

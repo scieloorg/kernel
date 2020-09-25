@@ -1188,6 +1188,12 @@ DEFAULT_SETTINGS = [
     ),
     ("kernel.app.mongodb.writeto", "KERNEL_APP_MONGODB_WRITETO", int, 1),
     ("kernel.app.mongodb.dbname", "KERNEL_APP_MONGODB_DBNAME", str, "document-store"),
+    (
+        "kernel.app.mongodb.transactions.enabled",
+        "KERNEL_APP_MONGODB_TRANSACTIONS_ENABLED",
+        asbool,
+        False,
+    ),
     ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True),
     ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087),
     ("kernel.app.sentry.enabled", "KERNEL_APP_SENTRY_ENABLED", asbool, False),
@@ -1239,7 +1245,15 @@ def main(global_config, **settings):
             "w": settings["kernel.app.mongodb.writeto"],
         },
     )
-    Session = adapters.Session.partial(mongo)
+
+    if settings["kernel.app.mongodb.transactions.enabled"]:
+        Session = adapters.TransactionalSession.partial(mongo)
+    else:
+        Session = adapters.Session.partial(mongo)
+        LOGGER.warning(
+            "transactional support is disabled and it may cause data loss. "
+            "If the app is running in production, this is a huge mistake"
+        )
 
     config.add_request_method(
         lambda request: services.get_handlers(Session), "services", reify=True

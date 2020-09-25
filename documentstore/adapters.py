@@ -34,9 +34,7 @@ class MongoDB:
     https://api.mongodb.com/python/current/api/pymongo/mongo_client.html
     """
 
-    def __init__(
-        self, uri, dbname, mongoclient=pymongo.MongoClient, options=None,
-    ):
+    def __init__(self, uri, dbname, mongoclient=pymongo.MongoClient, options=None):
         self._dbname = dbname
         self._uri = uri
         self._MongoClient = mongoclient
@@ -92,30 +90,104 @@ class MongoDB:
             [("timestamp", pymongo.ASCENDING)], unique=True, background=True
         )
 
+    def start_session(self):
+        """Inicia uma sessão transacional.
+        """
+        return self._client.start_session()
+
+    def start_transaction(self):
+        """Inicia uma transação.
+        """
+        return self._client.start_transaction()
+
+    def create_collections(self):
+        """Cria as coleções na base de dados.
+        
+        Com o uso de transações em instâncias de MongoDB < 4.4 as coleções não 
+        podem ser criadas implicitamente.
+        """
+        for colname in ["documents", "documents_bundles", "journals", "changes"]:
+            self._db().create_collection(colname)
+
 
 class Session(interfaces.Session):
     """Implementação de `interfaces.Session` para armazenamento em MongoDB.
-    Trata-se de uma classe concreta e não deve ser generalizada.
+
+    Instâncias de :class:`Session` servem como pontos de acesso aos repositórios 
+    de dados. Instâncias desta classe poderão usar da sintaxe de gerenciadores
+    de contexto do Python, mas sem qualquer efeito. Caso 
     """
 
     def __init__(self, mongodb_client):
         self._mongodb_client = mongodb_client
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+    def _repo_extra_args(self):
+        """Argumentos extras que serão passados na inicialização dos
+        repositórios.
+        """
+        return {}
+
     @property
     def documents(self):
-        return DocumentStore(self._mongodb_client.documents)
+        return DocumentStore(self._mongodb_client.documents, **self._repo_extra_args())
 
     @property
     def documents_bundles(self):
-        return DocumentsBundleStore(self._mongodb_client.documents_bundles)
+        return DocumentsBundleStore(
+            self._mongodb_client.documents_bundles, **self._repo_extra_args()
+        )
 
     @property
     def journals(self):
-        return JournalStore(self._mongodb_client.journals)
+        return JournalStore(self._mongodb_client.journals, **self._repo_extra_args())
 
     @property
     def changes(self):
-        return ChangesStore(self._mongodb_client.changes)
+        return ChangesStore(self._mongodb_client.changes, **self._repo_extra_args())
+
+
+class TransactionalSession(Session):
+    """Implementação de `interfaces.Session` para armazenamento em MongoDB, com
+    suporte transacional de múltiplas coleções.
+
+    Instâncias de :class:`TransactionalSession` servem como pontos de acesso aos 
+    repositórios de dados. Elas podem ser utilizadas na realização de consultas 
+    avulsas aos dados ou mais sofisticadas, em contextos transacionais. Caso o 
+    último seja desejado, deve-se instanciar :class:`TransactionalSession` com a 
+    sintaxe de gerenciadores de contexto do Python.
+    """
+
+    def __init__(self, mongodb_client):
+        self._mongodb_client = mongodb_client
+        self._txn_session = None
+
+    def __enter__(self):
+        self._txn_session = self._mongodb_client.start_session()
+        self._txn_session.start_transaction()
+        LOGGER.debug("new MongoDB transactional session created: %s", self._txn_session)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            self._txn_session.abort_transaction()
+            LOGGER.debug(
+                'transaction "%s" was aborted: %s', self._txn_session, exc_value
+            )
+        else:
+            self._txn_session.commit_transaction()
+            LOGGER.debug('transaction "%s" was commited', self._txn_session)
+
+    def _repo_extra_args(self):
+        """Argumentos extras que serão passados na inicialização dos
+        repositórios.
+        """
+        return {"txn_session": self._txn_session}
 
 
 class BaseStore(interfaces.DataStore):
@@ -124,8 +196,15 @@ class BaseStore(interfaces.DataStore):
     implementam/definem o atributo `DomainClass`.
     """
 
-    def __init__(self, collection):
+    def __init__(self, collection, txn_session=None):
         self._collection = collection
+        self._txn_session = txn_session
+
+    def _txn_session_arg(self):
+        if self._txn_session:
+            return {"session": self._txn_session}
+        else:
+            return {}
 
     def _pre_write(self, data) -> dict:
         """Tratamento anterior ao armazenamento do dado no MongoDB."""
@@ -141,7 +220,7 @@ class BaseStore(interfaces.DataStore):
     def add(self, data) -> None:
         try:
             _, _manifest = self._pre_write(data)
-            self._collection.insert_one(_manifest)
+            self._collection.insert_one(_manifest, **self._txn_session_arg())
         except pymongo.errors.DuplicateKeyError:
             raise exceptions.AlreadyExists(
                 "cannot add data with id " '"%s": the id is already in use' % data.id()
@@ -149,14 +228,16 @@ class BaseStore(interfaces.DataStore):
 
     def update(self, data) -> None:
         _id, _manifest = self._pre_write(data)
-        result = self._collection.replace_one({"_id": _id}, _manifest)
+        result = self._collection.replace_one(
+            {"_id": _id}, _manifest, **self._txn_session_arg()
+        )
         if result.matched_count == 0:
             raise exceptions.DoesNotExist(
                 "cannot update data with id " '"%s": data does not exist' % data.id()
             )
 
     def fetch(self, id: str):
-        manifest = self._collection.find_one({"_id": id})
+        manifest = self._collection.find_one({"_id": id}, **self._txn_session_arg())
         if manifest:
             return self.DomainClass(manifest=self._post_read(manifest))
         else:
@@ -170,12 +251,19 @@ class ChangesStore(interfaces.ChangesDataStore):
     MongoDB.
     """
 
-    def __init__(self, collection):
+    def __init__(self, collection, txn_session=None):
         self._collection = collection
+        self._txn_session = txn_session
+
+    def _txn_session_arg(self):
+        if self._txn_session:
+            return {"session": self._txn_session}
+        else:
+            return {}
 
     def add(self, change: dict):
         try:
-            self._collection.insert_one(change)
+            self._collection.insert_one(change, **self._txn_session_arg())
         except pymongo.errors.DuplicateKeyError as exc:
             raise exceptions.AlreadyExists(
                 'cannot add data with id "%s": %s' % (change["_id"], exc)
@@ -186,11 +274,14 @@ class ChangesStore(interfaces.ChangesDataStore):
             {"timestamp": {"$gt": since}},
             sort=[("timestamp", pymongo.ASCENDING)],
             projection={"content_gz": False, "content_type": False},
+            **self._txn_session_arg(),
         ).limit(limit)
 
     def fetch(self, id: str) -> dict:
         try:
-            change = self._collection.find_one({"_id": ObjectId(id)})
+            change = self._collection.find_one(
+                {"_id": ObjectId(id)}, **self._txn_session_arg()
+            )
         except bson.errors.InvalidId as exc:
             raise exceptions.DoesNotExist(
                 'cannot fetch data with id "%s": %s' % (id, exc)
