@@ -10,6 +10,7 @@ from clea import join as clea_join, core as clea_core
 
 from .interfaces import Session
 from .domain import Document, DocumentsBundle, Journal, utcnow
+from .domain import display_format
 from .exceptions import DoesNotExist, AlreadyExists, VersionAlreadySet
 
 __all__ = ["get_handlers"]
@@ -257,6 +258,7 @@ class SanitizeDocumentFront(CommandHandler):
         return {
             **clea_article.data_full,
             "aff_contrib_full": clea_join.aff_contrib_full(clea_article),
+            "display-format": display_format(xml_data),
         }
 
 
