@@ -263,6 +263,49 @@ def assets_from_remote_xml(
     return xml, get_static_assets(xml)
 
 
+def display_format(
+    data: bytes,
+) -> dict:
+    metadata = {}
+    parser = DEFAULT_XMLPARSER
+    xml = etree.parse(BytesIO(data), parser)
+    xpaths = [
+        ("article-title", ".", ".//article-meta//article-title"),
+        ("article-title", ".//article-meta//trans-title-group", ".//trans-title"),
+        ("article-title", ".//sub-article", ".//front-stub//article-title"),
+    ]
+
+    for label, lang_xpath, content_xpath in xpaths:
+        for lang_node in xml.findall(lang_xpath):
+            lang = lang_node.get('{http://www.w3.org/XML/1998/namespace}lang')
+            for content_node in lang_node.findall(content_xpath):
+                _display_format_remove_xref(content_node)
+                content = _display_format_get_content(content_node)
+                if content and lang:
+                    _display_format_update_output(
+                        metadata, label, lang, content)
+
+    return metadata
+
+
+def _display_format_update_output(output, label, lang, content):
+    output[label] = output.setdefault(label, {})
+    output[label][lang] = content
+
+
+def _display_format_get_content(node):
+    content = etree.tostring(node, encoding='utf-8').decode("utf-8")
+    content = content[content.find(">")+1:]
+    content = content[:content.rfind("</")]
+    return content
+
+
+def _display_format_remove_xref(node):
+    for xref in node.findall(".//xref"):
+        p = xref.getparent()
+        p.remove(xref)
+
+
 class Document:
     _timestamp_pattern = (
         r"^[0-9]{4}-[0-9]{2}-[0-9]{2}(T[0-9]{2}:[0-9]{2}(:[0-9]{2})?Z)?$"
