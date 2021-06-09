@@ -2042,14 +2042,14 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
             <sub-article article-type="translation" id="s1" xml:lang="pt">
                 <front-stub>
                   <title-group>
-                    <article-title>Solução de heparina na prevenção de oclusão do Cateter de Hickman<sup>®</sup> ensaio clínico randomizado<xref ref-type="fn" rid="fn2">*</xref></article-title>
+                    <article-title>Solução de <bold>heparina</bold> na prevenção de oclusão do Cateter de Hickman<sup>®</sup> ensaio clínico randomizado<xref ref-type="fn" rid="fn2">*</xref></article-title>
                   </title-group>
               </front-stub>
             </sub-article>
             <sub-article article-type="translation" id="s2" xml:lang="es">
                 <front-stub>
                   <title-group>
-                    <article-title>Solución de heparina para prevenir oclusiones en catéteres de Hickman<sup>®</sup> un ensayo clínico aleatorizado<xref ref-type="fn" rid="fn3">*</xref></article-title>
+                    <article-title>Solución <italic>de heparina para prevenir</italic> oclusiones en catéteres de Hickman<sup>®</sup> un ensayo clínico aleatorizado<xref ref-type="fn" rid="fn3">*</xref></article-title>
                   </title-group>
                 </front-stub>
             </sub-article>
@@ -2067,11 +2067,11 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
                     """clinical trial"""
                     ),
                 "pt": (
-                    """Solução de heparina na prevenção de oclusão do """
+                    """Solução de <b>heparina</b> na prevenção de oclusão do """
                     """Cateter de Hickman<sup>®</sup> ensaio clínico """
                     """randomizado"""),
                 "es": (
-                    """Solución de heparina para prevenir oclusiones en """
+                    """Solución <i>de heparina para prevenir</i> oclusiones en """
                     """catéteres de Hickman<sup>®</sup> un ensayo clínico """
                     """aleatorizado"""),
             }
