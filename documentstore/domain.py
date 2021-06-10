@@ -279,9 +279,9 @@ def display_format(
     parser = DEFAULT_XMLPARSER
     xml = etree.parse(BytesIO(data), parser)
     xpaths = [
-        ("article-title", ".", ".//article-meta//article-title"),
-        ("article-title", ".//article-meta//trans-title-group", ".//trans-title"),
-        ("article-title", ".//sub-article", ".//front-stub//article-title"),
+        ("article_title", ".", ".//article-meta//article-title"),
+        ("article_title", ".//article-meta//trans-title-group", ".//trans-title"),
+        ("article_title", ".//sub-article", ".//front-stub//article-title"),
     ]
 
     for label, lang_xpath, content_xpath in xpaths:

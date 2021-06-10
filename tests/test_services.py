@@ -1224,10 +1224,10 @@ class FetchDocumentFrontTest(CommandTestMixin, unittest.TestCase):
 
     def test_call_returns_display_format(self):
         expected = {
-            'article-title': {
+            'article_title': {
                 "en": """Proposal for a telehealth concept in the translational research model""",
                 "pt": """Proposta conceitual de telessaúde no modelo da pesquisa translacional""",
             }
         }
         result = self.command(self.data)
-        self.assertEqual(expected, result['display-format'])
+        self.assertEqual(expected, result['display_format'])

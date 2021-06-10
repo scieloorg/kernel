@@ -2000,7 +2000,7 @@ class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):
     def test_display_format(self):
         result = domain.display_format(self.xml)
         expected = {
-            "article-title": {
+            "article_title": {
                 "pt": 
                     ('Uma Reflexão de Professores sobre Demonstrações '
                         'Relativas à Irracionalidade de '
@@ -2060,7 +2060,7 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
     def test_display_format_removes_xref(self):
         result = domain.display_format(self.xml)
         expected = {
-            "article-title": {
+            "article_title": {
                 "en": (
                     """Heparin solution in the prevention of occlusions """
                     """in Hickman<sup>®</sup> catheters a randomized """

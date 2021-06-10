@@ -258,7 +258,7 @@ class SanitizeDocumentFront(CommandHandler):
         return {
             **clea_article.data_full,
             "aff_contrib_full": clea_join.aff_contrib_full(clea_article),
-            "display-format": display_format(xml_data),
+            "display_format": display_format(xml_data),
         }
 
 
