@@ -1974,3 +1974,106 @@ class RetryGracefullyDecoratorTests(unittest.TestCase):
 
         calls = [mock.call(1.2 ** i) for i in range(1, 3)]
         retry_gracefully._sleep.assert_has_calls(calls)
+
+
+class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):
+
+    def setUp(self):
+        self.xml = (
+            '<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="pt">'
+            '<front>'
+            '<article-meta>'
+            '''<title-group>
+                <article-title>Uma Reflexão de Professores sobre Demonstrações Relativas à Irracionalidade de <inline-formula><mml:math display="inline" id="m1"><mml:mrow><mml:msqrt><mml:mn>2</mml:mn></mml:msqrt></mml:mrow></mml:math></inline-formula> </article-title>
+                <trans-title-group xml:lang="en">
+                  <trans-title>Teachers' Considerations on the Irrationality Proof of <inline-formula><mml:math display="inline" id="m2"><mml:mrow><mml:msqrt><mml:mn>2</mml:mn></mml:msqrt></mml:mrow></mml:math></inline-formula> </trans-title>
+                </trans-title-group>
+                <trans-title-group xml:lang="es">
+                  <trans-title>Español <inline-formula><mml:math display="inline" id="m2"><mml:mrow><mml:msqrt><mml:mn>2</mml:mn></mml:msqrt></mml:mrow></mml:math></inline-formula> </trans-title>
+                </trans-title-group>
+            </title-group>'''
+            '</article-meta>'
+            '</front>'
+            '</article>'
+        ).encode("utf-8")
+
+    def test_display_format(self):
+        result = domain.display_format(self.xml)
+        expected = {
+            "article_title": {
+                "pt": 
+                    ('Uma Reflexão de Professores sobre Demonstrações '
+                        'Relativas à Irracionalidade de '
+                        '<inline-formula><mml:math display="inline" id="m1">'
+                        '<mml:mrow><mml:msqrt><mml:mn>2</mml:mn></mml:msqrt>'
+                        '</mml:mrow></mml:math></inline-formula> '),
+                "en": (
+                    """Teachers' Considerations on the Irrationality Proof """
+                    """of <inline-formula><mml:math display="inline" """
+                    """id="m2">"""
+                    """<mml:mrow><mml:msqrt><mml:mn>2</mml:mn></mml:msqrt>"""
+                    """</mml:mrow></mml:math></inline-formula> """),
+                "es": (
+                    """Español <inline-formula><mml:math display="inline" """
+                    """id="m2"><mml:mrow><mml:msqrt><mml:mn>2</mml:mn>"""
+                    """</mml:msqrt></mml:mrow></mml:math></inline-formula> """
+                    ),
+            }
+        }
+        self.assertEqual(expected, result)
+
+
+class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
+
+    def setUp(self):
+        self.xml = (
+            '<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="en">'
+            '<front>'
+            '<article-meta>'
+            '''
+            <title-group>
+                <article-title>Heparin solution in the prevention of occlusions in Hickman<sup>®</sup> catheters a randomized clinical trial<xref ref-type="fn" rid="fn1">*</xref></article-title>
+            </title-group>
+            '''
+            '</article-meta>'
+            '</front>'
+
+            '''
+            <sub-article article-type="translation" id="s1" xml:lang="pt">
+                <front-stub>
+                  <title-group>
+                    <article-title>Solução de <bold>heparina</bold> na prevenção de oclusão do Cateter de Hickman<sup>®</sup> ensaio clínico randomizado<xref ref-type="fn" rid="fn2">*</xref></article-title>
+                  </title-group>
+              </front-stub>
+            </sub-article>
+            <sub-article article-type="translation" id="s2" xml:lang="es">
+                <front-stub>
+                  <title-group>
+                    <article-title>Solución <italic>de heparina para prevenir</italic> oclusiones en catéteres de Hickman<sup>®</sup> un ensayo clínico aleatorizado<xref ref-type="fn" rid="fn3">*</xref></article-title>
+                  </title-group>
+                </front-stub>
+            </sub-article>
+            '''
+            '</article>'
+        ).encode("utf-8")
+
+    def test_display_format_removes_xref(self):
+        result = domain.display_format(self.xml)
+        expected = {
+            "article_title": {
+                "en": (
+                    """Heparin solution in the prevention of occlusions """
+                    """in Hickman<sup>®</sup> catheters a randomized """
+                    """clinical trial"""
+                    ),
+                "pt": (
+                    """Solução de <b>heparina</b> na prevenção de oclusão do """
+                    """Cateter de Hickman<sup>®</sup> ensaio clínico """
+                    """randomizado"""),
+                "es": (
+                    """Solución <i>de heparina para prevenir</i> oclusiones en """
+                    """catéteres de Hickman<sup>®</sup> un ensayo clínico """
+                    """aleatorizado"""),
+            }
+        }
+        self.assertDictEqual(expected, result)

@@ -1207,3 +1207,27 @@ class RegisterDocumentVersionTest(CommandTestMixin, unittest.TestCase):
                     assets=assets,
                 )
             )
+
+
+class FetchDocumentFrontTest(CommandTestMixin, unittest.TestCase):
+    def setUp(self):
+        self.services, self.session = make_services()
+        self.command = self.services["sanitize_document_front"]
+        with open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    "0034-8910-rsp-48-2-0347.xml",
+                ),
+                "rb"
+            ) as fixture:
+            self.data = fixture.read()
+
+    def test_call_returns_display_format(self):
+        expected = {
+            'article_title': {
+                "en": """Proposal for a telehealth concept in the translational research model""",
+                "pt": """Proposta conceitual de telessaúde no modelo da pesquisa translacional""",
+            }
+        }
+        result = self.command(self.data)
+        self.assertEqual(expected, result['display_format'])
