@@ -2001,22 +2001,22 @@ class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):
         result = domain.display_format(self.xml)
         expected = {
             "article_title": {
-                "pt": 
+                "pt":
                     ('Uma Reflexão de Professores sobre Demonstrações '
                         'Relativas à Irracionalidade de '
                         '<inline-formula><mml:math display="inline" id="m1">'
                         '<mml:mrow><mml:msqrt><mml:mn>2</mml:mn></mml:msqrt>'
-                        '</mml:mrow></mml:math></inline-formula> '),
+                        '</mml:mrow></mml:math></inline-formula>'),
                 "en": (
                     """Teachers' Considerations on the Irrationality Proof """
                     """of <inline-formula><mml:math display="inline" """
                     """id="m2">"""
                     """<mml:mrow><mml:msqrt><mml:mn>2</mml:mn></mml:msqrt>"""
-                    """</mml:mrow></mml:math></inline-formula> """),
+                    """</mml:mrow></mml:math></inline-formula>"""),
                 "es": (
                     """Español <inline-formula><mml:math display="inline" """
                     """id="m2"><mml:mrow><mml:msqrt><mml:mn>2</mml:mn>"""
-                    """</mml:msqrt></mml:mrow></mml:math></inline-formula> """
+                    """</mml:msqrt></mml:mrow></mml:math></inline-formula>"""
                     ),
             }
         }
@@ -2065,6 +2065,56 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
                     """Heparin solution in the prevention of occlusions """
                     """in Hickman<sup>®</sup> catheters a randomized """
                     """clinical trial"""
+                    ),
+                "pt": (
+                    """Solução de <b>heparina</b> na prevenção de oclusão do """
+                    """Cateter de Hickman<sup>®</sup> ensaio clínico """
+                    """randomizado"""),
+                "es": (
+                    """Solución <i>de heparina para prevenir</i> oclusiones en """
+                    """catéteres de Hickman<sup>®</sup> un ensayo clínico """
+                    """aleatorizado"""),
+            }
+        }
+        self.assertDictEqual(expected, result)
+
+    def test_display_format_removes_xref_when_have_content_between_xref(self):
+        self.maxDiff=None
+        xml = (
+            '<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="en">'
+            '<front>'
+            '<article-meta>'
+            '''
+            <title-group>
+                <article-title> Pesquisa em ensino de química <xref ref-type="fn" rid="fn1"> <sup>1</sup> </xref> no Brasil entre 2002 e 2017 a partir de periódicos especializados <xref ref-type="fn" rid="fn2"> <sup>2</sup> </xref> </article-title>
+            </title-group>
+            '''
+            '</article-meta>'
+            '</front>'
+            '''
+            <sub-article article-type="translation" id="s1" xml:lang="pt">
+                <front-stub>
+                <title-group>
+                    <article-title>Solução de <bold>heparina</bold> na prevenção de oclusão do Cateter de Hickman<sup>®</sup> ensaio clínico randomizado<xref ref-type="fn" rid="fn2">*</xref></article-title>
+                </title-group>
+            </front-stub>
+            </sub-article>
+            <sub-article article-type="translation" id="s2" xml:lang="es">
+                <front-stub>
+                <title-group>
+                    <article-title>Solución <italic>de heparina para prevenir</italic> oclusiones en catéteres de Hickman<sup>®</sup> un ensayo clínico aleatorizado<xref ref-type="fn" rid="fn3">*</xref></article-title>
+                </title-group>
+                </front-stub>
+            </sub-article>
+            '''
+            '</article>'
+                ).encode("utf-8")
+        result = domain.display_format(xml)
+        expected = {
+            "article_title": {
+                "en": (
+                    """Pesquisa em ensino de química  no Brasil entre 2002 e """
+                    """2017 a partir de periódicos especializados"""
                     ),
                 "pt": (
                     """Solução de <b>heparina</b> na prevenção de oclusão do """
