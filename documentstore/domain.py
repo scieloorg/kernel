@@ -268,11 +268,11 @@ def display_format(
 ) -> dict:
     """
     (#PCDATA | email | ext-link | uri | inline-supplementary-material |
-     related-article | related-object | bold | fixed-case | italic | 
-     monospace | overline | roman | sans-serif | sc | strike | underline | 
-     ruby | alternatives | inline-graphic | inline-media | private-char | 
-     chem-struct | inline-formula | tex-math | mml:math | abbrev | index-term | 
-     index-term-range-end | milestone-end | milestone-start | named-content | 
+     related-article | related-object | bold | fixed-case | italic |
+     monospace | overline | roman | sans-serif | sc | strike | underline |
+     ruby | alternatives | inline-graphic | inline-media | private-char |
+     chem-struct | inline-formula | tex-math | mml:math | abbrev | index-term |
+     index-term-range-end | milestone-end | milestone-start | named-content |
      styled-content | fn | target | xref | sub | sup | break)*
     """
     metadata = {}
@@ -313,14 +313,17 @@ def _display_format_get_content(node):
 def _display_format_remove_xref(node):
     for xref in node.findall(".//xref"):
         p = xref.getparent()
+        tmp = etree.Element("tmp")
+        tmp.text = xref.tail
+        xref.addprevious(tmp)
         p.remove(xref)
+        etree.strip_tags(node, "tmp")
 
 
 def _display_format_convert_bold_and_italic(node):
     for tag in ("bold", "italic"):
         for found in node.findall(".//{}".format(tag)):
             found.tag = tag[0]
-
 
 
 class Document:
