@@ -268,11 +268,11 @@ def display_format(
 ) -> dict:
     """
     (#PCDATA | email | ext-link | uri | inline-supplementary-material |
-     related-article | related-object | bold | fixed-case | italic | 
-     monospace | overline | roman | sans-serif | sc | strike | underline | 
-     ruby | alternatives | inline-graphic | inline-media | private-char | 
-     chem-struct | inline-formula | tex-math | mml:math | abbrev | index-term | 
-     index-term-range-end | milestone-end | milestone-start | named-content | 
+     related-article | related-object | bold | fixed-case | italic |
+     monospace | overline | roman | sans-serif | sc | strike | underline |
+     ruby | alternatives | inline-graphic | inline-media | private-char |
+     chem-struct | inline-formula | tex-math | mml:math | abbrev | index-term |
+     index-term-range-end | milestone-end | milestone-start | named-content |
      styled-content | fn | target | xref | sub | sup | break)*
     """
     metadata = {}
@@ -288,9 +288,9 @@ def display_format(
         for lang_node in xml.findall(lang_xpath):
             lang = lang_node.get('{http://www.w3.org/XML/1998/namespace}lang')
             for content_node in lang_node.findall(content_xpath):
-                _display_format_remove_xref(content_node)
                 _display_format_convert_bold_and_italic(content_node)
-                content = _display_format_get_content(content_node)
+                content = _display_format_remove_xref(
+                    _display_format_get_content(content_node))
                 if content and lang:
                     _display_format_update_output(
                         metadata, label, lang, content)
@@ -307,20 +307,18 @@ def _display_format_get_content(node):
     content = etree.tostring(node, encoding='utf-8').decode("utf-8")
     content = content[content.find(">")+1:]
     content = content[:content.rfind("</")]
-    return content
+    return content.strip()
 
 
-def _display_format_remove_xref(node):
-    for xref in node.findall(".//xref"):
-        p = xref.getparent()
-        p.remove(xref)
+def _display_format_remove_xref(text):
+    clean_text = re.compile('<\s*xref[^>]*>(.*?)<\s*/\s*xref>')
+    return re.sub(clean_text, '', text).strip()
 
 
 def _display_format_convert_bold_and_italic(node):
     for tag in ("bold", "italic"):
         for found in node.findall(".//{}".format(tag)):
             found.tag = tag[0]
-
 
 
 class Document:
