@@ -307,7 +307,7 @@ def _display_format_get_content(node):
     content = etree.tostring(node, encoding='utf-8').decode("utf-8")
     content = content[content.find(">")+1:]
     content = content[:content.rfind("</")]
-    return content.strip()
+    return content
 
 
 def _display_format_remove_xref(node):
