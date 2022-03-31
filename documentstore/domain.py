@@ -288,9 +288,9 @@ def display_format(
         for lang_node in xml.findall(lang_xpath):
             lang = lang_node.get('{http://www.w3.org/XML/1998/namespace}lang')
             for content_node in lang_node.findall(content_xpath):
+                _display_format_remove_xref(content_node)
                 _display_format_convert_bold_and_italic(content_node)
-                content = _display_format_remove_xref(
-                    _display_format_get_content(content_node))
+                content = _display_format_get_content(content_node)
                 if content and lang:
                     _display_format_update_output(
                         metadata, label, lang, content)
@@ -310,9 +310,14 @@ def _display_format_get_content(node):
     return content.strip()
 
 
-def _display_format_remove_xref(text):
-    clean_text = re.compile('<\s*xref[^>]*>(.*?)<\s*/\s*xref>')
-    return re.sub(clean_text, '', text).strip()
+def _display_format_remove_xref(node):
+    for xref in node.findall(".//xref"):
+        p = xref.getparent()
+        tmp = etree.Element("tmp")
+        tmp.text = xref.tail
+        xref.addprevious(tmp)
+        p.remove(xref)
+        etree.strip_tags(node, "tmp")
 
 
 def _display_format_convert_bold_and_italic(node):
