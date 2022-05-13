@@ -281,13 +281,13 @@ def display_format(
     xpaths = [
         ("article_title", ".", ".//article-meta//article-title"),
         ("article_title", ".//article-meta//trans-title-group", ".//trans-title"),
-        ("article_title", ".//sub-article", ".//front-stub//article-title"),
+        ("article_title", ".//sub-article[@article-type='translation']", ".//front-stub//article-title"),
     ]
 
     for label, lang_xpath, content_xpath in xpaths:
         for lang_node in xml.findall(lang_xpath):
             lang = lang_node.get('{http://www.w3.org/XML/1998/namespace}lang')
-            for content_node in lang_node.findall(content_xpath):
+            for content_node in lang_node.xpath(content_xpath):
                 _display_format_remove_xref(content_node)
                 _display_format_convert_bold_and_italic(content_node)
                 content = _display_format_get_content(content_node)
