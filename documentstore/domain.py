@@ -167,7 +167,8 @@ def get_static_assets(xml_et):
     ]
 
     iterators = [
-        xml_et.iterfind(path, namespaces={"xlink": "http://www.w3.org/1999/xlink"})
+        xml_et.iterfind(path, namespaces={
+                        "xlink": "http://www.w3.org/1999/xlink"})
         for path in paths
     ]
 
@@ -281,7 +282,8 @@ def display_format(
     xpaths = [
         ("article_title", ".", ".//article-meta//article-title"),
         ("article_title", ".//article-meta//trans-title-group", ".//trans-title"),
-        ("article_title", ".//sub-article[@article-type='translation']", ".//front-stub//article-title"),
+        ("article_title",
+         ".//sub-article[@article-type='translation']", ".//front-stub//article-title"),
     ]
 
     for label, lang_xpath, content_xpath in xpaths:
@@ -348,7 +350,7 @@ class Document:
         return self.manifest.get("id", "")
 
     def new_version(
-        self, data_url, assets_getter=assets_from_remote_xml, timeout=2
+        self, data_url, assets_getter=assets_from_remote_xml, timeout=2, ensure_unique_name=False
     ) -> None:
         """Adiciona `data_url` como uma nova versão do documento.
 
@@ -362,16 +364,18 @@ class Document:
         ``NonRetryableError`` para representar problemas no acesso aos dados
         do XML.
         """
-        latest_version = self._latest_or_default()
-        if latest_version.get("data") == data_url:
-            raise exceptions.VersionAlreadySet(
-                "could not add version: the version is equal to the latest one"
-            )
+        if ensure_unique_name:
+            latest_version = self._latest_or_default()
+            if latest_version.get("data") == data_url:
+                raise exceptions.VersionAlreadySet(
+                    "could not add version: the version is equal to the latest one"
+                )
 
         _, data_assets = assets_getter(data_url, timeout=timeout)
         data_assets_keys = [asset_key for asset_key, _ in data_assets]
         assets = self._link_assets(data_assets_keys)
-        self.manifest = DocumentManifest.add_version(self._manifest, data_url, assets)
+        self.manifest = DocumentManifest.add_version(
+            self._manifest, data_url, assets)
 
     def _link_assets(self, tolink: list) -> dict:
         """Retorna um mapa entre as chaves dos ativos em `tolink` e as
@@ -446,7 +450,8 @@ class Document:
                 key=lambda version: version.get("timestamp", ""),
             )
         except ValueError:
-            raise ValueError("missing version for timestamp: %s" % timestamp) from None
+            raise ValueError("missing version for timestamp: %s" %
+                             timestamp) from None
 
         if target_version.get("deleted"):
             return target_version
@@ -454,7 +459,8 @@ class Document:
         def _at_time(uris):
             try:
                 target = max(
-                    itertools.takewhile(lambda asset: asset[0] <= timestamp, uris),
+                    itertools.takewhile(
+                        lambda asset: asset[0] <= timestamp, uris),
                     key=lambda asset: asset[0],
                 )
             except ValueError:
@@ -480,7 +486,8 @@ class Document:
             }
             return rendition
 
-        target_assets = {a: _at_time(u) for a, u in target_version["assets"].items()}
+        target_assets = {a: _at_time(u)
+                         for a, u in target_version["assets"].items()}
         target_version["assets"] = target_assets
         target_renditions = [
             _rendition_at_time(r) for r in target_version["renditions"]
@@ -511,11 +518,13 @@ class Document:
         no nível dos ativos digitais do documento.
         """
         version = (
-            self.version_at(version_at) if version_at else self.version(version_index)
+            self.version_at(version_at) if version_at else self.version(
+                version_index)
         )
 
         if version.get("deleted"):
-            raise exceptions.DeletedVersion("cannot get data: the document was deleted")
+            raise exceptions.DeletedVersion(
+                "cannot get data: the document was deleted")
 
         xml_tree, data_assets = assets_getter(version["data"], timeout=timeout)
 
@@ -542,19 +551,21 @@ class Document:
         else:
             return latest_version
 
-    def new_asset_version(self, asset_id, data_url) -> None:
+    def new_asset_version(self, asset_id, data_url, ensure_unique_name=False) -> None:
         """Adiciona `data_url` como uma nova versão do ativo `asset_id` vinculado
         a versão mais recente do documento. É importante notar que nenhuma validação
         será executada em `data_url`.
         """
         latest_version = self._latest_if_not_deleted(
-            exceptions.DeletedVersion("cannot add version: the document is deleted")
+            exceptions.DeletedVersion(
+                "cannot add version: the document is deleted")
         )
 
-        if latest_version.get("assets", {}).get(asset_id) == data_url:
-            raise exceptions.VersionAlreadySet(
-                "could not add version: the version is equal to the latest one"
-            )
+        if ensure_unique_name:
+            if latest_version.get("assets", {}).get(asset_id) == data_url:
+                raise exceptions.VersionAlreadySet(
+                    "could not add version: the version is equal to the latest one"
+                )
 
         try:
             self.manifest = DocumentManifest.add_asset_version(
@@ -574,7 +585,8 @@ class Document:
         `data_url`, `mimetype` ou `size_bytes`.
         """
         latest_version = self._latest_if_not_deleted(
-            exceptions.DeletedVersion("cannot add version: the document is deleted")
+            exceptions.DeletedVersion(
+                "cannot add version: the document is deleted")
         )
 
         selected_rendition = [
@@ -819,7 +831,8 @@ class DocumentsBundle:
     @volume.setter
     def volume(self, value: Union[str, int]):
         _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "volume", _value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "volume", _value)
 
     @property
     def pid(self):
@@ -828,7 +841,8 @@ class DocumentsBundle:
     @pid.setter
     def pid(self, value: str):
         _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "pid", _value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "pid", _value)
 
     @property
     def number(self):
@@ -837,7 +851,8 @@ class DocumentsBundle:
     @number.setter
     def number(self, value: Union[str, int]):
         _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "number", _value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "number", _value)
 
     @property
     def supplement(self):
@@ -863,13 +878,15 @@ class DocumentsBundle:
                 "cannot set titles with value "
                 '"%s": value must be list of dict' % value
             ) from None
-        self.manifest = BundleManifest.set_metadata(self._manifest, "titles", _value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "titles", _value)
 
     def add_document(self, document: str):
         self.manifest = BundleManifest.add_item(self._manifest, document)
 
     def insert_document(self, index: int, document: str):
-        self.manifest = BundleManifest.insert_item(self._manifest, index, document)
+        self.manifest = BundleManifest.insert_item(
+            self._manifest, index, document)
 
     def remove_document(self, document: str):
         self.manifest = BundleManifest.remove_item(self._manifest, document)
@@ -930,7 +947,8 @@ class Journal:
                 "cannot set mission with value "
                 '"%s": value must be list of dict' % value
             ) from None
-        self.manifest = BundleManifest.set_metadata(self._manifest, "mission", value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "mission", value)
 
     @property
     def title(self):
@@ -939,7 +957,8 @@ class Journal:
     @title.setter
     def title(self, value: str):
         _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "title", _value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "title", _value)
 
     @property
     def title_iso(self):
@@ -948,7 +967,8 @@ class Journal:
     @title_iso.setter
     def title_iso(self, value: str):
         _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "title_iso", _value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "title_iso", _value)
 
     @property
     def short_title(self):
@@ -968,7 +988,8 @@ class Journal:
     @acronym.setter
     def acronym(self, value: str):
         _value = str(value)
-        self.manifest = BundleManifest.set_metadata(self._manifest, "acronym", _value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "acronym", _value)
 
     @property
     def scielo_issn(self):
@@ -1052,9 +1073,11 @@ class Journal:
         try:
             value = tuple([dict(sponsor) for sponsor in value])
         except TypeError:
-            raise TypeError("cannot set sponsors this type %s" % repr(value)) from None
+            raise TypeError("cannot set sponsors this type %s" %
+                            repr(value)) from None
 
-        self.manifest = BundleManifest.set_metadata(self._manifest, "sponsors", value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "sponsors", value)
 
     @property
     def metrics(self):
@@ -1068,7 +1091,8 @@ class Journal:
             raise TypeError(
                 "cannot set metrics with value " '"%s": value must be dict' % value
             ) from None
-        self.manifest = BundleManifest.set_metadata(self._manifest, "metrics", value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "metrics", value)
 
     @property
     def subject_categories(self):
@@ -1168,13 +1192,15 @@ class Journal:
                 ": value must be dict" % repr(value)
             ) from None
 
-        self.manifest = BundleManifest.set_metadata(self._manifest, "contact", value)
+        self.manifest = BundleManifest.set_metadata(
+            self._manifest, "contact", value)
 
     def add_issue(self, issue: str) -> None:
         self.manifest = BundleManifest.add_item(self._manifest, issue)
 
     def insert_issue(self, index: int, issue: str) -> None:
-        self.manifest = BundleManifest.insert_item(self._manifest, index, issue)
+        self.manifest = BundleManifest.insert_item(
+            self._manifest, index, issue)
 
     def remove_issue(self, issue: str) -> None:
         self.manifest = BundleManifest.remove_item(self._manifest, issue)
@@ -1199,7 +1225,8 @@ class Journal:
 
     @ahead_of_print_bundle.setter
     def ahead_of_print_bundle(self, value: str) -> None:
-        self.manifest = BundleManifest.set_component(self._manifest, "aop", str(value))
+        self.manifest = BundleManifest.set_component(
+            self._manifest, "aop", str(value))
 
     def remove_ahead_of_print_bundle(self) -> None:
         self.manifest = BundleManifest.remove_component(self._manifest, "aop")
