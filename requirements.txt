@@ -6,7 +6,7 @@ cornice-swagger==1.0.0
 hupper==1.10.2
 idna==2.9
 iso8601==0.1.12
-lxml==4.5.0
+lxml==4.9.1
 numpy==1.18.4
 PasteDeploy==2.1.0
 plaster==1.0
@@ -31,3 +31,4 @@ waitress==1.4.3
 WebOb==1.8.6
 zope.deprecation==4.4.0
 zope.interface==5.1.0
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
