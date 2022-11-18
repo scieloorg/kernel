@@ -31,3 +31,4 @@ waitress==1.4.3
 WebOb==1.8.6
 zope.deprecation==4.4.0
 zope.interface==5.1.0
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
