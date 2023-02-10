@@ -1,4 +1,4 @@
-FROM python:3.7-alpine AS build
+FROM python:3.12.0a5-alpine AS build
 COPY . /src
 RUN pip install --upgrade pip \
     && pip install wheel
@@ -6,7 +6,7 @@ RUN cd /src \
     && python setup.py bdist_wheel -d /deps
 
 
-FROM python:3.7-alpine
+FROM python:3.12.0a5-alpine
 MAINTAINER scielo-dev@googlegroups.com
 
 COPY --from=build /deps/* /deps/
