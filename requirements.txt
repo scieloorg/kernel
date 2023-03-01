@@ -31,4 +31,4 @@ waitress==1.4.3
 WebOb==1.8.6
 zope.deprecation==4.4.0
 zope.interface==5.1.0
--e git+https://git@github.com/scieloorg/clea@v0.4.5#egg=scielo-clea
+-e git+https://github.com/scieloorg/clea@v0.4.5#egg=scielo-clea
