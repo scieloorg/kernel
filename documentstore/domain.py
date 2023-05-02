@@ -283,7 +283,7 @@ def display_format(
         ("article_title", ".", ".//article-meta//article-title"),
         ("article_title", ".//article-meta//trans-title-group", ".//trans-title"),
         ("article_title",
-         ".//sub-article[@article-type='translation']", ".//front-stub//article-title"),
+         ".//sub-article[@article-type='translation']", "./front-stub//article-title"),
     ]
 
     for label, lang_xpath, content_xpath in xpaths:
