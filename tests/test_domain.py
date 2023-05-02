@@ -231,7 +231,8 @@ class DocumentTests(unittest.TestCase):
 
     def test_version_of_deleted_document(self):
         document = domain.Document(manifest=SAMPLE_MANIFEST_WITH_DELETIONS)
-        expected = {"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}
+        expected = {"deleted": True,
+                    "timestamp": "2018-08-05T23:30:29.392990Z"}
         self.assertEqual(document.version(), expected)
 
     def test_new_version_automaticaly_references_latest_known_assets(self):
@@ -315,7 +316,8 @@ class DocumentTests(unittest.TestCase):
 
     def test_version_at_time_prior_to_data_registration(self):
         document = self.make_one()
-        self.assertRaises(ValueError, lambda: document.version_at("2018-07-01"))
+        self.assertRaises(
+            ValueError, lambda: document.version_at("2018-07-01"))
 
     def test_version_at_non_UCT_time_raises_exception(self):
         document = self.make_one()
@@ -325,7 +327,8 @@ class DocumentTests(unittest.TestCase):
 
     def test_version_at_of_deleted_document(self):
         document = domain.Document(manifest=SAMPLE_MANIFEST_WITH_DELETIONS)
-        expected = {"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}
+        expected = {"deleted": True,
+                    "timestamp": "2018-08-05T23:30:29.392990Z"}
         self.assertEqual(document.version_at("2018-08-05T23:30:29Z"), expected)
 
     def test_add_new_rendition(self):
@@ -368,7 +371,8 @@ class DocumentTests(unittest.TestCase):
             document.version()["renditions"][0]["filename"],
             "0034-8910-rsp-48-2-0275-en.pdf",
         )
-        self.assertEqual(document.version()["renditions"][0]["size_bytes"], 788523)
+        self.assertEqual(document.version()[
+                         "renditions"][0]["size_bytes"], 788523)
         self.assertEqual(
             document.version()["renditions"][0]["url"],
             "/rawfiles/5cb5f9b2691cd/0034-8910-rsp-48-2-0275-en.pdf",
@@ -494,7 +498,8 @@ class DocumentTests(unittest.TestCase):
             "versions": [{"deleted": True, "timestamp": "2018-08-05T23:30:29.392990Z"}],
         }
         document = domain.Document(manifest=sample_manifest)
-        self.assertRaises(exceptions.VersionAlreadySet, document.new_deleted_version)
+        self.assertRaises(exceptions.VersionAlreadySet,
+                          document.new_deleted_version)
 
 
 class BundleManifestTest(UnittestMixin, unittest.TestCase):
@@ -511,7 +516,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
 
     def test_new_set_same_value_to_created_updated(self):
         documents_bundle = domain.BundleManifest.new("0034-8910-rsp-48-2")
-        self.assertEqual(documents_bundle["created"], documents_bundle["updated"])
+        self.assertEqual(
+            documents_bundle["created"], documents_bundle["updated"])
 
     def test_set_metadata(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
@@ -519,7 +525,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, "publication_year", "2018", now=fake_utcnow
         )
 
-        self.assertEqual(documents_bundle["metadata"]["publication_year"], "2018")
+        self.assertEqual(
+            documents_bundle["metadata"]["publication_year"], "2018")
 
         self.assertEqual(documents_bundle["updated"], fake_utcnow())
 
@@ -539,14 +546,17 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             "2018",
             now=lambda: "2018-08-05T22:33:49.795151Z",
         )
-        self.assertEqual(documents_bundle["metadata"]["publication_year"], "2018")
-        self.assertEqual(documents_bundle["updated"], "2018-08-05T22:33:49.795151Z")
+        self.assertEqual(
+            documents_bundle["metadata"]["publication_year"], "2018")
+        self.assertEqual(
+            documents_bundle["updated"], "2018-08-05T22:33:49.795151Z")
 
         documents_bundle = domain.BundleManifest.set_metadata(
             documents_bundle, "volume", "25", now=lambda: "2018-08-05T22:34:07.795151Z"
         )
 
-        self.assertEqual(documents_bundle["updated"], "2018-08-05T22:34:07.795151Z")
+        self.assertEqual(
+            documents_bundle["updated"], "2018-08-05T22:34:07.795151Z")
         self.assertEqual(len(documents_bundle["metadata"]), 2)
 
     def test_get_metadata(self):
@@ -555,7 +565,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, "publication_year", "2018"
         )
         self.assertEqual(
-            domain.BundleManifest.get_metadata(documents_bundle, "publication_year"),
+            domain.BundleManifest.get_metadata(
+                documents_bundle, "publication_year"),
             "2018",
         )
 
@@ -568,14 +579,16 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, "publication_year", "2019"
         )
         self.assertEqual(
-            domain.BundleManifest.get_metadata(documents_bundle, "publication_year"),
+            domain.BundleManifest.get_metadata(
+                documents_bundle, "publication_year"),
             "2019",
         )
 
     def test_get_metadata_defaults_to_empty_str_when_missing(self):
         documents_bundle = new_bundle("0034-8910-rsp-48-2")
         self.assertEqual(
-            domain.BundleManifest.get_metadata(documents_bundle, "publication_year"), ""
+            domain.BundleManifest.get_metadata(
+                documents_bundle, "publication_year"), ""
         )
 
     def test_get_metadata_with_user_defined_default(self):
@@ -621,7 +634,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
     def test_get_component_returns_given_default_value(self):
         bundle = new_bundle("0034-8910-rsp")
         self.assertEqual(
-            domain.BundleManifest.get_component(bundle, "component-1", [1, 2, 3]),
+            domain.BundleManifest.get_component(
+                bundle, "component-1", [1, 2, 3]),
             [1, 2, 3],
         )
 
@@ -667,7 +681,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
 
         bundle = domain.BundleManifest.add_item(bundle, item)
         self.assertEqual(
-            item, domain.BundleManifest.get_item(bundle, "0034-8910-rsp-48-2-0275")
+            item, domain.BundleManifest.get_item(
+                bundle, "0034-8910-rsp-48-2-0275")
         )
 
     def test_add_item(self):
@@ -677,7 +692,8 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, {"id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertEqual(
-            documents_bundle["items"][-1], {"id": "/documents/0034-8910-rsp-48-2-0275"}
+            documents_bundle["items"][-1], {
+                "id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertTrue(current_updated < documents_bundle["updated"])
 
@@ -709,10 +725,12 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, 0, {"id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertEqual(
-            documents_bundle["items"][0], {"id": "/documents/0034-8910-rsp-48-2-0275"}
+            documents_bundle["items"][0], {
+                "id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertEqual(
-            documents_bundle["items"][1], {"id": "/documents/0034-8910-rsp-48-2-0775"}
+            documents_bundle["items"][1], {
+                "id": "/documents/0034-8910-rsp-48-2-0775"}
         )
         self.assertTrue(current_updated < documents_bundle["updated"])
 
@@ -744,13 +762,15 @@ class BundleManifestTest(UnittestMixin, unittest.TestCase):
             documents_bundle, -10, {"id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         self.assertEqual(
-            documents_bundle["items"][0], {"id": "/documents/0034-8910-rsp-48-2-0275"}
+            documents_bundle["items"][0], {
+                "id": "/documents/0034-8910-rsp-48-2-0275"}
         )
         documents_bundle = domain.BundleManifest.insert_item(
             documents_bundle, 10, {"id": "/documents/0034-8910-rsp-48-2-0975"}
         )
         self.assertEqual(
-            documents_bundle["items"][-1], {"id": "/documents/0034-8910-rsp-48-2-0975"}
+            documents_bundle["items"][-1], {
+                "id": "/documents/0034-8910-rsp-48-2-0975"}
         )
 
     def test_remove_item(self):
@@ -966,7 +986,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
         documents_bundle.supplement = "3"
         self.assertEqual(documents_bundle.supplement, "3")
-        self.assertEqual(documents_bundle.manifest["metadata"]["supplement"], "3")
+        self.assertEqual(
+            documents_bundle.manifest["metadata"]["supplement"], "3")
 
     def test_set_supplement_convert_to_str(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
@@ -1008,7 +1029,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_add_document(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0275"})
         self.assertIn(
             {"id": "/documents/0034-8910-rsp-48-2-0275"},
             documents_bundle.manifest["items"],
@@ -1016,7 +1038,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_add_document_raises_exception_if_item_already_exists(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0275"})
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
             'cannot add item "/documents/0034-8910-rsp-48-2-0275" in bundle: '
@@ -1031,9 +1054,12 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_documents_returns_added_documents_list(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0276"})
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0277"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0275"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0276"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0277"})
         self.assertEqual(
             documents_bundle.documents,
             [
@@ -1045,9 +1071,12 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_remove_document(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0276"})
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0277"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0275"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0276"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0277"})
         documents_bundle.remove_document("/documents/0034-8910-rsp-48-2-0275")
         self.assertNotIn(
             {"id": "/documents/0034-8910-rsp-48-2-0275"},
@@ -1073,9 +1102,12 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_insert_document(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0276"})
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0277"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0275"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0276"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0277"})
         documents_bundle.insert_document(
             1, {"id": "/documents/0034-8910-rsp-48-2-0271"}
         )
@@ -1088,7 +1120,8 @@ class DocumentsBundleTest(UnittestMixin, unittest.TestCase):
 
     def test_insert_document_raises_exception_if_item_already_exists(self):
         documents_bundle = domain.DocumentsBundle(id="0034-8910-rsp-48-2")
-        documents_bundle.add_document({"id": "/documents/0034-8910-rsp-48-2-0275"})
+        documents_bundle.add_document(
+            {"id": "/documents/0034-8910-rsp-48-2-0275"})
         self._assert_raises_with_message(
             exceptions.AlreadyExists,
             'cannot insert item id "/documents/0034-8910-rsp-48-2-0275" in bundle: '
@@ -1324,7 +1357,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal.status_history = [{"status": "current"}]
         self.assertEqual(journal.status_history, [{"status": "current"}])
         self.assertEqual(
-            journal.manifest["metadata"]["status_history"], [{"status": "current"}],
+            journal.manifest["metadata"]["status_history"], [
+                {"status": "current"}],
         )
 
     def test_get_created(self):
@@ -1430,7 +1464,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         invalid = list(subject_areas)
         self._assert_raises_with_message(
             ValueError,
-            "cannot set subject_areas with value %s: " % repr(tuple(subject_areas))
+            "cannot set subject_areas with value %s: " % repr(
+                tuple(subject_areas))
             + "%s are not valid" % repr(invalid),
             setattr,
             journal,
@@ -1477,7 +1512,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         self._assert_raises_with_message(
             TypeError,
-            "cannot set sponsors this type %s" % repr(invalid_boolean_sponsors),
+            "cannot set sponsors this type %s" % repr(
+                invalid_boolean_sponsors),
             setattr,
             journal,
             "sponsors",
@@ -1562,15 +1598,18 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         categories = "Health Sciences"
         journal.subject_categories = categories
         self.assertEqual(
-            journal.manifest["metadata"]["subject_categories"], list(categories),
+            journal.manifest["metadata"]["subject_categories"], list(
+                categories),
         )
 
     def test_set_tuple_subject_categories(self):
         journal = domain.Journal(id="0234-8410-bjmbr-587-90")
-        categories = ("Health Sciences Orthopedics", "Human Sciences Psychology")
+        categories = ("Health Sciences Orthopedics",
+                      "Human Sciences Psychology")
         journal.subject_categories = categories
         self.assertEqual(
-            journal.manifest["metadata"]["subject_categories"], list(categories),
+            journal.manifest["metadata"]["subject_categories"], list(
+                categories),
         )
 
     def test_set_list_like_object_to_subject_categories(self):
@@ -1613,7 +1652,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.institution_responsible_for = ("Usp", "Scielo")
 
-        self.assertEqual(journal.institution_responsible_for, ("Usp", "Scielo"))
+        self.assertEqual(journal.institution_responsible_for,
+                         ("Usp", "Scielo"))
         self.assertEqual(
             journal.manifest["metadata"]["institution_responsible_for"],
             ("Usp", "Scielo"),
@@ -1635,14 +1675,16 @@ class JournalTest(UnittestMixin, unittest.TestCase):
     def test_institution_responsible_for_content_value_for_string(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         journal.institution_responsible_for = ["USP", "SCIELO"]
-        self.assertEqual(journal.institution_responsible_for, ("USP", "SCIELO"))
+        self.assertEqual(journal.institution_responsible_for,
+                         ("USP", "SCIELO"))
 
     def test_set_online_submission_url(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
         url = "http://mc04.manuscriptcentral.com/rsp-scielo"
         journal.online_submission_url = url
         self.assertEqual(journal.online_submission_url, url)
-        self.assertEqual(journal.manifest["metadata"]["online_submission_url"], url)
+        self.assertEqual(
+            journal.manifest["metadata"]["online_submission_url"], url)
 
     def test_online_submission_url_default_is_empty(self):
         journal = domain.Journal(id="0034-8910-rsp-48-2")
@@ -1650,7 +1692,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
     def test_set_next_journal(self):
         journal = domain.Journal(id="0034-8910-MR")
-        next_journal = {"title": "Materials Research", "id": "journal/0034-8910"}
+        next_journal = {"title": "Materials Research",
+                        "id": "journal/0034-8910"}
         journal.next_journal = next_journal
         self.assertEqual(
             journal.manifest["metadata"]["next_journal"], next_journal,
@@ -1725,7 +1768,8 @@ class JournalTest(UnittestMixin, unittest.TestCase):
 
         journal.status_history = [{"status": "SUSPENDED", "notes": "motivo"}]
         self.assertEqual(
-            journal.status_history, [{"status": "SUSPENDED", "notes": "motivo"}]
+            journal.status_history, [
+                {"status": "SUSPENDED", "notes": "motivo"}]
         )
 
         journal.status_history = [{"status": "CEASED"}]
@@ -1920,18 +1964,22 @@ class JournalTest(UnittestMixin, unittest.TestCase):
         journal = domain.Journal(id="0034-8910-MR")
 
         journal.title = "Ciência Agrária 1"
-        self.assertEqual(journal.data()["metadata"]["title"], "Ciência Agrária 1")
+        self.assertEqual(journal.data()["metadata"]
+                         ["title"], "Ciência Agrária 1")
 
         journal.title = "Ciência Agrária 2"
-        self.assertEqual(journal.data()["metadata"]["title"], "Ciência Agrária 2")
+        self.assertEqual(journal.data()["metadata"]
+                         ["title"], "Ciência Agrária 2")
 
 
 class RetryGracefullyDecoratorTests(unittest.TestCase):
     def test_max_retries(self):
-        retry_gracefully = domain.retry_gracefully(max_retries=2, backoff_factor=0.001)
+        retry_gracefully = domain.retry_gracefully(
+            max_retries=2, backoff_factor=0.001)
 
         failing_obj = mock.Mock(
-            side_effect=[exceptions.RetryableError(), exceptions.RetryableError(), True]
+            side_effect=[exceptions.RetryableError(
+            ), exceptions.RetryableError(), True]
         )
         failing_obj.__qualname__ = "failing_function"
         decorated_obj = retry_gracefully(failing_obj)
@@ -1962,11 +2010,13 @@ class RetryGracefullyDecoratorTests(unittest.TestCase):
         self.assertEqual(retry_gracefully.backoff_factor, 1.2)
 
     def test_sleep_increases_exponentially(self):
-        retry_gracefully = domain.retry_gracefully(max_retries=2, backoff_factor=1.2)
+        retry_gracefully = domain.retry_gracefully(
+            max_retries=2, backoff_factor=1.2)
         retry_gracefully._sleep = mock.MagicMock(return_value=None)
 
         failing_obj = mock.Mock(
-            side_effect=[exceptions.RetryableError(), exceptions.RetryableError(), True]
+            side_effect=[exceptions.RetryableError(
+            ), exceptions.RetryableError(), True]
         )
         failing_obj.__qualname__ = "failing_function"
         decorated_obj = retry_gracefully(failing_obj)
@@ -2017,7 +2067,7 @@ class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):
                     """Español <inline-formula><mml:math display="inline" """
                     """id="m2"><mml:mrow><mml:msqrt><mml:mn>2</mml:mn>"""
                     """</mml:msqrt></mml:mrow></mml:math></inline-formula>"""
-                    ),
+                        ),
             }
         }
         self.assertEqual(expected, result)
@@ -2065,7 +2115,7 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
                     """Heparin solution in the prevention of occlusions """
                     """in Hickman<sup>®</sup> catheters a randomized """
                     """clinical trial"""
-                    ),
+                ),
                 "pt": (
                     """Solução de <b>heparina</b> na prevenção de oclusão do """
                     """Cateter de Hickman<sup>®</sup> ensaio clínico """
@@ -2079,7 +2129,7 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
         self.assertDictEqual(expected, result)
 
     def test_display_format_removes_xref_when_have_content_between_xref(self):
-        self.maxDiff=None
+        self.maxDiff = None
         xml = (
             '<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="en">'
             '<front>'
@@ -2108,14 +2158,14 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
             </sub-article>
             '''
             '</article>'
-                ).encode("utf-8")
+        ).encode("utf-8")
         result = domain.display_format(xml)
         expected = {
             "article_title": {
                 "en": (
                     """Pesquisa em ensino de química  no Brasil entre 2002 e """
                     """2017 a partir de periódicos especializados"""
-                    ),
+                ),
                 "pt": (
                     """Solução de <b>heparina</b> na prevenção de oclusão do """
                     """Cateter de Hickman<sup>®</sup> ensaio clínico """
@@ -2124,6 +2174,154 @@ class MetadataWithStylesForArticleWithSubarticlesTests(unittest.TestCase):
                     """Solución <i>de heparina para prevenir</i> oclusiones en """
                     """catéteres de Hickman<sup>®</sup> un ensayo clínico """
                     """aleatorizado"""),
+            }
+        }
+        self.assertDictEqual(expected, result)
+
+    def test_display_format_with_more_than_one_sub_article_and_front_sub(self):
+        self.maxDiff = None
+        xml = (
+            '<article xmlns:mml="http://www.w3.org/1998/Math/MathML" xmlns:xlink="http://www.w3.org/1999/xlink" article-type="research-article" dtd-version="1.1" specific-use="sps-1.9" xml:lang="pt">'
+            '<front>'
+            '<article-meta>'
+            '''
+            <title-group>
+            '''
+            '<article-title>HIRSCHKOP, Ken. <italic>The Cambridge Introduction to Mikhail Bakhtin</italic></article-title>'
+            '''
+            </title-group>
+            '''
+            '</article-meta>'
+            '</front>'
+            '''
+            <sub-article article-type="translation" id="s1" xml:lang="en">
+                <front-stub>
+                    <article-id pub-id-type="doi">10.1590/2176-4573e59384</article-id>
+                    <article-categories>
+                        <subj-group subj-group-type="heading">
+                            <subject>ARTICLES</subject>
+                        </subj-group>
+                    </article-categories>
+                    <title-group>'''
+                    '<article-title>HIRSCHKOP, Ken. <italic>The Cambridge Introduction to Mikhail Bakhtin</italic></article-title>'
+                    '''
+                    </title-group>
+                    <contrib-group>
+                        <contrib contrib-type="author">
+                            <contrib-id contrib-id-type="orcid">0000-0001-7356-3128</contrib-id>
+                            <name>
+                                <surname>Gomes</surname>
+                                <given-names>Filipe Almeida</given-names>
+                            </name>
+                            <xref ref-type="aff" rid="aff2">*</xref>
+                        </contrib>
+                    </contrib-group>
+                    <aff id="aff2">
+                        <label>*</label>
+                        <institution content-type="original">Universidade do Estado de Minas Gerais – UEMG, Unidade Ibirité,
+                            Departamento de Letras e Linguística, Ibirité, Minas Gerais, Brazil; filipegomeslc15@gmail.com
+                        </institution>
+                    </aff>
+                    <product product-type="book">
+                        <source>
+                        <italic>The Cambridge Introduction to Mikhail Bakhtin</italic>
+                        . Cambridge, United Kingdom
+                        </source>
+                        <person-group person-group-type="author">
+                            <name>
+                                <surname>HIRSCHKOP</surname>
+                                <given-names>Ken</given-names>
+                            </name>
+                        </person-group>
+                        <publisher-loc>New York, NY</publisher-loc>
+                        <publisher-name>Cambridge University Press</publisher-name>
+                        <year>2021</year>
+                        <size units="pages">194p.</size>
+                        <comment>
+                            <italic>E-book</italic>
+                            . (Series: Cambridge introductions to literature)
+                        </comment>
+                    </product>
+                </front-stub>
+                <sub-article article-type="reviewer-report" id="s4" xml:lang="en">
+                    <front-stub>
+                        <article-categories>
+                            <subj-group subj-group-type="heading">
+                                <subject>Peer-Review</subject>
+                            </subj-group>
+                        </article-categories>
+                        <title-group>
+                            <article-title>Review I</article-title>
+                        </title-group>
+                        <contrib-group>
+                            <contrib contrib-type="author">
+                                <contrib-id contrib-id-type="orcid">0000-0001-5532-5564</contrib-id>
+                                <name>
+                                    <surname>Sobral</surname>
+                                    <given-names>Adail Ubirajara</given-names>
+                                </name>
+                                <xref ref-type="aff" rid="aff5">*</xref>
+                            </contrib>
+                        </contrib-group>
+                        <aff id="aff5">
+                            <label>*</label>
+                            <institution content-type="original">Universidade Federal do Rio Grande – FURG, Rio Grande, Rio Grande
+                                do Sul, Brazil; adailsobral@gmail.com</institution>
+                        </aff>
+                        <custom-meta-group>
+                            <custom-meta>
+                                <meta-name>peer-review-recommendation</meta-name>
+                                <meta-value>accept</meta-value>
+                            </custom-meta>
+                        </custom-meta-group>
+                    </front-stub>
+                </sub-article>
+                <sub-article article-type="reviewer-report" id="s5" xml:lang="en">
+                    <front-stub>
+                        <article-categories>
+                            <subj-group subj-group-type="heading">
+                                <subject>Peer-Review</subject>
+                            </subj-group>
+                        </article-categories>
+                        <title-group>
+                            <article-title>Review III</article-title>
+                        </title-group>
+                        <contrib-group>
+                            <contrib contrib-type="author">
+                                <contrib-id contrib-id-type="orcid">0000-0003-0004-9923</contrib-id>
+                                <name>
+                                    <surname>Campos</surname>
+                                    <given-names>Maria Inês Batista</given-names>
+                                </name>
+                                <xref ref-type="aff" rid="aff6">*</xref>
+                            </contrib>
+                        </contrib-group>
+                        <aff id="aff6">
+                            <label>*</label>
+                            <institution content-type="original">Universidade de São Paulo – USP, São Paulo, São Paulo, Brazil;
+                                maria.maricamp@gmail.com</institution>
+                        </aff>
+                        <custom-meta-group>
+                            <custom-meta>
+                                <meta-name>peer-review-recommendation</meta-name>
+                                <meta-value>accept</meta-value>
+                            </custom-meta>
+                        </custom-meta-group>
+                    </front-stub>
+
+                </sub-article>
+            </sub-article>
+            '''
+            '</article>'
+        ).encode("utf-8")
+        result = domain.display_format(xml)
+        expected = {
+            "article_title": {
+                "en": (
+                    """HIRSCHKOP, Ken. <i>The Cambridge Introduction to Mikhail Bakhtin</i>"""
+                ),
+                "pt": (
+                    """HIRSCHKOP, Ken. <i>The Cambridge Introduction to Mikhail Bakhtin</i>"""),
             }
         }
         self.assertDictEqual(expected, result)
