@@ -19,7 +19,7 @@ python-slugify==4.0.0
 regex==2020.5.14
 requests==2.23.0
 #scielo-clea==0.4.4
-sentry-sdk==0.14.4
+sentry-sdk==2.8.0
 simplejson==3.17.0
 six==1.14.0
 text-unidecode==1.3
