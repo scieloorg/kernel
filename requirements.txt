@@ -33,6 +33,8 @@ zope.interface==5.1.0
 -e git+https://github.com/scieloorg/clea@v0.4.5#egg=scielo-clea
 gunicorn==23.0.0
 # numpy==1.21.6
-gevent==21.12.0
+gevent==24.10.1
 Cython==0.29.21
 
+setuptools>=70.0.0 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
