@@ -7,7 +7,6 @@ hupper==1.10.2
 idna==2.9
 iso8601==0.1.12
 lxml==4.5.0
-numpy==1.18.4
 PasteDeploy==2.1.0
 plaster==1.0
 plaster-pastedeploy==0.7
@@ -32,3 +31,8 @@ WebOb==1.8.6
 zope.deprecation==4.4.0
 zope.interface==5.1.0
 -e git+https://github.com/scieloorg/clea@v0.4.5#egg=scielo-clea
+gunicorn==23.0.0
+# numpy==1.21.6
+gevent==21.12.0
+Cython==0.29.21
+

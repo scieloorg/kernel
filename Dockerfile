@@ -14,7 +14,7 @@ COPY production.ini /app/config.ini
 COPY requirements.txt .
 
 RUN apk add --no-cache --virtual .build-deps \
-        make gcc libxml2-dev libxslt-dev musl-dev g++ git \
+        make gcc libxml2-dev libxslt-dev musl-dev g++ git libffi-dev \
     && apk add libxml2 libxslt \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \
@@ -28,4 +28,5 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED 1
 
 USER nobody
-CMD ["pserve", "/app/config.ini"]
+# CMD ["pserve", "/app/config.ini"]
+CMD ["gunicorn", "documentstore.wsgi:application", "--bind", "0.0.0.0:6543", "--workers=3", "--worker-class=gevent", "--timeout=1000", "--worker-connections=1000", "--log-level DEBUG"]
