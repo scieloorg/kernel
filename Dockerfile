@@ -29,4 +29,4 @@ ENV PYTHONUNBUFFERED 1
 
 USER nobody
 # CMD ["pserve", "/app/config.ini"]
-CMD ["gunicorn", "documentstore.wsgi:application", "--bind", "0.0.0.0:6543", "--workers=3", "--worker-class=gevent", "--timeout=1000", "--worker-connections=1000", "--log-level DEBUG"]
+CMD gunicorn documentstore.wsgi:application --bind 0.0.0.0:6543 --workers=3 --worker-class=gevent --timeout=1000 --worker-connections=1000 --log-level DEBUG
