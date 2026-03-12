@@ -32,7 +32,7 @@ class ChangesDataStore(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def filter(self, since: str = "", limit: int = 500) -> list:
+    def filter(self, since: str = "", until: str = "", limit: int = 500) -> list:
         pass
 
     @abc.abstractmethod

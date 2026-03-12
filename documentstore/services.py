@@ -474,12 +474,13 @@ class FetchChanges(CommandHandler):
 
     :param since: (Opcional) timestamp UTC, inicia a lista de resultados na mudança
     imediatamente posterior ao timestamp informado.
+    :param until: (Opcional) timestamp UTC que limita o fim da janela de resultados.
     :param limit: (Opcional) Limita o total de resultados obtidos. O valor padrão é 500.
     """
 
-    def __call__(self, since: str = "", limit: int = 500):
+    def __call__(self, since: str = "", until: str = "", limit: int = 500):
         session = self.Session()
-        return session.changes.filter(since=since, limit=limit)
+        return session.changes.filter(since=since, until=until, limit=limit)
 
 
 class FetchChange(CommandHandler):

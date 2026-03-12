@@ -344,6 +344,74 @@ class ChangesStoreTestMixin:
 
         self.assertEqual(list(store.filter(limit=2)), changes[:2])
 
+    def test_filter_until(self):
+        store = self.Store()
+
+        changes = [
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:03:47.891432Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:06:47.621560Z",
+                "id": "0034-8910-rsp-48-2-0349",
+                "entity": "document",
+            },
+        ]
+
+        for change in changes:
+            store.add(change)
+
+        self.assertEqual(
+            list(store.filter(until="2018-08-05T23:03:47.891432Z")),
+            changes[:2],
+        )
+
+    def test_filter_since_and_until(self):
+        store = self.Store()
+
+        changes = [
+            {
+                "timestamp": "2018-08-05T23:03:44.971230Z",
+                "id": "0034-8910-rsp-48-2-0347",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:03:47.891432Z",
+                "id": "0034-8910-rsp-48-2-0348",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:06:47.621560Z",
+                "id": "0034-8910-rsp-48-2-0349",
+                "entity": "document",
+            },
+            {
+                "timestamp": "2018-08-05T23:08:47.621560Z",
+                "id": "0034-8910-rsp-48-2-0350",
+                "entity": "document",
+            },
+        ]
+
+        for change in changes:
+            store.add(change)
+
+        self.assertEqual(
+            list(
+                store.filter(
+                    since="2018-08-05T23:03:47.891432Z",
+                    until="2018-08-05T23:06:47.621560Z",
+                )
+            ),
+            changes[2:3],
+        )
+
     def test_fetch_by_id(self):
         from bson.objectid import ObjectId
 

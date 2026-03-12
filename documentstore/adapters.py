@@ -269,9 +269,12 @@ class ChangesStore(interfaces.ChangesDataStore):
                 'cannot add data with id "%s": %s' % (change["_id"], exc)
             ) from None
 
-    def filter(self, since: str = "", limit: int = 500):
+    def filter(self, since: str = "", until: str = "", limit: int = 500):
+        timestamp_query = {"$gt": since}
+        if until:
+            timestamp_query["$lte"] = until
         return self._collection.find(
-            {"timestamp": {"$gt": since}},
+            {"timestamp": timestamp_query},
             sort=[("timestamp", pymongo.ASCENDING)],
             projection={"content_gz": False, "content_type": False},
             **self._txn_session_arg(),

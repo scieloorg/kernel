@@ -193,12 +193,12 @@ class InMemoryChangesDataStore(interfaces.ChangesDataStore):
             self._timestamps[change["timestamp"]] = change
             self._ids[change["_id"]] = change
 
-    def filter(self, since: str = "", limit: int = 500):
+    def filter(self, since: str = "", until: str = "", limit: int = 500):
 
         return [
             change
             for timestamp, change in self._timestamps.items()
-            if timestamp > since
+            if timestamp > since and (not until or timestamp <= until)
         ][:limit]
 
     def fetch(self, id: str) -> dict:
@@ -225,6 +225,7 @@ class MongoDBCollectionStub:
 
     def find(self, query, sort=None, projection=None):
         since = query["timestamp"]["$gt"]
+        until = query["timestamp"].get("$lte", "")
 
         first = 0
         for i, change_key in enumerate(self._mongo_store):
@@ -233,8 +234,12 @@ class MongoDBCollectionStub:
             else:
                 first = i
                 break
-
-        return SliceResultStub(list(self._mongo_store.values())[first:])
+        result = [
+            change
+            for change in list(self._mongo_store.values())[first:]
+            if not until or change["timestamp"] <= until
+        ]
+        return SliceResultStub(result)
 
     def find_one(self, query):
         change_id = query["_id"]

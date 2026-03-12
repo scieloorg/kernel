@@ -296,6 +296,7 @@ class QueryChangeSchema(colander.MappingSchema):
 
     limit = colander.SchemaNode(colander.String(), missing=colander.drop)
     since = colander.SchemaNode(colander.String(), missing=colander.drop)
+    until = colander.SchemaNode(colander.String(), missing=colander.drop)
 
 
 class ChangeSchema(colander.MappingSchema):
@@ -809,9 +810,10 @@ def _format_change(c, request):
     renderer="json",
 )
 def fetch_changes(request):
-    """Obtém a lista de mudanças, recebe os argumentos `since` e `limit`.
+    """Obtém a lista de mudanças, recebe os argumentos `since`, `until` e `limit`.
     """
     since = request.GET.get("since", "")
+    until = request.GET.get("until", "")
 
     try:
         limit = int(request.GET.get("limit", 500))
@@ -820,10 +822,13 @@ def fetch_changes(request):
 
     return {
         "since": since,
+        "until": until,
         "limit": limit,
         "results": [
             _format_change(c, request)
-            for c in request.services["fetch_changes"](since=since, limit=limit)
+            for c in request.services["fetch_changes"](
+                since=since, until=until, limit=limit
+            )
         ],
     }
 

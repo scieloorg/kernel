@@ -471,7 +471,7 @@ class FetchChangeUnitTest(unittest.TestCase):
     def test_fetch_changes(self):
         self.assertEqual(
             restfulapi.fetch_changes(self.request),
-            {"since": "", "limit": 500, "results": []},
+            {"since": "", "until": "", "limit": 500, "results": []},
         )
 
     def test_limit_must_be_int(self):
@@ -486,6 +486,13 @@ class FetchChangeUnitTest(unittest.TestCase):
         self.request.GET["since"] = "2019-02-21T13:52:26.526904Z"
         self.assertEqual(
             restfulapi.fetch_changes(self.request)["since"],
+            "2019-02-21T13:52:26.526904Z",
+        )
+
+    def test_until_return_correct_value(self):
+        self.request.GET["until"] = "2019-02-21T13:52:26.526904Z"
+        self.assertEqual(
+            restfulapi.fetch_changes(self.request)["until"],
             "2019-02-21T13:52:26.526904Z",
         )
 
@@ -523,6 +530,24 @@ class FetchChangeUnitTest(unittest.TestCase):
         self.assertEqual(
             restfulapi.fetch_changes(self.request)["results"], changes[11:16]
         )
+
+    def test_fetch_with_until(self):
+        self.make_documents(10)
+        changes = restfulapi.fetch_changes(self.request)["results"]
+        until = changes[4]["timestamp"]
+
+        self.request.GET["until"] = until
+
+        self.assertEqual(restfulapi.fetch_changes(self.request)["results"], changes[:5])
+
+    def test_fetch_with_since_and_until(self):
+        self.make_documents(10)
+        changes = restfulapi.fetch_changes(self.request)["results"]
+
+        self.request.GET["since"] = changes[2]["timestamp"]
+        self.request.GET["until"] = changes[6]["timestamp"]
+
+        self.assertEqual(restfulapi.fetch_changes(self.request)["results"], changes[3:7])
 
 
 class FetchChangeDetailsUnitTest(unittest.TestCase):
