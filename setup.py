@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import os, setuptools
+import os
+
+import setuptools
 
 setup_path = os.path.dirname(__file__)
 
@@ -22,12 +24,13 @@ setuptools.setup(
         exclude=["*.tests", "*.tests.*", "tests.*", "tests", "docs"]
     ),
     include_package_data=False,
-    python_requires=">=3.7",
+    python_requires=">=3.14,<4",
     install_requires=[
         "lxml",
         "requests",
+        "setuptools<81",
         "pymongo",
-        "pyramid",
+        "pyramid>=2.0.2,<2.1",
         "cornice",
         "cornice_swagger",
         "colander",
@@ -42,7 +45,7 @@ setuptools.setup(
         "Development Status :: 2 - Pre-Alpha",
         "Environment :: Other Environment",
         "License :: OSI Approved :: BSD License",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.14",
         "Programming Language :: Python :: 3 :: Only",
         "Operating System :: OS Independent",
     ],

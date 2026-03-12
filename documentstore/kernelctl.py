@@ -1,9 +1,9 @@
 import sys
 import argparse
 import logging
-import pkg_resources
 
 from documentstore import adapters
+from documentstore._version import get_version
 
 
 LOGGER = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ Licensed under the terms of the BSD license. Please see LICENSE in the source
 code for more information.
 """
 
-VERSION = pkg_resources.get_distribution("scielo-kernel").version
+VERSION = get_version()
 
 LOGGER_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 

@@ -1,10 +1,10 @@
 from time import time
-import pkg_resources
 
 from pyramid.tweens import EXCVIEW
 from prometheus_client import start_http_server, Histogram, Gauge, Summary, Info
+from ._version import get_version
 
-_VERSION = pkg_resources.get_distribution("scielo-kernel").version
+_VERSION = get_version()
 
 APP_INFO = Info(
     "kernel",

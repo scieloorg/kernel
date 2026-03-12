@@ -34,7 +34,7 @@ Para mais informação sobre a nova arquitetura de sistemas de informação da M
 
 ## Requisitos
 
-* Python 3.7+
+* Python 3.14
 * MongoDB
 
 
@@ -81,13 +81,20 @@ variável de ambiente      | valor padrão
 --------------------------|-------------
 KERNEL_LIB_MAX_RETRIES    | 4
 KERNEL_LIB_BACKOFF_FACTOR | 1.2
+KERNEL_LIB_FETCH_TIMEOUT  | 2.0
+
+Para ambientes com object storage remoto, recomenda-se iniciar com `KERNEL_LIB_FETCH_TIMEOUT=10`.
 
 ### Executando via código-fonte e Pip:
 
 ```bash
 $ git clone https://github.com/scieloorg/kernel.git
 $ cd kernel
-$ pip install -r requirements.txt && python setup.py develop
+$ python3.14 -m venv .venv
+$ . .venv/bin/activate
+$ python -m pip install --upgrade pip
+$ python -m pip install -r requirements.txt
+$ python -m pip install -e .
 $ pserve development.ini
 ```
 
