@@ -14,6 +14,7 @@ services:
         user: nobody
         environment:
             KERNEL_LIB_FETCH_TIMEOUT: "10"
+            KERNEL_LIB_FETCH_CACHE_TTL: "30"
         restart: always
         depends_on:
             - db

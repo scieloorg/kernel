@@ -82,8 +82,11 @@ variável de ambiente      | valor padrão
 KERNEL_LIB_MAX_RETRIES    | 4
 KERNEL_LIB_BACKOFF_FACTOR | 1.2
 KERNEL_LIB_FETCH_TIMEOUT  | 2.0
+KERNEL_LIB_FETCH_CACHE_TTL | 0
+KERNEL_LIB_FETCH_CACHE_MAX_ENTRIES | 256
 
 Para ambientes com object storage remoto, recomenda-se iniciar com `KERNEL_LIB_FETCH_TIMEOUT=10`.
+Quando houver muitas leituras repetidas do mesmo XML, recomenda-se iniciar com `KERNEL_LIB_FETCH_CACHE_TTL=30`.
 
 ### Executando via código-fonte e Pip:
 

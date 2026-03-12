@@ -1,4 +1,5 @@
 import itertools
+from collections import OrderedDict
 from copy import deepcopy
 from io import BytesIO
 import re
@@ -44,6 +45,8 @@ SUBJECT_AREAS = (
 
 MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))
 BACKOFF_FACTOR = float(os.environ.get("KERNEL_LIB_BACKOFF_FACTOR", "1.2"))
+FETCH_CACHE_TTL = float(os.environ.get("KERNEL_LIB_FETCH_CACHE_TTL", "0"))
+FETCH_CACHE_MAX_ENTRIES = int(os.environ.get("KERNEL_LIB_FETCH_CACHE_MAX_ENTRIES", "256"))
 OBJECTSTORE_RESPONSE_TIME_SECONDS = Summary(
     "kernel_objectstore_response_time_seconds",
     "Elapsed time between the request for an XML and the response",
@@ -53,6 +56,8 @@ OBJECTSTORE_REQUEST_FAILURES_TOTAL = Counter(
     "Total number of exceptions raised when requesting for an XML from the object-store",
 )
 _OBJECTSTORE_LOCAL = threading.local()
+_OBJECTSTORE_CACHE = OrderedDict()
+_OBJECTSTORE_CACHE_LOCK = threading.RLock()
 
 
 def utcnow():
@@ -79,6 +84,37 @@ def get_objectstore_session():
         session = _build_objectstore_session()
         _OBJECTSTORE_LOCAL.session = session
     return session
+
+
+def _fetch_data_from_cache(url):
+    if FETCH_CACHE_TTL <= 0:
+        return None
+
+    now = time.monotonic()
+    with _OBJECTSTORE_CACHE_LOCK:
+        cached = _OBJECTSTORE_CACHE.get(url)
+        if cached is None:
+            return None
+
+        expires_at, content = cached
+        if expires_at <= now:
+            _OBJECTSTORE_CACHE.pop(url, None)
+            return None
+
+        _OBJECTSTORE_CACHE.move_to_end(url)
+        return content
+
+
+def _store_data_in_cache(url, content):
+    if FETCH_CACHE_TTL <= 0 or FETCH_CACHE_MAX_ENTRIES <= 0:
+        return
+
+    expires_at = time.monotonic() + FETCH_CACHE_TTL
+    with _OBJECTSTORE_CACHE_LOCK:
+        _OBJECTSTORE_CACHE[url] = (expires_at, content)
+        _OBJECTSTORE_CACHE.move_to_end(url)
+        while len(_OBJECTSTORE_CACHE) > FETCH_CACHE_MAX_ENTRIES:
+            _OBJECTSTORE_CACHE.popitem(last=False)
 
 
 class DocumentManifest:
@@ -258,6 +294,10 @@ class retry_gracefully:
 @OBJECTSTORE_REQUEST_FAILURES_TOTAL.count_exceptions()
 @OBJECTSTORE_RESPONSE_TIME_SECONDS.time()
 def fetch_data(url: str, timeout: float = 2) -> bytes:
+    cached_content = _fetch_data_from_cache(url)
+    if cached_content is not None:
+        return cached_content
+
     try:
         response = get_objectstore_session().get(url, timeout=timeout)
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
@@ -314,6 +354,7 @@ def fetch_data(url: str, timeout: float = 2) -> bytes:
             else:
                 raise
 
+    _store_data_in_cache(url, response.content)
     return response.content
 
 

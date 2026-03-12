@@ -1,4 +1,5 @@
 import unittest
+from collections import OrderedDict
 from unittest import mock
 import functools
 from copy import deepcopy
@@ -2078,6 +2079,88 @@ class ObjectstoreSessionTests(unittest.TestCase):
         self.assertIs(first, created_session)
         self.assertIs(second, created_session)
         mocked_builder.assert_called_once_with()
+
+
+class FetchDataCacheTests(unittest.TestCase):
+    def setUp(self):
+        with domain._OBJECTSTORE_CACHE_LOCK:
+            self.previous_cache = OrderedDict(domain._OBJECTSTORE_CACHE)
+            domain._OBJECTSTORE_CACHE.clear()
+
+    def tearDown(self):
+        with domain._OBJECTSTORE_CACHE_LOCK:
+            domain._OBJECTSTORE_CACHE.clear()
+            domain._OBJECTSTORE_CACHE.update(self.previous_cache)
+
+    @mock.patch("documentstore.domain.get_objectstore_session")
+    @mock.patch("documentstore.domain.time.monotonic")
+    def test_fetch_data_reuses_cached_content_for_same_url(
+        self, mocked_monotonic, mocked_get_session
+    ):
+        mocked_monotonic.side_effect = [100.0, 100.5, 101.0]
+        mocked_response = mock.Mock()
+        mocked_response.content = b"<xml/>"
+        mocked_response.raise_for_status.return_value = None
+        mocked_session = mock.Mock()
+        mocked_session.get.return_value = mocked_response
+        mocked_get_session.return_value = mocked_session
+
+        with mock.patch.object(domain, "FETCH_CACHE_TTL", 30.0):
+            first = domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
+            second = domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
+
+        self.assertEqual(first, b"<xml/>")
+        self.assertEqual(second, b"<xml/>")
+        mocked_session.get.assert_called_once_with(
+            "https://minio.scielo.br/path/file.xml", timeout=9
+        )
+
+    @mock.patch("documentstore.domain.get_objectstore_session")
+    @mock.patch("documentstore.domain.time.monotonic")
+    def test_fetch_data_refetches_when_cache_entry_expires(
+        self, mocked_monotonic, mocked_get_session
+    ):
+        mocked_monotonic.side_effect = [100.0, 100.5, 131.0, 131.5]
+        first_response = mock.Mock()
+        first_response.content = b"<xml>one</xml>"
+        first_response.raise_for_status.return_value = None
+        second_response = mock.Mock()
+        second_response.content = b"<xml>two</xml>"
+        second_response.raise_for_status.return_value = None
+        mocked_session = mock.Mock()
+        mocked_session.get.side_effect = [first_response, second_response]
+        mocked_get_session.return_value = mocked_session
+
+        with mock.patch.object(domain, "FETCH_CACHE_TTL", 30.0):
+            first = domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
+            second = domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
+
+        self.assertEqual(first, b"<xml>one</xml>")
+        self.assertEqual(second, b"<xml>two</xml>")
+        self.assertEqual(mocked_session.get.call_count, 2)
+
+    @mock.patch("documentstore.domain.get_objectstore_session")
+    def test_fetch_data_does_not_cache_failed_request(self, mocked_get_session):
+        mocked_session = mock.Mock()
+        failing_response = mock.Mock()
+        failing_response.raise_for_status.side_effect = requests.HTTPError(
+            response=mock.Mock(status_code=500)
+        )
+        success_response = mock.Mock()
+        success_response.content = b"<xml/>"
+        success_response.raise_for_status.return_value = None
+        mocked_session.get.side_effect = (
+            [failing_response] * (domain.MAX_RETRIES + 1) + [success_response]
+        )
+        mocked_get_session.return_value = mocked_session
+
+        with mock.patch.object(domain, "FETCH_CACHE_TTL", 30.0):
+            with self.assertRaises(exceptions.RetryableError):
+                domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
+            content = domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
+
+        self.assertEqual(content, b"<xml/>")
+        self.assertEqual(mocked_session.get.call_count, domain.MAX_RETRIES + 2)
 
 
 class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):
