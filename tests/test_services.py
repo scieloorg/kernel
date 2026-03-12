@@ -1248,7 +1248,9 @@ class RegisterDocumentVersionTest(CommandTestMixin, unittest.TestCase):
         self.command = self.services["register_document_version"]
 
     def test_swollows_VersionAlreadySet_exception_for_assets(self):
-        with mock.patch("documentstore.domain.requests.get") as mock_request:
+        with mock.patch("documentstore.domain.get_objectstore_session") as mock_get_session:
+            mock_request = mock.Mock()
+            mock_get_session.return_value = mock.Mock(get=mock_request)
             with open(
                 os.path.join(
                     os.path.dirname(os.path.abspath(__file__)),

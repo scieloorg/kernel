@@ -9,9 +9,11 @@ import os
 import functools
 import logging
 import json
+import threading
 import warnings
 
 import requests
+from requests.adapters import HTTPAdapter
 from lxml import etree
 from prometheus_client import Counter, Summary
 
@@ -50,6 +52,7 @@ OBJECTSTORE_REQUEST_FAILURES_TOTAL = Counter(
     "kernel_objectstore_request_failures_total",
     "Total number of exceptions raised when requesting for an XML from the object-store",
 )
+_OBJECTSTORE_LOCAL = threading.local()
 
 
 def utcnow():
@@ -60,6 +63,22 @@ def utcnow():
             category=DeprecationWarning,
         )
         return str(datetime.utcnow().isoformat() + "Z")
+
+
+def _build_objectstore_session():
+    session = requests.Session()
+    adapter = HTTPAdapter(pool_connections=20, pool_maxsize=20)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
+def get_objectstore_session():
+    session = getattr(_OBJECTSTORE_LOCAL, "session", None)
+    if session is None:
+        session = _build_objectstore_session()
+        _OBJECTSTORE_LOCAL.session = session
+    return session
 
 
 class DocumentManifest:
@@ -240,7 +259,7 @@ class retry_gracefully:
 @OBJECTSTORE_RESPONSE_TIME_SECONDS.time()
 def fetch_data(url: str, timeout: float = 2) -> bytes:
     try:
-        response = requests.get(url, timeout=timeout)
+        response = get_objectstore_session().get(url, timeout=timeout)
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
         LOGGER.warning(
             'objectstore request failed url="%s" timeout="%s" failure_type="%s"',

@@ -2029,9 +2029,13 @@ class RetryGracefullyDecoratorTests(unittest.TestCase):
 
 class FetchDataLoggingTests(unittest.TestCase):
     @mock.patch.object(domain, "LOGGER")
-    @mock.patch("documentstore.domain.requests.get")
-    def test_logs_timeout_with_url_and_timeout(self, mocked_get, mocked_logger):
-        mocked_get.side_effect = requests.exceptions.ReadTimeout("timeout")
+    @mock.patch("documentstore.domain.get_objectstore_session")
+    def test_logs_timeout_with_url_and_timeout(
+        self, mocked_get_session, mocked_logger
+    ):
+        mocked_session = mock.Mock()
+        mocked_session.get.side_effect = requests.exceptions.ReadTimeout("timeout")
+        mocked_get_session.return_value = mocked_session
 
         with self.assertRaises(exceptions.RetryableError):
             domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
@@ -2050,6 +2054,30 @@ class FetchDataLoggingTests(unittest.TestCase):
         )
         self.assertEqual(kwargs["extra"]["timeout"], 9)
         self.assertEqual(kwargs["extra"]["failure_type"], "ReadTimeout")
+
+
+class ObjectstoreSessionTests(unittest.TestCase):
+    def test_get_objectstore_session_reuses_session_in_same_thread(self):
+        previous_session = getattr(domain._OBJECTSTORE_LOCAL, "session", None)
+        created_session = object()
+        try:
+            if hasattr(domain._OBJECTSTORE_LOCAL, "session"):
+                delattr(domain._OBJECTSTORE_LOCAL, "session")
+            with mock.patch.object(
+                domain, "_build_objectstore_session", return_value=created_session
+            ) as mocked_builder:
+                first = domain.get_objectstore_session()
+                second = domain.get_objectstore_session()
+        finally:
+            if previous_session is None:
+                if hasattr(domain._OBJECTSTORE_LOCAL, "session"):
+                    delattr(domain._OBJECTSTORE_LOCAL, "session")
+            else:
+                domain._OBJECTSTORE_LOCAL.session = previous_session
+
+        self.assertIs(first, created_session)
+        self.assertIs(second, created_session)
+        mocked_builder.assert_called_once_with()
 
 
 class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):
