@@ -3,6 +3,7 @@ from unittest import mock
 import functools
 from copy import deepcopy
 import datetime
+import requests
 
 from documentstore import domain, exceptions
 
@@ -2024,6 +2025,31 @@ class RetryGracefullyDecoratorTests(unittest.TestCase):
 
         calls = [mock.call(1.2 ** i) for i in range(1, 3)]
         retry_gracefully._sleep.assert_has_calls(calls)
+
+
+class FetchDataLoggingTests(unittest.TestCase):
+    @mock.patch.object(domain, "LOGGER")
+    @mock.patch("documentstore.domain.requests.get")
+    def test_logs_timeout_with_url_and_timeout(self, mocked_get, mocked_logger):
+        mocked_get.side_effect = requests.exceptions.ReadTimeout("timeout")
+
+        with self.assertRaises(exceptions.RetryableError):
+            domain.fetch_data("https://minio.scielo.br/path/file.xml", timeout=9)
+
+        self.assertEqual(mocked_logger.warning.call_count, domain.MAX_RETRIES + 1)
+        args, kwargs = mocked_logger.warning.call_args_list[0]
+        self.assertEqual(
+            args[0],
+            'objectstore request failed url="%s" timeout="%s" failure_type="%s"',
+        )
+        self.assertEqual(args[1], "https://minio.scielo.br/path/file.xml")
+        self.assertEqual(args[2], 9)
+        self.assertEqual(args[3], "ReadTimeout")
+        self.assertEqual(
+            kwargs["extra"]["url"], "https://minio.scielo.br/path/file.xml"
+        )
+        self.assertEqual(kwargs["extra"]["timeout"], 9)
+        self.assertEqual(kwargs["extra"]["failure_type"], "ReadTimeout")
 
 
 class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):

@@ -15,6 +15,16 @@ def make_services():
     return services.get_handlers(lambda: session, subscribers=[]), session
 
 
+def make_services_with_timeout(fetch_timeout):
+    session = apptesting.Session()
+    return (
+        services.get_handlers(
+            lambda: session, subscribers=[], fetch_timeout=fetch_timeout
+        ),
+        session,
+    )
+
+
 class CommandTestMixin:
     SUBSCRIBERS_EVENTS = [subscriber[0] for subscriber in services.DEFAULT_SUBSCRIBERS]
 
@@ -63,6 +73,54 @@ class CreateDocumentsBundleTest(CommandTestMixin, unittest.TestCase):
                     "instance": mock.ANY,
                 },
             )
+
+
+class FetchDocumentDataTimeoutTest(unittest.TestCase):
+    def test_fetch_document_data_uses_configured_timeout(self):
+        services_map, session = make_services_with_timeout(9.5)
+        document = domain.Document(id="doc-timeout")
+        session.documents.add(document)
+
+        with mock.patch.object(document, "data", return_value=b"<xml/>") as mocked_data:
+            with mock.patch.object(session.documents, "fetch", return_value=document):
+                result = services_map["fetch_document_data"]("doc-timeout")
+
+        self.assertEqual(result, b"<xml/>")
+        mocked_data.assert_called_once_with(
+            version_index=-1, version_at=None, timeout=9.5
+        )
+
+
+class DiffDocumentVersionsTimeoutTest(unittest.TestCase):
+    def test_diff_document_versions_uses_configured_timeout(self):
+        services_map, session = make_services_with_timeout(7.25)
+        document = domain.Document(id="doc-diff-timeout")
+        session.documents.add(document)
+
+        with mock.patch.object(
+            document,
+            "data",
+            side_effect=[b"old-version", b"new-version"],
+        ) as mocked_data:
+            with mock.patch.object(session.documents, "fetch", return_value=document):
+                services_map["diff_document_versions"](
+                    "doc-diff-timeout",
+                    from_version_at="2026-03-12T10:00:00Z",
+                    to_version_at="2026-03-12T11:00:00Z",
+                )
+
+        mocked_data.assert_has_calls(
+            [
+                mock.call(
+                    version_at="2026-03-12T10:00:00Z",
+                    timeout=7.25,
+                ),
+                mock.call(
+                    version_at="2026-03-12T11:00:00Z",
+                    timeout=7.25,
+                ),
+            ]
+        )
 
 
 class FetchDocumentsBundleTest(CommandTestMixin, unittest.TestCase):

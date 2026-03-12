@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Any, List
+from typing import Callable, Dict
 import difflib
 import functools
 from io import BytesIO
@@ -41,8 +41,9 @@ class Events(Enum):
 
 
 class CommandHandler:
-    def __init__(self, Session: Callable[[], Session]):
+    def __init__(self, Session: Callable[[], Session], fetch_timeout: float = 2):
         self.Session = Session
+        self.fetch_timeout = fetch_timeout
 
 
 class BaseRegisterDocument(CommandHandler):
@@ -72,7 +73,7 @@ class BaseRegisterDocument(CommandHandler):
             assets = {}
         with self.Session() as session:
             document = self._get_document(session, id)
-            document.new_version(data_url)
+            document.new_version(data_url, timeout=self.fetch_timeout)
             for asset_id, asset_url in assets.items():
                 self._new_asset_version(document, asset_id, asset_url)
             self._persist(session, document)
@@ -128,11 +129,11 @@ class RegisterDocumentVersion(BaseRegisterDocument):
     def _new_asset_version(self, document, asset_id, asset_url):
         try:
             document.new_asset_version(asset_id, asset_url)
-        except VersionAlreadySet as exc:
+        except VersionAlreadySet:
             # ao registrar uma nova versão de documento seus ativos são linkados
             # automaticamente, fazendo com que esta exceção seja levantada caso
             # os mesmos ativos sejam passados explicitamente.
-            pass
+            return
 
 
 class FetchDocumentData(CommandHandler):
@@ -154,7 +155,11 @@ class FetchDocumentData(CommandHandler):
     ) -> bytes:
         session = self.Session()
         document = session.documents.fetch(id)
-        return document.data(version_index=version_index, version_at=version_at)
+        return document.data(
+            version_index=version_index,
+            version_at=version_at,
+            timeout=self.fetch_timeout,
+        )
 
 
 class FetchDocumentManifest(CommandHandler):
@@ -230,12 +235,16 @@ class DiffDocumentVersions(CommandHandler):
     ) -> bytes:
         session = self.Session()
         document = session.documents.fetch(id)
-        from_version = document.data(version_at=from_version_at).splitlines()
+        from_version = document.data(
+            version_at=from_version_at, timeout=self.fetch_timeout
+        ).splitlines()
         if to_version_at:
             _to_version_at = {"version_at": to_version_at}
         else:
             _to_version_at = {}
-        to_version = document.data(**_to_version_at).splitlines()
+        to_version = document.data(
+            timeout=self.fetch_timeout, **_to_version_at
+        ).splitlines()
         diff = difflib.diff_bytes(
             difflib.unified_diff,
             from_version,
@@ -661,7 +670,7 @@ DEFAULT_SUBSCRIBERS = [
 
 
 def get_handlers(
-    Session: Callable[[], Session], subscribers=DEFAULT_SUBSCRIBERS
+    Session: Callable[[], Session], subscribers=DEFAULT_SUBSCRIBERS, fetch_timeout: float = 2
 ) -> dict:
     """Ponto de acesso aos serviços do Kernel.
 
@@ -679,13 +688,21 @@ def get_handlers(
         return session
 
     return {
-        "register_document": RegisterDocument(SessionWrapper),
-        "register_document_version": RegisterDocumentVersion(SessionWrapper),
-        "fetch_document_data": FetchDocumentData(SessionWrapper),
+        "register_document": RegisterDocument(
+            SessionWrapper, fetch_timeout=fetch_timeout
+        ),
+        "register_document_version": RegisterDocumentVersion(
+            SessionWrapper, fetch_timeout=fetch_timeout
+        ),
+        "fetch_document_data": FetchDocumentData(
+            SessionWrapper, fetch_timeout=fetch_timeout
+        ),
         "fetch_document_manifest": FetchDocumentManifest(SessionWrapper),
         "fetch_assets_list": FetchAssetsList(SessionWrapper),
         "register_asset_version": RegisterAssetVersion(SessionWrapper),
-        "diff_document_versions": DiffDocumentVersions(SessionWrapper),
+        "diff_document_versions": DiffDocumentVersions(
+            SessionWrapper, fetch_timeout=fetch_timeout
+        ),
         "sanitize_document_front": SanitizeDocumentFront(SessionWrapper),
         "create_documents_bundle": CreateDocumentsBundle(SessionWrapper),
         "fetch_documents_bundle": FetchDocumentsBundle(SessionWrapper),

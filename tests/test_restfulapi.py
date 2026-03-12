@@ -11,6 +11,8 @@ from pyramid.httpexceptions import (
     HTTPCreated,
     HTTPNoContent,
     HTTPBadRequest,
+    HTTPBadGateway,
+    HTTPGatewayTimeout,
     HTTPUnprocessableEntity,
 )
 
@@ -79,6 +81,52 @@ class FetchDocumentDataUnitTests(unittest.TestCase):
         document_data = restfulapi.fetch_document_data(request)
         self.assertIsInstance(document_data, bytes)
 
+    def test_timeout_from_objectstore_returns_http_504(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        read_timeout = type("ReadTimeout", (Exception,), {})("timeout")
+        retryable_error = exceptions.RetryableError(read_timeout)
+        retryable_error.__cause__ = read_timeout
+        request.services["fetch_document_data"] = Mock(
+            side_effect=retryable_error
+        )
+        with self.assertRaises(HTTPGatewayTimeout):
+            restfulapi.fetch_document_data(request)
+
+    def test_non_retryable_objectstore_error_returns_http_502(self):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.services["fetch_document_data"] = Mock(
+            side_effect=exceptions.NonRetryableError("upstream bad request")
+        )
+        with self.assertRaises(HTTPBadGateway):
+            restfulapi.fetch_document_data(request)
+
+    @patch("documentstore.restfulapi.LOGGER")
+    def test_logs_document_id_when_objectstore_fails(self, mocked_logger):
+        request = make_request()
+        request.matchdict = {"document_id": "my-testing-doc"}
+        request.GET = {"when": "2026-03-12T19:00:00Z"}
+        request.services["fetch_document_data"] = Mock(
+            side_effect=exceptions.NonRetryableError("upstream bad request")
+        )
+
+        with self.assertRaises(HTTPBadGateway):
+            restfulapi.fetch_document_data(request)
+
+        mocked_logger.warning.assert_called_once()
+        args, kwargs = mocked_logger.warning.call_args
+        self.assertEqual(
+            args[0],
+            'objectstore request failed during API operation operation="%s" document_id="%s" version_at="%s" from_when="%s" to_when="%s" error_type="%s"',
+        )
+        self.assertEqual(args[1], "fetch_document_data")
+        self.assertEqual(args[2], "my-testing-doc")
+        self.assertEqual(args[3], "2026-03-12T19:00:00Z")
+        self.assertEqual(kwargs["extra"]["operation"], "fetch_document_data")
+        self.assertEqual(kwargs["extra"]["document_id"], "my-testing-doc")
+        self.assertEqual(kwargs["extra"]["version_at"], "2026-03-12T19:00:00Z")
+
 
 @patch("documentstore.domain.fetch_data", new=fetch_data_stub)
 class PutDocumentUnitTests(unittest.TestCase):
@@ -104,6 +152,29 @@ class PutDocumentUnitTests(unittest.TestCase):
         request.validated = apptesting.document_registry_data_fixture()
         restfulapi.put_document(request)
         self.assertIsInstance(restfulapi.put_document(request), HTTPNoContent)
+
+    def test_registration_timeout_from_objectstore_returns_http_504(self):
+        request = make_request()
+        request.matchdict = {"document_id": "0034-8910-rsp-48-2-0347"}
+        request.validated = apptesting.document_registry_data_fixture()
+        read_timeout = type("ReadTimeout", (Exception,), {})("timeout")
+        retryable_error = exceptions.RetryableError(read_timeout)
+        retryable_error.__cause__ = read_timeout
+        request.services["register_document"] = Mock(side_effect=retryable_error)
+
+        with self.assertRaises(HTTPGatewayTimeout):
+            restfulapi.put_document(request)
+
+    def test_registration_upstream_error_returns_http_502(self):
+        request = make_request()
+        request.matchdict = {"document_id": "0034-8910-rsp-48-2-0347"}
+        request.validated = apptesting.document_registry_data_fixture()
+        request.services["register_document"] = Mock(
+            side_effect=exceptions.NonRetryableError("upstream bad request")
+        )
+
+        with self.assertRaises(HTTPBadGateway):
+            restfulapi.put_document(request)
 
 
 class ParseSettingsFunctionTests(unittest.TestCase):
@@ -152,6 +223,17 @@ class ParseSettingsFunctionTests(unittest.TestCase):
             )
         finally:
             os.environ.pop("APPTEST_FOO", None)
+
+    def test_float_values_are_converted(self):
+        defaults = [("apptest.timeout", "APPTEST_TIMEOUT", float, "2.5")]
+        self.assertEqual(
+            restfulapi.parse_settings({}, defaults=defaults),
+            {"apptest.timeout": 2.5},
+        )
+        self.assertEqual(
+            restfulapi.parse_settings({"apptest.timeout": "7"}, defaults=defaults),
+            {"apptest.timeout": 7.0},
+        )
 
 
 class FetchDocumentsBundleTest(unittest.TestCase):
@@ -233,6 +315,14 @@ class DocumentsBundleSchemaTest(unittest.TestCase):
         self.assertRaises(
             colander.Invalid, restfulapi.JournalIssuesSchema().deserialize, data
         )
+
+class OpenAPISpecTests(unittest.TestCase):
+    def test_openapi_spec_generation_returns_schema_document(self):
+        spec = restfulapi.openAPI_spec(testing.DummyRequest())
+
+        self.assertIsInstance(spec, dict)
+        self.assertEqual(spec["info"]["title"], "Kernel")
+        self.assertIn("/bundles/{bundle_id}", spec["paths"])
 
 
 class PutDocumentsBundleTest(unittest.TestCase):

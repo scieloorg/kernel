@@ -9,6 +9,7 @@ import os
 import functools
 import logging
 import json
+import warnings
 
 import requests
 from lxml import etree
@@ -52,7 +53,13 @@ OBJECTSTORE_REQUEST_FAILURES_TOTAL = Counter(
 
 
 def utcnow():
-    return str(datetime.utcnow().isoformat() + "Z")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r"datetime\.datetime\.utcnow\(\) is deprecated.*",
+            category=DeprecationWarning,
+        )
+        return str(datetime.utcnow().isoformat() + "Z")
 
 
 class DocumentManifest:
@@ -159,11 +166,11 @@ def get_static_assets(xml_et):
     """Retorna uma lista das URIs dos ativos digitais de ``xml_et``.
     """
     paths = [
-        "//graphic[@xlink:href]",
-        "//media[@xlink:href]",
-        "//inline-graphic[@xlink:href]",
-        "//supplementary-material[@xlink:href]",
-        "//inline-supplementary-material[@xlink:href]",
+        ".//graphic[@xlink:href]",
+        ".//media[@xlink:href]",
+        ".//inline-graphic[@xlink:href]",
+        ".//supplementary-material[@xlink:href]",
+        ".//inline-supplementary-material[@xlink:href]",
     ]
 
     iterators = [
@@ -235,17 +242,52 @@ def fetch_data(url: str, timeout: float = 2) -> bytes:
     try:
         response = requests.get(url, timeout=timeout)
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
+        LOGGER.warning(
+            'objectstore request failed url="%s" timeout="%s" failure_type="%s"',
+            url,
+            timeout,
+            exc.__class__.__name__,
+            extra={
+                "url": url,
+                "timeout": timeout,
+                "failure_type": exc.__class__.__name__,
+            },
+        )
         raise exceptions.RetryableError(exc) from exc
     except (
         requests.exceptions.InvalidSchema,
         requests.exceptions.MissingSchema,
         requests.exceptions.InvalidURL,
     ) as exc:
+        LOGGER.warning(
+            'objectstore request is invalid url="%s" timeout="%s" failure_type="%s"',
+            url,
+            timeout,
+            exc.__class__.__name__,
+            extra={
+                "url": url,
+                "timeout": timeout,
+                "failure_type": exc.__class__.__name__,
+            },
+        )
         raise exceptions.NonRetryableError(exc) from exc
     else:
         try:
             response.raise_for_status()
         except requests.HTTPError as exc:
+            LOGGER.warning(
+                'objectstore upstream returned error status url="%s" timeout="%s" failure_type="%s" status_code="%s"',
+                url,
+                timeout,
+                exc.__class__.__name__,
+                exc.response.status_code,
+                extra={
+                    "url": url,
+                    "timeout": timeout,
+                    "failure_type": exc.__class__.__name__,
+                    "status_code": exc.response.status_code,
+                },
+            )
             if 400 <= exc.response.status_code < 500:
                 raise exceptions.NonRetryableError(exc) from exc
             elif 500 <= exc.response.status_code < 600:
@@ -309,7 +351,7 @@ def _display_format_get_content(node):
     content = etree.tostring(node, encoding='utf-8').decode("utf-8")
     content = content[content.find(">")+1:]
     content = content[:content.rfind("</")]
-    return content
+    return content.strip()
 
 
 def _display_format_remove_xref(node):

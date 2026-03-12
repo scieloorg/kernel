@@ -1,7 +1,6 @@
 import logging
 import os
 import base64
-import pkg_resources
 
 from pyramid.settings import asbool
 from pyramid.config import Configurator
@@ -10,7 +9,9 @@ from pyramid.httpexceptions import (
     HTTPNoContent,
     HTTPCreated,
     HTTPBadRequest,
+    HTTPBadGateway,
     HTTPGone,
+    HTTPGatewayTimeout,
     HTTPUnprocessableEntity,
 )
 from cornice import Service
@@ -25,10 +26,11 @@ from sentry_sdk.integrations.pyramid import PyramidIntegration
 from . import services
 from . import adapters
 from . import exceptions
+from ._version import get_version
 
 LOGGER = logging.getLogger(__name__)
 
-VERSION = pkg_resources.get_distribution("scielo-kernel").version
+VERSION = get_version()
 
 swagger = Service(
     name="Kernel API", path="/__api__", description="Kernel API documentation"
@@ -246,7 +248,7 @@ class DocumentsBundleSchema(colander.MappingSchema):
         month = colander.SchemaNode(colander.Int(), missing=colander.drop)
 
         @colander.instantiate(missing=colander.drop)
-        class range(colander.TupleSchema):
+        class range(colander.MappingSchema):
             start_month = colander.SchemaNode(colander.Int(), missing=colander.drop)
             end_month = colander.SchemaNode(colander.Int(), missing=colander.drop)
 
@@ -443,6 +445,8 @@ def fetch_document_data(request):
         raise HTTPNotFound(exc)
     except exceptions.DeletedVersion as exc:
         raise HTTPGone(exc)
+    except (exceptions.RetryableError, exceptions.NonRetryableError) as exc:
+        raise objectstore_error_to_http(request, exc, "fetch_document_data")
 
 
 @documents.put(
@@ -486,7 +490,11 @@ def put_document(request):
                 request.matchdict["document_id"],
                 exc,
             )
+        except (exceptions.RetryableError, exceptions.NonRetryableError) as exc:
+            raise objectstore_error_to_http(request, exc, "put_document")
         return HTTPNoContent("document updated successfully")
+    except (exceptions.RetryableError, exceptions.NonRetryableError) as exc:
+        raise objectstore_error_to_http(request, exc, "put_document")
     else:
         return HTTPCreated("document created successfully")
 
@@ -638,6 +646,8 @@ def diff_document_versions(request):
         raise HTTPNotFound(exc)
     except exceptions.DeletedVersion as exc:
         raise HTTPGone(exc)
+    except (exceptions.RetryableError, exceptions.NonRetryableError) as exc:
+        raise objectstore_error_to_http(request, exc, "diff_document_versions")
 
 
 @front.get(
@@ -1172,6 +1182,30 @@ def split_dsn(dsns):
     return [dsn.strip() for dsn in str(dsns).split() if dsn]
 
 
+def objectstore_error_to_http(request, exc, operation):
+    LOGGER.warning(
+        'objectstore request failed during API operation operation="%s" document_id="%s" version_at="%s" from_when="%s" to_when="%s" error_type="%s"',
+        operation,
+        request.matchdict.get("document_id"),
+        request.GET.get("when"),
+        request.GET.get("from_when"),
+        request.GET.get("to_when"),
+        exc.__class__.__name__,
+        extra={
+            "operation": operation,
+            "document_id": request.matchdict.get("document_id"),
+            "version_at": request.GET.get("when"),
+            "from_when": request.GET.get("from_when"),
+            "to_when": request.GET.get("to_when"),
+            "error_type": exc.__class__.__name__,
+        },
+    )
+    cause = getattr(exc, "__cause__", None)
+    if cause is not None and cause.__class__.__name__ == "ReadTimeout":
+        return HTTPGatewayTimeout(str(cause))
+    return HTTPBadGateway(str(exc))
+
+
 DEFAULT_SETTINGS = [
     (
         "kernel.app.mongodb.dsn",
@@ -1196,6 +1230,7 @@ DEFAULT_SETTINGS = [
     ),
     ("kernel.app.prometheus.enabled", "KERNEL_APP_PROMETHEUS_ENABLED", asbool, True),
     ("kernel.app.prometheus.port", "KERNEL_APP_PROMETHEUS_PORT", int, 8087),
+    ("kernel.lib.fetch_timeout", "KERNEL_LIB_FETCH_TIMEOUT", float, 2.0),
     ("kernel.app.sentry.enabled", "KERNEL_APP_SENTRY_ENABLED", asbool, False),
     ("kernel.app.sentry.dsn", "KERNEL_APP_SENTRY_DSN", str, ""),
     ("kernel.app.sentry.environment", "KERNEL_APP_SENTRY_ENVIRONMENT", str, ""),
@@ -1256,7 +1291,11 @@ def main(global_config, **settings):
         )
 
     config.add_request_method(
-        lambda request: services.get_handlers(Session), "services", reify=True
+        lambda request: services.get_handlers(
+            Session, fetch_timeout=settings["kernel.lib.fetch_timeout"]
+        ),
+        "services",
+        reify=True,
     )
 
     if settings["kernel.app.sentry.enabled"]:

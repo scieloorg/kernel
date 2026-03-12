@@ -1,5 +1,3 @@
-version: '2'
-
 services:
     db:
         image: mongo:latest
@@ -14,6 +12,8 @@ services:
             context: .
             dockerfile: ./Dockerfile
         user: nobody
+        environment:
+            KERNEL_LIB_FETCH_TIMEOUT: "10"
         restart: always
         depends_on:
             - db
