@@ -77,10 +77,11 @@ https://docs.mongodb.com/master/core/transactions/.
 Configurações avançadas:
 
 
-variável de ambiente      | valor padrão
---------------------------|-------------
-KERNEL_LIB_MAX_RETRIES    | 4
-KERNEL_LIB_BACKOFF_FACTOR | 1.2
+variável de ambiente           | valor padrão
+-------------------------------|-------------
+KERNEL_LIB_MAX_RETRIES         | 4
+KERNEL_LIB_BACKOFF_FACTOR      | 1.2
+KERNEL_LIB_OBJECTSTORE_TIMEOUT | 2
 
 ### Executando via código-fonte e Pip:
 
