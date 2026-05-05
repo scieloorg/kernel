@@ -2026,6 +2026,43 @@ class RetryGracefullyDecoratorTests(unittest.TestCase):
         retry_gracefully._sleep.assert_has_calls(calls)
 
 
+class ObjectstoreTimeoutTests(unittest.TestCase):
+    def test_default_timeout_value(self):
+        with mock.patch.dict(domain.os.environ, {}, clear=True):
+            self.assertEqual(domain.objectstore_timeout(), 2)
+
+    def test_timeout_value_from_environment(self):
+        with mock.patch.dict(
+            domain.os.environ, {"KERNEL_LIB_OBJECTSTORE_TIMEOUT": "15.5"}
+        ):
+            self.assertEqual(domain.objectstore_timeout(), 15.5)
+
+    def test_explicit_timeout_value_has_priority(self):
+        with mock.patch.dict(
+            domain.os.environ, {"KERNEL_LIB_OBJECTSTORE_TIMEOUT": "15.5"}
+        ):
+            self.assertEqual(domain.objectstore_timeout(3), 3)
+
+    def test_fetch_data_uses_configured_timeout(self):
+        response = mock.Mock()
+        response.content = b"<article/>"
+        response.raise_for_status.return_value = None
+
+        with mock.patch.dict(
+            domain.os.environ, {"KERNEL_LIB_OBJECTSTORE_TIMEOUT": "15.5"}
+        ):
+            with mock.patch(
+                "documentstore.domain.requests.get", return_value=response
+            ) as request_get:
+                self.assertEqual(
+                    domain.fetch_data("https://example.org/doc.xml"), b"<article/>"
+                )
+
+        request_get.assert_called_once_with(
+            "https://example.org/doc.xml", timeout=15.5
+        )
+
+
 class MetadataWithStylesForArticleWithTransTitlesTests(unittest.TestCase):
 
     def setUp(self):

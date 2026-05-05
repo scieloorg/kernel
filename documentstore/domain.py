@@ -41,6 +41,7 @@ SUBJECT_AREAS = (
 
 MAX_RETRIES = int(os.environ.get("KERNEL_LIB_MAX_RETRIES", "4"))
 BACKOFF_FACTOR = float(os.environ.get("KERNEL_LIB_BACKOFF_FACTOR", "1.2"))
+OBJECTSTORE_TIMEOUT = float(os.environ.get("KERNEL_LIB_OBJECTSTORE_TIMEOUT", "2"))
 OBJECTSTORE_RESPONSE_TIME_SECONDS = Summary(
     "kernel_objectstore_response_time_seconds",
     "Elapsed time between the request for an XML and the response",
@@ -53,6 +54,14 @@ OBJECTSTORE_REQUEST_FAILURES_TOTAL = Counter(
 
 def utcnow():
     return str(datetime.utcnow().isoformat() + "Z")
+
+
+def objectstore_timeout(timeout=None):
+    if timeout is None:
+        return float(
+            os.environ.get("KERNEL_LIB_OBJECTSTORE_TIMEOUT", OBJECTSTORE_TIMEOUT)
+        )
+    return timeout
 
 
 class DocumentManifest:
@@ -231,7 +240,8 @@ class retry_gracefully:
 @retry_gracefully()
 @OBJECTSTORE_REQUEST_FAILURES_TOTAL.count_exceptions()
 @OBJECTSTORE_RESPONSE_TIME_SECONDS.time()
-def fetch_data(url: str, timeout: float = 2) -> bytes:
+def fetch_data(url: str, timeout: float = None) -> bytes:
+    timeout = objectstore_timeout(timeout)
     try:
         response = requests.get(url, timeout=timeout)
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
@@ -257,7 +267,7 @@ def fetch_data(url: str, timeout: float = 2) -> bytes:
 
 
 def assets_from_remote_xml(
-    url: str, timeout: float = 2, parser=DEFAULT_XMLPARSER
+    url: str, timeout: float = None, parser=DEFAULT_XMLPARSER
 ) -> list:
     data = fetch_data(url, timeout)
     xml = etree.parse(BytesIO(data), parser)
@@ -350,7 +360,11 @@ class Document:
         return self.manifest.get("id", "")
 
     def new_version(
-        self, data_url, assets_getter=assets_from_remote_xml, timeout=2, ensure_unique_name=False
+        self,
+        data_url,
+        assets_getter=assets_from_remote_xml,
+        timeout=None,
+        ensure_unique_name=False,
     ) -> None:
         """Adiciona `data_url` como uma nova versão do documento.
 
@@ -371,7 +385,7 @@ class Document:
                     "could not add version: the version is equal to the latest one"
                 )
 
-        _, data_assets = assets_getter(data_url, timeout=timeout)
+        _, data_assets = assets_getter(data_url, timeout=objectstore_timeout(timeout))
         data_assets_keys = [asset_key for asset_key, _ in data_assets]
         assets = self._link_assets(data_assets_keys)
         self.manifest = DocumentManifest.add_version(
@@ -500,7 +514,7 @@ class Document:
         version_index=-1,
         version_at=None,
         assets_getter=assets_from_remote_xml,
-        timeout=2,
+        timeout=None,
     ) -> bytes:
         """Retorna o conteúdo do XML, codificado em UTF-8, já com as
         referências aos ativos digitais correspondendo às da versão solicitada.
@@ -526,7 +540,9 @@ class Document:
             raise exceptions.DeletedVersion(
                 "cannot get data: the document was deleted")
 
-        xml_tree, data_assets = assets_getter(version["data"], timeout=timeout)
+        xml_tree, data_assets = assets_getter(
+            version["data"], timeout=objectstore_timeout(timeout)
+        )
 
         version_assets = version["assets"]
         for asset_key, target_node in data_assets:
